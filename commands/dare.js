@@ -23,5 +23,5 @@ const dares = [
 
 module.exports = async function(sock, chatId, msg) {
     const dare = dares[Math.floor(Math.random() * dares.length)];
-    await sock.sendMessage(chatId, { text: `*\u1F3B2 DARE*\n\n${dare}\n\n_You must do it!_` }, { quoted: msg });
+    await sock.sendMessage(chatId, { text: `*🎲 DARE*\n\n${dare}\n\n_You must do it!_` }, { quoted: msg });
 };

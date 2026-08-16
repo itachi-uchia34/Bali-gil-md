@@ -23,5 +23,5 @@ const truths = [
 
 module.exports = async function(sock, chatId, msg) {
     const truth = truths[Math.floor(Math.random() * truths.length)];
-    await sock.sendMessage(chatId, { text: `*\u1F9E9 TRUTH*\n\n${truth}\n\n_Answer honestly!_` }, { quoted: msg });
+    await sock.sendMessage(chatId, { text: `*🧩 TRUTH*\n\n${truth}\n\n_Answer honestly!_` }, { quoted: msg });
 };

@@ -14,7 +14,7 @@ const riddles = [
 module.exports = async function(sock, chatId, msg) {
     const riddle = riddles[Math.floor(Math.random() * riddles.length)];
     await sock.sendMessage(chatId, { 
-        text: `*\u1F9E9 Riddle*\n\n` +
+        text: `*🧩 Riddle*\n\n` +
             `${riddle.q}\n\n` +
             `*Answer:* ||${riddle.a}||` 
     }, { quoted: msg });
