@@ -15,8 +15,8 @@ async function reportCommand(sock, from, msg, isAdmin, session, args = []) {
     at: new Date().toISOString(),
     from: msg.key.participant || msg.key.remoteJid,
     author: (msg.pushName || '') ,
-    text
-n  };
+    text 
+  };
 
   session.adminInbox.push(report);
 
