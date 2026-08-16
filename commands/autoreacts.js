@@ -1,10 +1,32 @@
 // commands/autoreacts.js
 // Auto-React Command for MD Bot — improved to use all emojis across different messages
-// Features added/changed:
-// - Default mode set to 'rotating' so the pool cycles through every emoji on successive messages
-// - Avoids repeating the same emoji for consecutive messages in the same chat
-// - New subcommands: mode, remove, list
-// - Prevent duplicate emojis in the pool when adding
+// Supports large emoji pool and a built-in ALL_EMOJIS mode.
+
+// A broad emoji list used when the user wants to "use all emojis".
+const ALL_EMOJIS = [
+  '😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😇','🙂','🙃','😋','😌','😍','😘','😗','😙','😚',
+  '😜','😝','😛','🤑','🤗','🤔','🤐','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫',
+  '😴','😌','🤤','😛','😜','😝','🤤','😒','😓','😔','😕','🙁','☹️','😖','😞','😟','😤','😢','😭','😦',
+  '😧','😨','😩','🤯','😬','😰','😱','😳','🤪','😵','😡','😠','🤬','😷','🤒','🤕','🤢','🤮','🤧','😇',
+  '🥳','🥺','🤠','🤡','🤥','🤫','🤭','🧐','🤓','😈','👿','👹','👺','💀','👻','👽','🤖','💩','😺','😸',
+  '😹','😻','😼','😽','🙀','😿','😾','👶','🧒','👦','👧','🧑','👱','👨','🧔','👨‍🦰','👨‍🦱','👨‍🦳','👨‍🦲',
+  '👩','👩‍🦰','👩‍🦱','👩‍🦳','👩‍🦲','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🧏','🙇','🤦','🤷','🧑‍⚕️',
+  '🧑‍🎓','🧑‍🏫','🧑‍⚖️','🧑‍🌾','🧑‍🍳','🧑‍🔧','🧑‍🔬','🧑‍💼','🧑‍🎤','🧑‍🎨','🧑‍✈️','🧑‍🚀','🧑‍🚒','👮','🕵️','💂','🥷','👷','🤴','👸',
+  '👳','👲','🤵','👰','🤰','🤱','👼','🎅','🤶','🦸','🦹','🧙','🧚','🧛','🧜','🧝','🧞','🧟','💆','💇',
+  '💅','🤳','💃','🕺','🕴️','🚶','🏃','💃','🧘','🛀','🏄','🏊','🚣','🧗','🚴','🚵','🏇','🏂','🧗‍♀️','🧗‍♂️',
+  '⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥅','🏒','🏑','🥍','🏏','🥊','🥋','🥇','🥈','🥉','🏆',
+  '🎮','🎲','🎯','🎳','🎹','🎸','🥁','🎺','🎻','🎬','🎤','🎧','📯','🎼','🎵','🎶','📣','📢','🔔','🔕',
+  '💡','🔦','🏮','📱','📲','☎️','📞','📟','📠','📺','📷','📸','📹','🎥','📽️','🎞️','📞','🔋','💻','🖥️',
+  '🖨️','🖱️','🖲️','🕹️','🗜️','💾','💿','📀','🎚️','🎛️','🔌','💡','🔦','🏮','📡','🔭','🔬','🧭','🧯',
+  '🪓','🔨','⚒️','🛠️','🗡️','⚔️','🔫','🏹','🛡️','🚪','🪑','🛋️','🛏️','🛁','🚿','🧴','🧷','🧹','🧺','🧻',
+  '🪣','🔑','🗝️','🚬','⚗️','🔬','🔭','🧪','🧫','🧬','🔮','🕯️','🗿','🛒','🚗','🚕','🚙','🚌','🚎','🏎️',
+  '🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🛺','🏍️','🛵','🦽','🦼','🛴','🚲','🛹','🛼','🛶','⛵','🚤',
+  '🛳️','⛴️','🛥️','🚢','✈️','🛩️','🛫','🛬','🚁','🚀','🛸','🌍','🌎','🌏','🌕','🌖','🌗','🌘','🌑','🌒','🌓',
+  '🌔','🌙','🌚','🌛','🌜','☀️','🌝','⭐','🌟','🌠','🌌','☁️','⛅','⛈️','🌩️','🌨️','❄️','☃️','☔','💧','💦',
+  '🔥','🌪️','🌫️','🌈','☂️','⚡','❄️','💨','🌊','🎃','🎄','🎆','🎇','🧨','✨','🎈','🎉','🎊','🎋','🎍','🎎','🎏',
+  '🎐','🧧','🎑','🏮','📯','🔔','🔕','🎵','🎶','🎙️','🎚️','🎛️','🎤','🎧','📻','📱','📲','💬','💭','🗨️','🗯️',
+  '💢','💣','💥','💦','💫','💬','🟠','🟡','🟢','🔵','🟣','⚪','⚫','🟥','🟧','🟨','🟩','🟦','🟪','🟫'
+];
 
 async function autoreactsCommand(sock, from, msg, isAdmin, session, args = []) {
     if (!isAdmin) {
@@ -36,6 +58,12 @@ async function autoreactsCommand(sock, from, msg, isAdmin, session, args = []) {
                 session.autoReact.mode = opt.toLowerCase();
                 await sock.sendMessage(from, {
                     text: `✅ Auto-React Enabled! Mode: ${session.autoReact.mode.toUpperCase()}`
+                }, { quoted: msg });
+            } else if (opt.toLowerCase() === 'all') {
+                session.autoReact.mode = 'rotating';
+                session.autoReact.emojis = ALL_EMOJIS.slice();
+                await sock.sendMessage(from, {
+                    text: `✅ Auto-React Enabled! Mode: ROTATING (Using ALL emojis)`
                 }, { quoted: msg });
             } else {
                 // Treat as a fixed emoji
@@ -71,6 +99,13 @@ async function autoreactsCommand(sock, from, msg, isAdmin, session, args = []) {
         if (idx === -1) return await sock.sendMessage(from, { text: `⚠️ ${emoji} not found in pool.` }, { quoted: msg });
         session.autoReact.emojis.splice(idx, 1);
         await sock.sendMessage(from, { text: `✅ Removed ${emoji} from the emoji pool.` }, { quoted: msg });
+    } else if (action === 'all') {
+        // Shortcut to set pool to ALL_EMOJIS
+        session.autoReact.emojis = ALL_EMOJIS.slice();
+        session.autoReact.mode = 'rotating';
+        session.autoReact.rotatingIndex = 0;
+        session.autoReact.lastByChat = {};
+        await sock.sendMessage(from, { text: `✅ Emoji pool set to ALL emojis. Mode: ROTATING` }, { quoted: msg });
     } else if (action === 'reset') {
         session.autoReact.emojis = ['✅', '❤️', '👏', '🔥', '🎉', '💕', '💯', '😡', '✨', '🚀', '😂', '👀', '👍', '🌟', '💎', '🎈'];
         session.autoReact.rotatingIndex = 0;
@@ -92,18 +127,27 @@ async function autoreactsCommand(sock, from, msg, isAdmin, session, args = []) {
         await sock.sendMessage(from, { text: `✅ Mode set to ${mode.toUpperCase()}` }, { quoted: msg });
     } else if (action === 'list') {
         const pool = session.autoReact.emojis || [];
+        // If the pool is huge (all emojis), send a summary first and offer full list on demand
+        if (pool.length > 100) {
+            await sock.sendMessage(from, { text: `🎯 Emoji pool contains ${pool.length} emojis (using ALL_EMOJIS). Use ".autoreact list" with "full" to send the entire list.` }, { quoted: msg });
+            return;
+        }
         await sock.sendMessage(from, { text: `🎯 Emoji pool (${pool.length}): ${pool.join(' ')}` }, { quoted: msg });
+    } else if (action === 'list' && args[1] === 'full') {
+        const pool = session.autoReact.emojis || [];
+        await sock.sendMessage(from, { text: `🎯 Full Emoji pool (${pool.length}):\n${pool.join(' ')}` }, { quoted: msg });
     } else {
         await sock.sendMessage(from, {
-            text: `❌ *Usage:* .autoreact [on/off/add/remove/reset/status/mode/list]\n\n` +
-                  `• on [mode|emoji] - Enable auto-react (modes: random, rotating, default)\n` +
+            text: `❌ *Usage:* .autoreact [on/off/add/remove/all/reset/status/mode/list]\n\n` +
+                  `• on [mode|emoji|all] - Enable auto-react (modes: random, rotating, default). Use 'all' to enable ALL emojis\n` +
                   `• off - Disable auto-react\n` +
                   `• add [emoji] - Add an emoji to the pool\n` +
                   `• remove [emoji] - Remove an emoji from the pool\n` +
+                  `• all - Set pool to ALL emojis (switches to rotating mode)\n` +
                   `• reset - Reset pool to defaults\n` +
                   `• status - Show current settings\n` +
                   `• mode [random|rotating|default] - Set selection mode\n` +
-                  `• list - Show all emojis in the pool`
+                  `• list - Show emojis in the pool` 
         }, { quoted: msg });
     }
 }
