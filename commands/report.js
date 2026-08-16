@@ -1,68 +1,54 @@
-const settings = require('../settings');
+// commands/report.js
+// .report <text> - send a report to group admins and store it in session.adminInbox
 
-function onlyDigits(s = '') { 
-    return String(s).replace(/\D/g, ''); 
+async function reportCommand(sock, from, msg, isAdmin, session, args = []) {
+  const text = args.join(' ').trim();
+  if (!text) return await sock.sendMessage(from, { text: '❌ Usage: .report <your message>' }, { quoted: msg });
+
+  // ensure inbox exists
+  session.adminInbox = session.adminInbox || [];
+
+  // id: incremental
+  const id = (session.adminInbox.length ? session.adminInbox[session.adminInbox.length - 1].id + 1 : 1);
+  const report = {
+    id,
+    at: new Date().toISOString(),
+    from: msg.key.participant || msg.key.remoteJid,
+    author: (msg.pushName || '') ,
+    text
+n  };
+
+  session.adminInbox.push(report);
+
+  // try to forward summary to group admins
+  try {
+    // fetch group metadata
+    let metadata = {};
+    if (sock.groupMetadata) metadata = await sock.groupMetadata(from);
+    else if (sock.fetchGroupMetadata) metadata = await sock.fetchGroupMetadata(from);
+
+    const participants = metadata && metadata.participants ? metadata.participants : [];
+    const adminJids = participants.filter(p => p.isAdmin || p.isSuperAdmin).map(p => p.id || p.jid || p.participant).filter(Boolean);
+
+    // notify each admin privately (or in group with mention if private fails)
+    const summary = `📨 New report (#${id}) from @${report.from.split('@')[0]}\n${report.text.slice(0, 500)}...\nUse: .inbox status to view reports`;
+    if (adminJids.length) {
+      for (const admin of adminJids) {
+        try {
+          await sock.sendMessage(admin, { text: `📨 New report in group ${metadata.subject || from} (#${id})\nFrom: @${report.from.split('@')[0]}\n${report.text}` }, { mentions: [report.from], quoted: msg });
+        } catch (e) {
+          // fallback: mention in the group
+        }
+      }
+    } else {
+      // no admin list — mention in group
+      await sock.sendMessage(from, { text: `📨 Report received (#${id}). Admins will be notified.` }, { quoted: msg });
+    }
+  } catch (e) {
+    console.error('report: failed to notify admins', e);
+  }
+
+  await sock.sendMessage(from, { text: `✅ Report submitted (id: ${id}). Admins will review it.` }, { quoted: msg });
 }
 
-module.exports = async function(sock, chatId, message, q) {
-    try {
-        await sock.sendMessage(chatId, { react: { text: '⏳', key: message.key } });
-        
-        if (!q) return await sock.sendMessage(chatId, { text: '⚠️ Usage: .report <number/mention>' }, { quoted: message });
-
-        let target = onlyDigits(q);
-        if (message.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-            target = onlyDigits(message.message.extendedTextMessage.contextInfo.mentionedJid[0]);
-        }
-        
-        if (target.length < 10) return await sock.sendMessage(chatId, { text: '❌ Invalid number' }, { quoted: message });
-
-        const tJid = target + '@s.whatsapp.net';
-
-        // Proper WhatsApp Reporting Mechanism
-        // This uses the internal 'abuse' namespace for real reports
-        const reportTypes = ['spam', 'abuse', 'harassment', 'fraud', 'illegal_content'];
-        
-        await sock.sendMessage(chatId, { 
-            text: `🚨 **BALI MASS REPORTER** 🚨\n\n👤 **Target:** +${target}\n📊 **Action:** Sending Official Abuse Reports\n\n_Please wait..._` 
-        }, { quoted: message });
-
-        let successCount = 0;
-        for (const type of reportTypes) {
-            try {
-                await sock.query({
-                    tag: 'iq',
-                    type: 'set',
-                    attrs: {
-                        to: 's.whatsapp.net',
-                        id: sock.generateMessageTag(),
-                        xmlns: 'abuse',
-                    },
-                    content: [
-                        {
-                            tag: 'report',
-                            attrs: {
-                                jid: tJid,
-                                type: type,
-                            },
-                        },
-                    ],
-                });
-                successCount++;
-            } catch (e) {
-                console.error(`Report failed for type ${type}:`, e.message);
-            }
-        }
-
-        await sock.sendMessage(chatId, { 
-            text: `✅ **REPORTING COMPLETE**\n\n👤 **Target:** +${target}\n🛡️ *Official Reports:* ${successCount}/${reportTypes.length}\n⚡ **Status:** Target has been officially reported to WhatsApp for multiple violations.` 
-        }, { quoted: message });
-
-        await sock.sendMessage(chatId, { react: { text: '✅', key: message.key } });
-
-    } catch(err) { 
-        console.error('Report Error:', err);
-        await sock.sendMessage(chatId, { text: '❌ Error: ' + err.message }, { quoted: message }); 
-        await sock.sendMessage(chatId, { react: { text: '❌', key: message.key } });
-    }
-};
+module.exports = reportCommand;
