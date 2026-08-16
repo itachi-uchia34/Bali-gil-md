@@ -11,11 +11,22 @@ module.exports = async function(...args) {
   const from = args[1];
   const msg = args[2];
 
+  if (!sock || !from || !msg) {
+    console.error('dpz: missing required arguments');
+    return;
+  }
+
   // Determine category either from explicit param (args[4]) or from message text
   let explicit = typeof args[4] === 'string' ? args[4].toLowerCase() : '';
 
   // Fallback: attempt to read the text body from message
-  const body = (msg.message?.conversation) || (msg.message?.extendedTextMessage?.text) || '';
+  let body = '';
+  try {
+    body = (msg.message?.conversation) || (msg.message?.extendedTextMessage?.text) || '';
+  } catch (e) {
+    body = '';
+  }
+  
   const textParts = body.trim().split(/\s+/).filter(Boolean);
   const bodyArg = textParts[1] ? textParts[1].toLowerCase() : '';
 
@@ -53,6 +64,10 @@ module.exports = async function(...args) {
     await sock.sendMessage(from, { text: `✅ Sent ${count} ${category} DP images.` }, { quoted: msg });
   } catch (e) {
     console.error('dpz error', e);
-    await sock.sendMessage(from, { text: `❌ Failed to send DP images: ${e && e.message ? e.message : String(e)}` }, { quoted: msg });
+    try {
+      await sock.sendMessage(from, { text: `❌ Failed to send DP images: ${e && e.message ? e.message : String(e)}` }, { quoted: msg });
+    } catch (e2) {
+      console.error('dpz: failed to send error message', e2);
+    }
   }
 };
