@@ -1,19 +1,23 @@
 require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const fs = require('fs-extra');
 const path = require('path');
-const axios = require('axios');
-const TelegramBot = require('node-telegram-bot-api');
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  Browsers,
-} = require('@whiskeysockets/baileys');
-const P = require('pino');
+let TelegramBot;
+let baileysModule;
+let pinoFactory;
+
+function getBaileys() {
+  if (!baileysModule) baileysModule = require('@whiskeysockets/baileys');
+  return baileysModule;
+}
+
+function getPino() {
+  if (!pinoFactory) pinoFactory = require('pino');
+  return pinoFactory;
+}
 
 // Load settings (provide fallback if missing)
 let settings = {};
@@ -35,21 +39,22 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // =================== TELEGRAM BOT ===================
-const tgToken = process.env.TELEGRAM_BOT_TOKEN;
+const tgToken = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
 let tgBot = null;
 if (tgToken) {
+  TelegramBot = require('node-telegram-bot-api');
   tgBot = new TelegramBot(tgToken, {
     polling: { interval: 3000, autoStart: true, params: { timeout: 10 } },
   });
   tgBot.on('polling_error', (error) => {
-    console.log('Telegram polling error:', error.message);
+    console.error('Telegram polling error:', error.message);
     if (error.message.includes('409') || error.message.includes('Conflict')) {
-      console.log('Another instance detected. Stopping this instance...');
+      console.error('Telegram polling conflict: stop every other bot instance, then restart this one.');
       tgBot.stopPolling();
     }
   });
 } else {
-  console.warn('TELEGRAM_BOT_TOKEN not set – Telegram commands disabled.');
+  console.warn('TELEGRAM_BOT_TOKEN is missing – Telegram commands are disabled. Set it in the deployment environment.');
 }
 
 // =================== SESSION MANAGEMENT ===================
@@ -90,15 +95,16 @@ class BotSession {
     this.phoneNumber = number;
 
     const authFolder = `auth_info_${this.sessionId}`;
-    const { state, saveCreds } = await useMultiFileAuthState(authFolder);
-    const { version } = await fetchLatestBaileysVersion();
+    const baileys = getBaileys();
+    const { state, saveCreds } = await baileys.useMultiFileAuthState(authFolder);
+    const { version } = await baileys.fetchLatestBaileysVersion();
 
-    this.sock = makeWASocket({
+    this.sock = baileys.default({
       version,
       auth: state,
       printQRInTerminal: false,
-      browser: Browsers.macOS('Desktop'),
-      logger: P({ level: 'silent' }),
+      browser: baileys.Browsers.macOS('Desktop'),
+      logger: getPino()({ level: 'silent' }),
       getMessage: async () => ({}),
     });
 
@@ -110,11 +116,14 @@ class BotSession {
         this.pairingExpiresAt = Date.now() + 60000; // 1 minute
         io.emit('pairing-code', {
           code,
-          sessionId: this.sessionId,
           expiresAt: this.pairingExpiresAt,
         });
         if (this.tgChatId && tgBot) {
-          await this.sendPairingCodeToTelegram(this.tgChatId, code);
+          try {
+            await this.sendPairingCodeToTelegram(this.tgChatId, code);
+          } catch (telegramError) {
+            console.error('Pairing code was generated, but Telegram delivery failed:', telegramError.message);
+          }
         }
       } catch (err) {
         io.emit('pair-error', `Pairing request failed: ${err.message}`);
@@ -128,16 +137,16 @@ class BotSession {
       const { connection, lastDisconnect } = update;
       if (connection === 'close') {
         this.isConnected = false;
-        io.emit('connection-status', { sessionId: this.sessionId, connected: false });
+        io.emit('connection-status', { connected: false });
         this.isInitializing = false;
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        if (statusCode !== DisconnectReason.loggedOut) {
+        if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
           // optionally reconnect
         }
       } else if (connection === 'open') {
         this.isConnected = true;
         this.phoneNumber = this.sock.user.id.split('@')[0];
-        io.emit('connection-status', { sessionId: this.sessionId, connected: true });
+        io.emit('connection-status', { connected: true });
         this.isInitializing = false;
         if (!botData.statusSettings[this.sessionId]) {
           botData.statusSettings[this.sessionId] = { isPublic: true };
@@ -150,19 +159,27 @@ class BotSession {
   async sendPairingCodeToTelegram(chatId, code) {
     if (!tgBot || !chatId || !code) return;
     const rawCode = String(code).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const htmlEscape = (value) => String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;');
     const msg =
-      `╭━━〔 *PAIRING CODE READY* 〕━━╮\n` +
-      `┃ Code: \`${rawCode}\`\n` +
-      `╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
-      `Open WhatsApp → Settings → Linked Devices → Link with phone number, then enter the 8 characters exactly as shown.\n` +
-      `Do not type spaces or a hyphen. The code is temporary; keep this chat open until the device is linked.\n\n` +
-      `> POWERED BY ITACHI-UCHIHA`;
-    await tgBot.sendMessage(chatId, msg, { parse_mode: 'Markdown' });
+      '<b>PAIRING CODE READY</b>\n\n' +
+      `<code>${htmlEscape(rawCode)}</code>\n\n` +
+      'Open WhatsApp → Settings → Linked Devices → Link with phone number, then enter the 8 characters exactly as shown.\n' +
+      'Do not type spaces or a hyphen. The code is temporary; keep this chat open until the device is linked.\n\n' +
+      '<i>POWERED BY ITACHI-UCHIHA</i>';
+    try {
+      await tgBot.sendMessage(chatId, msg, { parse_mode: 'HTML', disable_web_page_preview: true });
+    } catch (error) {
+      console.error('Telegram pairing-code delivery failed:', error.message);
+      await tgBot.sendMessage(chatId, `PAIRING CODE READY\n\n${rawCode}\n\nEnter this code in WhatsApp → Settings → Linked Devices → Link with phone number.`);
+    }
   }
 
   sendConnectionStatus() {
     io.emit('connection-status', {
-      sessionId: this.sessionId,
       connected: this.isConnected,
       pairingCode: this.pairingCode,
       pairingExpiresAt: this.pairingExpiresAt,
@@ -278,7 +295,7 @@ io.on('connection', (socket) => {
         socket.emit('pair-error', 'Invalid number. Provide a complete WhatsApp number with country code, e.g., 923271054080.');
         return;
       }
-      const { session, sessionId } = getSessionForNumber(cleanNumber);
+      const { session } = getSessionForNumber(cleanNumber);
       if (session.isConnected) {
         socket.emit('pair-error', `This number (${cleanNumber}) is already connected.`);
         return;
@@ -295,10 +312,19 @@ io.on('connection', (socket) => {
 });
 
 // =================== API ROUTES ===================
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    telegramConfigured: Boolean(tgBot),
+    activeSessions: Object.values(sessions).filter((session) => session.isConnected).length,
+  });
+});
+
 app.get('/api/runtime-config', async (req, res) => {
   const botLink = await resolveTelegramBotLink();
   const publicUrl = publicDeploymentUrl();
   res.json({
+    telegramConfigured: Boolean(tgBot),
     telegramBotLink: botLink || '',
     publicDeploymentUrl: publicUrl || '',
   });
@@ -395,15 +421,20 @@ if (tgBot) {
 }
 
 async function startTelegramPairing(chatId, rawNumber) {
+  if (!tgBot) {
+    console.error('Telegram pairing requested while TELEGRAM_BOT_TOKEN is not configured.');
+    return;
+  }
   const cleanNumber = normalizeWhatsAppNumber(rawNumber);
   if (!isValidWhatsAppNumber(cleanNumber)) {
     await tgBot.sendMessage(chatId, 'Invalid number. Send the complete WhatsApp number with country code, without a leading local 0. Example: `923271054080`.', { parse_mode: 'Markdown' });
     return;
   }
 
-  const { session, sessionId } = getSessionForNumber(cleanNumber);
-  if (!botData.statusSettings[sessionId]) {
-    botData.statusSettings[sessionId] = { isPublic: true };
+  const { session } = getSessionForNumber(cleanNumber);
+  const sessionKey = session.sessionId;
+  if (!botData.statusSettings[sessionKey]) {
+    botData.statusSettings[sessionKey] = { isPublic: true };
     saveBotData();
   }
 
@@ -423,13 +454,11 @@ async function startTelegramPairing(chatId, rawNumber) {
   }
 
   const initMsg =
-    `╭━━〔 *PAIRING REQUEST* 〕━━╮\n` +
-    `┃ Number: \`${cleanNumber}\`\n` +
-    `┃ Session: \`${sessionId}\`\n` +
-    `┃ Status: generating code...\n` +
-    `╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
+    `PAIRING REQUEST\n\n` +
+    `Number: ${cleanNumber}\n` +
+    `Status: generating code...\n\n` +
     `Keep this chat open. The code will arrive here shortly.`;
-  await tgBot.sendMessage(chatId, initMsg, { parse_mode: 'Markdown' });
+  await tgBot.sendMessage(chatId, initMsg);
   session.tgChatId = chatId;
   await session.initialize(cleanNumber);
 }

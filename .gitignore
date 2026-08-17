@@ -3,3 +3,7 @@ auth_info
 data/*.json
 .env
 *.log
+
+# Runtime authentication and generated state
+auth_info_*
+botData.json

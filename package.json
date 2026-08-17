@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node --check settings.js && node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "audit": "node tools/audit_project.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "7.0.0-rc14",

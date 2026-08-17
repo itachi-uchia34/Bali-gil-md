@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bali Gil | WhatsApp Pairing</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root { color-scheme: dark; --bg:#080a16; --panel:#12162b; --line:#30385f; --text:#f7f8ff; --muted:#a7afd0; --accent:#ff6c88; --cyan:#68dcff; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; color:var(--text); font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; background:radial-gradient(circle at 20% 10%,#16334a 0,transparent 32%),linear-gradient(145deg,#070814,#150b20); }
+    .card { width:min(560px,100%); padding:32px; border:1px solid var(--line); border-radius:20px; background:rgba(18,22,43,.9); box-shadow:0 24px 80px rgba(0,0,0,.38); }
+    h1 { margin:0 0 8px; font-size:clamp(1.8rem,5vw,2.7rem); letter-spacing:.04em; }
+    .subtitle { margin:0 0 26px; color:var(--muted); }
+    label { display:block; margin-bottom:8px; color:var(--muted); font-size:.9rem; }
+    .row { display:flex; gap:10px; }
+    input { flex:1; min-width:0; padding:14px 15px; border:1px solid var(--line); border-radius:10px; background:#080b19; color:var(--text); font:inherit; }
+    input:focus { outline:2px solid rgba(104,220,255,.35); border-color:var(--cyan); }
+    button { padding:14px 18px; border:0; border-radius:10px; background:var(--accent); color:#210611; font-weight:800; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .status { min-height:28px; margin:18px 0 0; color:var(--muted); }
+    .status.error { color:#ff9aaa; }
+    .status.success { color:#8df0c1; }
+    .code-panel { display:none; margin-top:24px; padding:22px; text-align:center; border:1px solid var(--cyan); border-radius:14px; background:rgba(104,220,255,.08); }
+    .code-panel.visible { display:block; }
+    .code-label { color:var(--muted); font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; }
+    #pairing-code { display:block; margin:8px 0; color:var(--cyan); font:800 clamp(2rem,10vw,3.5rem)/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.18em; word-break:break-all; }
+    .hint { margin:0; color:var(--muted); font-size:.9rem; }
+    .foot { margin-top:26px; padding-top:16px; border-top:1px solid rgba(48,56,95,.7); color:var(--muted); font-size:.8rem; }
+    @media (max-width:480px) { .row { flex-direction:column; } button { width:100%; } }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>WhatsApp Pairing</h1>
+    <p class="subtitle">Request a temporary pairing code through the Bali Gil connection center.</p>
+    <form id="pair-form">
+      <label for="number">WhatsApp number with country code</label>
+      <div class="row">
+        <input id="number" name="number" inputmode="numeric" autocomplete="tel" placeholder="923271054080" required>
+        <button id="connect-button" type="submit">Get code</button>
+      </div>
+    </form>
+    <p id="status" class="status" role="status" aria-live="polite">Ready.</p>
+    <section id="code-panel" class="code-panel" aria-live="polite">
+      <div class="code-label">Pairing code</div>
+      <code id="pairing-code"></code>
+      <p class="hint">In WhatsApp, open Settings → Linked Devices → Link with phone number and enter this code.</p>
+    </section>
+    <p class="foot">The code is temporary. Keep this page open until the device is linked.</p>
+  </main>
+  <script>
+    (() => {
+      const socket = io();
+      const form = document.getElementById('pair-form');
+      const input = document.getElementById('number');
+      const button = document.getElementById('connect-button');
+      const status = document.getElementById('status');
+      const panel = document.getElementById('code-panel');
+      const code = document.getElementById('pairing-code');
+      const setStatus = (message, type = '') => { status.textContent = message; status.className = `status ${type}`; };
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const number = input.value.trim();
+        if (!/^\+?[1-9][\d\s-]{9,18}$/.test(number)) {
+          setStatus('Enter a complete WhatsApp number with country code.', 'error');
+          return;
+        }
+        panel.classList.remove('visible');
+        code.textContent = '';
+        button.disabled = true;
+        setStatus('Generating your pairing code…');
+        socket.emit('pair-request', { number });
+      });
+      socket.on('pairing-code', (payload) => {
+        const raw = String(payload?.code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        if (!raw) { setStatus('The server returned an empty pairing code.', 'error'); return; }
+        code.textContent = raw;
+        panel.classList.add('visible');
+        button.disabled = false;
+        setStatus('Pairing code ready.', 'success');
+      });
+      socket.on('pair-error', (message) => { button.disabled = false; setStatus(message || 'Pairing failed.', 'error'); });
+      socket.on('connection-status', (payload) => {
+        if (payload?.connected) { button.disabled = false; setStatus('WhatsApp connected successfully.', 'success'); }
+      });
+      socket.on('connect_error', () => { button.disabled = false; setStatus('Unable to reach the pairing server.', 'error'); });
+    })();
+  </script>
+</body>
+</html>
