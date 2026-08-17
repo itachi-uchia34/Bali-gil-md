@@ -456,6 +456,11 @@ io.on('connection', (socket) => {
       await session.initialize(cleanNumber);
     } catch (error) {
       const message = error?.message || 'Unknown WhatsApp pairing error';
+      // Initialization can fail before Baileys emits a connection.update event.
+      // Clear the stale in-progress state so the next request can retry.
+      try { await session.reset(); } catch (resetError) {
+        console.error('Failed to reset WhatsApp session after web pairing error:', resetError.message);
+      }
       socket.emit('pairing-status', { state: 'error', message: `Failed to start pairing: ${message}` });
       socket.emit('pair-error', `Failed to start pairing: ${message}`);
     }
@@ -621,16 +626,26 @@ async function startTelegramPairing(chatId, rawNumber) {
   session.lastRequestAt = now;
   await session.reset();
 
-  await tgBot.sendMessage(chatId, initMsg);
-  session.tgChatId = chatId;
   try {
+    await tgBot.sendMessage(chatId, initMsg);
+    session.tgChatId = chatId;
     const initialized = await session.initialize(cleanNumber);
     if (initialized === false) {
+      await session.reset();
       await tgBot.sendMessage(chatId, 'Pairing could not start because WhatsApp closed the connection before the code was ready. Please retry in a few seconds.', { parse_mode: 'Markdown' });
     }
   } catch (error) {
     console.error('Telegram pairing handler failed:', error.message);
-    await tgBot.sendMessage(chatId, 'Pairing could not start. Please retry in a few seconds.', { parse_mode: 'Markdown' });
+    // If setup fails before connection.update, isInitializing would otherwise
+    // remain true and every later /connect command would be blocked forever.
+    try { await session.reset(); } catch (resetError) {
+      console.error('Failed to reset WhatsApp session after Telegram pairing error:', resetError.message);
+    }
+    try {
+      await tgBot.sendMessage(chatId, 'Pairing could not start. The WhatsApp session was reset; please retry in a few seconds.', { parse_mode: 'Markdown' });
+    } catch (notifyError) {
+      console.error('Could not send Telegram pairing failure message:', notifyError.message);
+    }
   }
 }
 
