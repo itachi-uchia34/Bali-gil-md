@@ -1,13 +1,6 @@
-// commands/boysdpz.js
-// Wrapper for .dpz boys
-const dpz = require('./dpz');
+// commands/boysdpz.js - Wrapper for dpboys command
+const { dpboys } = require('./dpboys');
 
-module.exports = async function(...args) {
-  try {
-    const newArgs = Array.from(args);
-    newArgs[4] = 'boys';
-    return await dpz(...newArgs);
-  } catch (e) {
-    console.error('boysdpz error:', e);
-  }
+module.exports = async function(sock, from, msg, q) {
+    return await dpboys(sock, from, msg, q);
 };
