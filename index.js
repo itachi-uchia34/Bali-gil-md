@@ -108,9 +108,51 @@ class BotSession {
       getMessage: async () => ({}),
     });
 
-    // Request pairing code
+    // Register listeners before requesting a code. Baileys rejects
+    // requestPairingCode with 428 if the WebSocket is not open yet.
+    this.sock.ev.on('creds.update', saveCreds);
+    const connectionReady = new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('WhatsApp connection timed out before pairing was ready')), 20000);
+      this.sock.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === 'open') {
+          clearTimeout(timeout);
+          resolve();
+        } else if (connection === 'close') {
+          clearTimeout(timeout);
+          const statusCode = lastDisconnect?.error?.output?.statusCode;
+          reject(new Error(`WhatsApp connection closed before pairing was ready${statusCode ? ` (status ${statusCode})` : ''}`));
+        }
+      });
+    });
+
+    this.sock.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect } = update;
+      if (connection === 'close') {
+        this.isConnected = false;
+        this.sock = null;
+        io.emit('connection-status', { connected: false });
+        this.isInitializing = false;
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
+          console.warn('WhatsApp connection closed; the pairing request can be retried.');
+        }
+      } else if (connection === 'open') {
+        this.isConnected = true;
+        this.phoneNumber = this.sock?.user?.id?.split('@')[0] || this.phoneNumber;
+        io.emit('connection-status', { connected: true });
+        this.isInitializing = false;
+        if (!botData.statusSettings[this.sessionId]) {
+          botData.statusSettings[this.sessionId] = { isPublic: true };
+          saveBotData();
+        }
+      }
+    });
+
+    // Request pairing code only after the WebSocket is ready.
     if (number) {
       try {
+        await connectionReady;
         const code = await this.sock.requestPairingCode(number);
         this.pairingCode = code;
         this.pairingExpiresAt = Date.now() + 60000; // 1 minute
@@ -126,34 +168,14 @@ class BotSession {
           }
         }
       } catch (err) {
-        io.emit('pair-error', `Pairing request failed: ${err.message}`);
         this.isInitializing = false;
-        throw err;
+        this.pairingCode = null;
+        io.emit('pair-error', `Pairing request failed: ${err.message}`);
+        console.error('Pairing request failed:', err.message);
+        return false;
       }
     }
-
-    this.sock.ev.on('creds.update', saveCreds);
-    this.sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
-      if (connection === 'close') {
-        this.isConnected = false;
-        io.emit('connection-status', { connected: false });
-        this.isInitializing = false;
-        const statusCode = lastDisconnect?.error?.output?.statusCode;
-        if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
-          // optionally reconnect
-        }
-      } else if (connection === 'open') {
-        this.isConnected = true;
-        this.phoneNumber = this.sock.user.id.split('@')[0];
-        io.emit('connection-status', { connected: true });
-        this.isInitializing = false;
-        if (!botData.statusSettings[this.sessionId]) {
-          botData.statusSettings[this.sessionId] = { isPublic: true };
-          saveBotData();
-        }
-      }
-    });
+    return true;
   }
 
   async sendPairingCodeToTelegram(chatId, code) {
@@ -460,7 +482,15 @@ async function startTelegramPairing(chatId, rawNumber) {
     `Keep this chat open. The code will arrive here shortly.`;
   await tgBot.sendMessage(chatId, initMsg);
   session.tgChatId = chatId;
-  await session.initialize(cleanNumber);
+  try {
+    const initialized = await session.initialize(cleanNumber);
+    if (initialized === false) {
+      await tgBot.sendMessage(chatId, 'Pairing could not start because WhatsApp closed the connection before the code was ready. Please retry in a few seconds.', { parse_mode: 'Markdown' });
+    }
+  } catch (error) {
+    console.error('Telegram pairing handler failed:', error.message);
+    await tgBot.sendMessage(chatId, 'Pairing could not start. Please retry in a few seconds.', { parse_mode: 'Markdown' });
+  }
 }
 
 // =================== START SERVER ===================
