@@ -86,6 +86,7 @@ class BotSession {
     this.isInitializing = false;
     this.pairingCode = null;
     this.pairingExpiresAt = null;
+    this.pairingRequested = false;
     this.tgChatId = null;
   }
 
@@ -322,12 +323,20 @@ io.on('connection', (socket) => {
       }
       const { session } = getSessionForNumber(cleanNumber);
       if (session.isConnected) {
+        socket.emit('pairing-status', { state: 'connected', message: 'This WhatsApp number is already connected.' });
         socket.emit('pair-error', `This number (${cleanNumber}) is already connected.`);
         return;
       }
+      if (session.isInitializing) {
+        socket.emit('pairing-status', { state: 'connecting', message: 'A WhatsApp pairing request is already in progress.' });
+        return;
+      }
+      socket.emit('pairing-status', { state: 'connecting', message: 'Opening the WhatsApp secure channel…' });
       await session.initialize(cleanNumber);
     } catch (error) {
-      socket.emit('pair-error', `Failed to start pairing: ${error.message}`);
+      const message = error?.message || 'Unknown WhatsApp pairing error';
+      socket.emit('pairing-status', { state: 'error', message: `Failed to start pairing: ${message}` });
+      socket.emit('pair-error', `Failed to start pairing: ${message}`);
     }
   });
 
