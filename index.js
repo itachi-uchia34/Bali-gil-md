@@ -38,6 +38,15 @@ const io = socketIo(server, { cors: { origin: '*' } });
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Never let one bad async error take down the whole process (and with it,
+// any in-progress WhatsApp pairing). Log it and keep running instead.
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception (ignored, process kept alive):', err?.stack || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection (ignored, process kept alive):', reason);
+});
+
 // =================== TELEGRAM BOT ===================
 const tgToken = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
 let tgBot = null;
@@ -63,7 +72,11 @@ const botData = { statusSettings: {} };
 const BOT_DATA_PATH = path.join(__dirname, 'botData.json');
 
 function saveBotData() {
-  fs.writeJsonSync(BOT_DATA_PATH, botData, { spaces: 2 });
+  try {
+    fs.writeJsonSync(BOT_DATA_PATH, botData, { spaces: 2 });
+  } catch (err) {
+    console.error('Failed to save bot data (ignored):', err.message);
+  }
 }
 
 function loadBotData() {
@@ -216,6 +229,32 @@ class BotSession {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const suppressCloseError = this.suppressNextCloseError;
         this.suppressNextCloseError = false;
+        const DisconnectReason = getBaileys().DisconnectReason;
+
+        // 515 (restartRequired) always follows a successful pairing-code
+        // registration — WhatsApp intentionally closes the socket once and
+        // expects an immediate reconnect using the now-saved credentials to
+        // finish linking. Without this, the phone hangs on "Logging in…"
+        // forever waiting for a handshake that never resumes.
+        if (statusCode === DisconnectReason.restartRequired) {
+          io.emit('pairing-status', { state: 'linking', message: 'Code accepted — finishing the link…' });
+          setTimeout(() => {
+            void this.initialize(number).catch((e) => console.error('Reconnect after pairing failed:', e.message));
+          }, 500);
+          return;
+        }
+
+        // Any other transient close that happens after the account is
+        // already registered (pairing succeeded, connection just dropped)
+        // should reconnect quietly instead of forcing a brand-new code.
+        if (statusCode !== DisconnectReason.loggedOut && state.creds.registered && this.pairingRetryCount < 5) {
+          this.pairingRetryCount += 1;
+          const retryIn = 2000;
+          setTimeout(() => {
+            void this.initialize(number).catch((e) => console.error('Reconnect failed:', e.message));
+          }, retryIn);
+          return;
+        }
 
         // A 401 (loggedOut) before pairing ever completed means the local
         // auth_info folder is stale/invalid, not that the user was really
@@ -240,6 +279,7 @@ class BotSession {
         }
       } else if (connection === 'open') {
         this.isConnected = true;
+        this.pairingRetryCount = 0;
         this.phoneNumber = this.sock?.user?.id?.split('@')[0] || this.phoneNumber;
         this.isInitializing = Boolean(number && !state.creds.registered && !this.pairingCode);
         io.emit('connection-status', { connected: true });
