@@ -102,64 +102,29 @@ class BotSession {
     this.sock = baileys.default({
       version,
       auth: state,
-      printQRInTerminal: false,
       browser: baileys.Browsers.macOS('Desktop'),
+      markOnlineOnConnect: false,
+      connectTimeoutMs: 60000,
       logger: getPino()({ level: 'silent' }),
       getMessage: async () => ({}),
     });
 
-    // Register listeners before requesting a code. Baileys rejects
-    // requestPairingCode with 428 if the WebSocket is not open yet.
+    // Pairing codes must be requested after Baileys emits a QR update.
+    // Calling requestPairingCode immediately can produce status 428.
     this.sock.ev.on('creds.update', saveCreds);
-    const connectionReady = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('WhatsApp connection timed out before pairing was ready')), 20000);
-      this.sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
-        if (connection === 'open') {
-          clearTimeout(timeout);
-          resolve();
-        } else if (connection === 'close') {
-          clearTimeout(timeout);
-          const statusCode = lastDisconnect?.error?.output?.statusCode;
-          reject(new Error(`WhatsApp connection closed before pairing was ready${statusCode ? ` (status ${statusCode})` : ''}`));
-        }
-      });
-    });
-
-    this.sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
-      if (connection === 'close') {
-        this.isConnected = false;
-        this.sock = null;
-        io.emit('connection-status', { connected: false });
-        this.isInitializing = false;
-        const statusCode = lastDisconnect?.error?.output?.statusCode;
-        if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
-          console.warn('WhatsApp connection closed; the pairing request can be retried.');
-        }
-      } else if (connection === 'open') {
-        this.isConnected = true;
-        this.phoneNumber = this.sock?.user?.id?.split('@')[0] || this.phoneNumber;
-        io.emit('connection-status', { connected: true });
-        this.isInitializing = false;
-        if (!botData.statusSettings[this.sessionId]) {
-          botData.statusSettings[this.sessionId] = { isPublic: true };
-          saveBotData();
-        }
-      }
-    });
-
-    // Request pairing code only after the WebSocket is ready.
-    if (number) {
+    let pairingTimer = null;
+    const requestPairingCode = async () => {
+      if (!number || this.pairingCode || this.pairingRequested || state.creds.registered) return;
+      this.pairingRequested = true;
+      pairingTimer = null;
       try {
-        await connectionReady;
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        if (!this.sock || state.creds.registered) return;
         const code = await this.sock.requestPairingCode(number);
         this.pairingCode = code;
-        this.pairingExpiresAt = Date.now() + 60000; // 1 minute
-        io.emit('pairing-code', {
-          code,
-          expiresAt: this.pairingExpiresAt,
-        });
+        this.pairingExpiresAt = Date.now() + 60000;
+        this.isInitializing = false;
+        io.emit('pairing-code', { code, expiresAt: this.pairingExpiresAt });
         if (this.tgChatId && tgBot) {
           try {
             await this.sendPairingCodeToTelegram(this.tgChatId, code);
@@ -168,13 +133,44 @@ class BotSession {
           }
         }
       } catch (err) {
-        this.isInitializing = false;
+        this.pairingRequested = false;
         this.pairingCode = null;
         io.emit('pair-error', `Pairing request failed: ${err.message}`);
         console.error('Pairing request failed:', err.message);
-        return false;
       }
-    }
+    };
+
+    this.sock.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect, qr } = update;
+      if (qr && number && !state.creds.registered && !this.pairingRequested && !pairingTimer) {
+        pairingTimer = setTimeout(() => { void requestPairingCode(); }, 100);
+      }
+      if (connection === 'close') {
+        if (pairingTimer) clearTimeout(pairingTimer);
+        pairingTimer = null;
+        this.isConnected = false;
+        this.sock = null;
+        this.pairingRequested = false;
+        this.isInitializing = false;
+        io.emit('connection-status', { connected: false });
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
+          console.warn(`WhatsApp connection closed (status ${statusCode || 'unknown'}); retry the pairing request.`);
+        }
+      } else if (connection === 'open') {
+        this.isConnected = true;
+        this.phoneNumber = this.sock?.user?.id?.split('@')[0] || this.phoneNumber;
+        this.isInitializing = Boolean(number && !state.creds.registered && !this.pairingCode);
+        io.emit('connection-status', { connected: true });
+        if (!botData.statusSettings[this.sessionId]) {
+          botData.statusSettings[this.sessionId] = { isPublic: true };
+          saveBotData();
+        }
+      }
+    });
+
+    // The socket is now listening for its QR/connection updates; the code is
+    // delivered asynchronously when the QR update arrives.
     return true;
   }
 

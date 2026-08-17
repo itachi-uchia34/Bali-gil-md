@@ -3,52 +3,130 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bali Gil | WhatsApp Pairing</title>
+  <meta name="theme-color" content="#08090d">
+  <title>ITACHI UCHIHA | WhatsApp Pairing</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    :root { color-scheme: dark; --bg:#080a16; --panel:#12162b; --line:#30385f; --text:#f7f8ff; --muted:#a7afd0; --accent:#ff6c88; --cyan:#68dcff; }
-    * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; color:var(--text); font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; background:radial-gradient(circle at 20% 10%,#16334a 0,transparent 32%),linear-gradient(145deg,#070814,#150b20); }
-    .card { width:min(560px,100%); padding:32px; border:1px solid var(--line); border-radius:20px; background:rgba(18,22,43,.9); box-shadow:0 24px 80px rgba(0,0,0,.38); }
-    h1 { margin:0 0 8px; font-size:clamp(1.8rem,5vw,2.7rem); letter-spacing:.04em; }
-    .subtitle { margin:0 0 26px; color:var(--muted); }
-    label { display:block; margin-bottom:8px; color:var(--muted); font-size:.9rem; }
-    .row { display:flex; gap:10px; }
-    input { flex:1; min-width:0; padding:14px 15px; border:1px solid var(--line); border-radius:10px; background:#080b19; color:var(--text); font:inherit; }
-    input:focus { outline:2px solid rgba(104,220,255,.35); border-color:var(--cyan); }
-    button { padding:14px 18px; border:0; border-radius:10px; background:var(--accent); color:#210611; font-weight:800; cursor:pointer; }
-    button:disabled { opacity:.55; cursor:not-allowed; }
-    .status { min-height:28px; margin:18px 0 0; color:var(--muted); }
-    .status.error { color:#ff9aaa; }
-    .status.success { color:#8df0c1; }
-    .code-panel { display:none; margin-top:24px; padding:22px; text-align:center; border:1px solid var(--cyan); border-radius:14px; background:rgba(104,220,255,.08); }
-    .code-panel.visible { display:block; }
-    .code-label { color:var(--muted); font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; }
-    #pairing-code { display:block; margin:8px 0; color:var(--cyan); font:800 clamp(2rem,10vw,3.5rem)/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.18em; word-break:break-all; }
-    .hint { margin:0; color:var(--muted); font-size:.9rem; }
-    .foot { margin-top:26px; padding-top:16px; border-top:1px solid rgba(48,56,95,.7); color:var(--muted); font-size:.8rem; }
-    @media (max-width:480px) { .row { flex-direction:column; } button { width:100%; } }
+    :root {
+      color-scheme: dark;
+      --ink: #f8f4ed;
+      --muted: #aaa6a2;
+      --panel: rgba(13, 15, 20, .88);
+      --panel-soft: rgba(27, 28, 34, .72);
+      --line: rgba(255, 255, 255, .11);
+      --red: #c5162e;
+      --red-bright: #ff334d;
+      --gold: #d6a85b;
+      --blue: #82d5ff;
+      --danger: #ff91a0;
+      --success: #8de0b1;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      font: 15px/1.6 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(90deg, rgba(5, 6, 9, .96), rgba(5, 6, 9, .66) 46%, rgba(5, 6, 9, .92)),
+        linear-gradient(0deg, rgba(7, 8, 12, .88), rgba(7, 8, 12, .46)),
+        url('/itachi_wallpaper.jpg') center / cover fixed;
+    }
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      content: "";
+      opacity: .24;
+      background-image: radial-gradient(rgba(255,255,255,.35) .6px, transparent .6px);
+      background-size: 5px 5px;
+      mix-blend-mode: screen;
+    }
+    .shell { width: min(1120px, 100%); margin: 0 auto; padding: 28px 20px 42px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 56px; }
+    .brand { display: flex; align-items: center; gap: 13px; letter-spacing: .16em; text-transform: uppercase; font-size: .75rem; font-weight: 800; }
+    .crest {
+      display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(255, 61, 80, .72); border-radius: 50%;
+      color: #160308; background: radial-gradient(circle, #09090b 0 14%, var(--red-bright) 15% 23%, #4e0916 24% 38%, var(--red-bright) 39% 43%, #09090b 44%);
+      box-shadow: 0 0 25px rgba(197, 22, 46, .42), inset 0 0 15px rgba(0,0,0,.75);
+    }
+    .topbar-note { color: var(--muted); font-size: .78rem; letter-spacing: .06em; }
+    .layout { display: grid; grid-template-columns: minmax(0, .93fr) minmax(360px, .75fr); gap: 68px; align-items: center; }
+    .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--gold); font-size: .72rem; font-weight: 800; letter-spacing: .28em; text-transform: uppercase; }
+    .eyebrow::before { width: 34px; height: 1px; content: ""; background: var(--gold); }
+    h1 { max-width: 610px; margin: 18px 0 16px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(3.2rem, 8vw, 6.5rem); font-weight: 500; line-height: .91; letter-spacing: -.06em; text-transform: uppercase; }
+    h1 span { display: block; color: var(--red-bright); text-shadow: 0 0 24px rgba(197,22,46,.42); }
+    .lead { max-width: 530px; margin: 0; color: #c5c1bd; font-size: 1.02rem; }
+    .quote { max-width: 430px; margin: 32px 0 0; padding-left: 16px; border-left: 2px solid var(--red); color: var(--muted); font-family: Georgia, serif; font-size: 1rem; font-style: italic; }
+    .quote strong { display: block; margin-top: 9px; color: var(--gold); font-family: inherit; font-size: .7rem; font-style: normal; letter-spacing: .18em; text-transform: uppercase; }
+    .card { position: relative; padding: clamp(23px, 4vw, 36px); border: 1px solid var(--line); border-radius: 2px; background: linear-gradient(145deg, rgba(21,23,29,.92), var(--panel)); box-shadow: 0 28px 100px rgba(0,0,0,.48), 0 0 0 1px rgba(197,22,46,.08) inset; backdrop-filter: blur(16px); }
+    .card::before, .card::after { position: absolute; width: 44px; height: 44px; content: ""; border-color: rgba(214,168,91,.7); }
+    .card::before { top: -1px; left: -1px; border-top: 1px solid; border-left: 1px solid; }
+    .card::after { right: -1px; bottom: -1px; border-right: 1px solid; border-bottom: 1px solid; }
+    .card-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 26px; }
+    .card-kicker { color: var(--red-bright); font-size: .68rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    .live { display: inline-flex; align-items: center; gap: 7px; color: var(--success); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; }
+    .live::before { width: 7px; height: 7px; border-radius: 50%; content: ""; background: currentColor; box-shadow: 0 0 12px currentColor; }
+    h2 { margin: 6px 0 0; font-family: Georgia, serif; font-size: clamp(1.75rem, 4vw, 2.4rem); font-weight: 500; }
+    .form-label { display: block; margin: 0 0 8px; color: var(--muted); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+    .input-row { display: flex; gap: 9px; }
+    input { width: 100%; min-width: 0; padding: 15px 14px; border: 1px solid rgba(255,255,255,.17); border-radius: 2px; outline: none; color: var(--ink); background: rgba(3,4,7,.82); font: 600 1rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .05em; transition: border-color .2s, box-shadow .2s; }
+    input:focus { border-color: var(--red-bright); box-shadow: 0 0 0 3px rgba(197,22,46,.17); }
+    button { min-width: 126px; padding: 0 17px; border: 1px solid var(--red-bright); border-radius: 2px; color: white; background: linear-gradient(135deg, #b40f28, #e62c43); font: 800 .78rem Inter, sans-serif; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; box-shadow: 0 9px 24px rgba(197,22,46,.22); transition: transform .2s, filter .2s; }
+    button:hover:not(:disabled) { filter: brightness(1.13); transform: translateY(-1px); }
+    button:disabled { cursor: wait; filter: grayscale(.4); opacity: .62; }
+    .status { min-height: 28px; margin: 18px 0 0; color: var(--muted); font-size: .9rem; }
+    .status.error { color: var(--danger); }
+    .status.success { color: var(--success); }
+    .code-panel { display: none; margin-top: 21px; padding: 20px; border: 1px solid rgba(130,213,255,.48); background: rgba(31,105,135,.12); text-align: center; }
+    .code-panel.visible { display: block; animation: reveal .35s ease both; }
+    .code-label { color: var(--blue); font-size: .67rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; }
+    #pairing-code { display: block; margin: 7px 0 6px; color: #b9ecff; font: 800 clamp(2rem, 10vw, 3.3rem)/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .17em; word-break: break-all; text-shadow: 0 0 20px rgba(130,213,255,.38); }
+    .hint { margin: 0; color: var(--muted); font-size: .78rem; }
+    .foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; padding-top: 15px; border-top: 1px solid var(--line); color: #85817e; font-size: .72rem; letter-spacing: .06em; }
+    .foot span:last-child { color: var(--gold); }
+    @keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 820px) { .layout { grid-template-columns: 1fr; gap: 34px; } .topbar { margin-bottom: 36px; } h1 { font-size: clamp(3rem, 15vw, 5rem); } }
+    @media (max-width: 500px) { .shell { padding: 18px 14px 28px; } .topbar-note { display: none; } .input-row { flex-direction: column; } button { min-height: 50px; } .foot { flex-direction: column; gap: 4px; } }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>WhatsApp Pairing</h1>
-    <p class="subtitle">Request a temporary pairing code through the Bali Gil connection center.</p>
-    <form id="pair-form">
-      <label for="number">WhatsApp number with country code</label>
-      <div class="row">
-        <input id="number" name="number" inputmode="numeric" autocomplete="tel" placeholder="923271054080" required>
-        <button id="connect-button" type="submit">Get code</button>
-      </div>
-    </form>
-    <p id="status" class="status" role="status" aria-live="polite">Ready.</p>
-    <section id="code-panel" class="code-panel" aria-live="polite">
-      <div class="code-label">Pairing code</div>
-      <code id="pairing-code"></code>
-      <p class="hint">In WhatsApp, open Settings → Linked Devices → Link with phone number and enter this code.</p>
-    </section>
-    <p class="foot">The code is temporary. Keep this page open until the device is linked.</p>
-  </main>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><div class="crest" aria-hidden="true">◉</div><span>ITACHI UCHIHA // BALI GIL</span></div>
+      <div class="topbar-note">SHADOW LINK PROTOCOL · SECURE CHANNEL</div>
+    </header>
+    <main class="layout">
+      <section>
+        <div class="eyebrow">The connection center</div>
+        <h1>Link your<br><span>shinobi</span><br>device.</h1>
+        <p class="lead">Request a temporary WhatsApp pairing code through the BALI GIL connection center. Keep this page open while the link is established.</p>
+        <blockquote class="quote">“People live their lives bound by what they accept as correct and true.”<strong>— Itachi Uchiha</strong></blockquote>
+      </section>
+      <section class="card" aria-labelledby="pairing-title">
+        <div class="card-head">
+          <div><div class="card-kicker">Protocol 01 / Pairing</div><h2 id="pairing-title">WhatsApp Link</h2></div>
+          <div class="live">System ready</div>
+        </div>
+        <form id="pair-form">
+          <label class="form-label" for="number">Number with country code</label>
+          <div class="input-row">
+            <input id="number" name="number" inputmode="numeric" autocomplete="tel" placeholder="923271054080" required>
+            <button id="connect-button" type="submit">Get code</button>
+          </div>
+        </form>
+        <p id="status" class="status" role="status" aria-live="polite">Ready to establish a secure link.</p>
+        <section id="code-panel" class="code-panel" aria-live="polite">
+          <div class="code-label">Temporary pairing code</div>
+          <code id="pairing-code"></code>
+          <p class="hint">WhatsApp → Settings → Linked Devices → Link with phone number.</p>
+        </section>
+        <div class="foot"><span>CODE EXPIRES QUICKLY</span><span>POWERED BY ITACHI-UCHIHA</span></div>
+      </section>
+    </main>
+  </div>
   <script>
     (() => {
       const socket = io();
@@ -62,28 +140,16 @@
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         const number = input.value.trim();
-        if (!/^\+?[1-9][\d\s-]{9,18}$/.test(number)) {
-          setStatus('Enter a complete WhatsApp number with country code.', 'error');
-          return;
-        }
-        panel.classList.remove('visible');
-        code.textContent = '';
-        button.disabled = true;
-        setStatus('Generating your pairing code…');
-        socket.emit('pair-request', { number });
+        if (!/^\+?[1-9][\d\s-]{9,18}$/.test(number)) { setStatus('Enter a complete number with country code.', 'error'); return; }
+        panel.classList.remove('visible'); code.textContent = ''; button.disabled = true; setStatus('Opening the secure WhatsApp channel…'); socket.emit('pair-request', { number });
       });
       socket.on('pairing-code', (payload) => {
         const raw = String(payload?.code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-        if (!raw) { setStatus('The server returned an empty pairing code.', 'error'); return; }
-        code.textContent = raw;
-        panel.classList.add('visible');
-        button.disabled = false;
-        setStatus('Pairing code ready.', 'success');
+        if (!raw) { button.disabled = false; setStatus('The server returned an empty pairing code.', 'error'); return; }
+        code.textContent = raw; panel.classList.add('visible'); button.disabled = false; setStatus('Pairing code ready. Enter it in WhatsApp.', 'success');
       });
-      socket.on('pair-error', (message) => { button.disabled = false; setStatus(message || 'Pairing failed.', 'error'); });
-      socket.on('connection-status', (payload) => {
-        if (payload?.connected) { button.disabled = false; setStatus('WhatsApp connected successfully.', 'success'); }
-      });
+      socket.on('pair-error', (message) => { button.disabled = false; setStatus(message || 'Pairing failed. Please retry.', 'error'); });
+      socket.on('connection-status', (payload) => { if (payload?.connected) { button.disabled = false; setStatus('WhatsApp connected successfully.', 'success'); } });
       socket.on('connect_error', () => { button.disabled = false; setStatus('Unable to reach the pairing server.', 'error'); });
     })();
   </script>
