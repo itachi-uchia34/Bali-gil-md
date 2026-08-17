@@ -1,14 +1,6 @@
-// commands/girlsdpz.js
-// Wrapper for .dpz girls
-const dpz = require('./dpz');
+// commands/girlsdpz.js - Wrapper for dpgirls command
+const { dpgirls } = require('./dpgirls');
 
-module.exports = async function(...args) {
-  try {
-    // call dpz with explicit category 'girls' as 5th argument
-    const newArgs = Array.from(args);
-    newArgs[4] = 'girls';
-    return await dpz(...newArgs);
-  } catch (e) {
-    console.error('girlsdpz error:', e);
-  }
+module.exports = async function(sock, from, msg, q) {
+    return await dpgirls(sock, from, msg, q);
 };
