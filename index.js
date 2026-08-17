@@ -517,7 +517,21 @@ if (tgBot) {
         const botLink = await resolveTelegramBotLink();
         const website = publicDeploymentUrl();
         const message =
-            `*BALI GIL DEPLOYMENT CENTER*\\n\\n` +
-            (website ? `Live website: ${website}\\n` : 'Live website: not configured\\n') +
-            (botLink ? `Telegram bot: ${botLink}\\n\\n` : '\\n') +
-            `
+            `*BALI GIL DEPLOYMENT CENTER*\n\n` +
+            (website ? `Live website: ${website}\n` : 'Live website: not configured\n') +
+            (botLink ? `Telegram bot: ${botLink}\n\n` : '\n') +
+            `To connect a WhatsApp number, send /connect <number> or use the UI on the website if available.`;
+
+        await tgBot.sendMessage(msg.chat.id, message, { parse_mode: 'Markdown' });
+    });
+}
+
+// Basic web UI and server start (minimal to keep deployment running)
+app.get('/', (req, res) => {
+    res.send('BALI GIL-mini-bot is running');
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+});
