@@ -105,7 +105,7 @@ class BotSession {
     this.sock = baileys.default({
       version,
       auth: state,
-      browser: baileys.Browsers.macOS('Desktop'),
+      browser: baileys.Browsers.windows('Chrome'),
       markOnlineOnConnect: false,
       connectTimeoutMs: 60000,
       logger: getPino()({ level: 'silent' }),
