@@ -90,6 +90,31 @@ class BotSession {
     this.pairingRetryCount = 0;
     this.suppressNextCloseError = false;
     this.tgChatId = null;
+    this.lastRequestAt = 0;
+    this.expiryTimer = null;
+  }
+
+  // Fully tears down any previous socket/timers/pairing state for this
+  // session so a fresh "Get Code" click always starts clean, instead of
+  // inheriting stale flags (like pairingRequested) from a prior attempt.
+  async reset() {
+    if (this.expiryTimer) {
+      clearTimeout(this.expiryTimer);
+      this.expiryTimer = null;
+    }
+    if (this.sock) {
+      try { this.sock.ev.removeAllListeners(); } catch {}
+      try { this.sock.end?.(new Error('Restarting pairing session')); } catch {}
+      try { this.sock.ws?.close(); } catch {}
+      this.sock = null;
+    }
+    this.isInitializing = false;
+    this.isConnected = false;
+    this.pairingRequested = false;
+    this.pairingCode = null;
+    this.pairingExpiresAt = null;
+    this.pairingRetryCount = 0;
+    this.suppressNextCloseError = false;
   }
 
   async initialize(number) {
@@ -131,6 +156,15 @@ class BotSession {
         this.isInitializing = false;
         io.emit('pairing-status', { state: 'code-ready', message: 'Pairing code ready. Enter it in WhatsApp.' });
         io.emit('pairing-code', { code, expiresAt: this.pairingExpiresAt });
+        if (this.expiryTimer) clearTimeout(this.expiryTimer);
+        this.expiryTimer = setTimeout(() => {
+          if (this.pairingCode === code) {
+            this.pairingCode = null;
+            this.pairingExpiresAt = null;
+            this.pairingRequested = false;
+            io.emit('pairing-status', { state: 'error', message: 'The pairing code expired. Request a new one.' });
+          }
+        }, 60000);
         if (this.tgChatId && tgBot) {
           try {
             await this.sendPairingCodeToTelegram(this.tgChatId, code);
@@ -182,6 +216,24 @@ class BotSession {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const suppressCloseError = this.suppressNextCloseError;
         this.suppressNextCloseError = false;
+
+        // A 401 (loggedOut) before pairing ever completed means the local
+        // auth_info folder is stale/invalid, not that the user was really
+        // logged out. Wipe it and retry automatically, same as the 428 path.
+        if (
+          statusCode === getBaileys().DisconnectReason.loggedOut &&
+          !state.creds.registered &&
+          this.pairingRetryCount < 3
+        ) {
+          this.pairingRetryCount += 1;
+          const retryIn = this.pairingRetryCount * 2000;
+          io.emit('pairing-status', { state: 'retrying', message: `Clearing an invalid session and retrying (${this.pairingRetryCount}/3) in ${Math.ceil(retryIn / 1000)} seconds…` });
+          fs.remove(authFolder).catch(() => {}).finally(() => {
+            setTimeout(() => { void this.initialize(number).catch((retryError) => console.error('WhatsApp pairing retry failed:', retryError.message)); }, retryIn);
+          });
+          return;
+        }
+
         if (!suppressCloseError) io.emit('pairing-status', { state: 'error', message: `WhatsApp connection closed${statusCode ? ` (status ${statusCode})` : ''}. Retry the request.` });
         if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
           console.warn(`WhatsApp connection closed (status ${statusCode || 'unknown'}); retry the pairing request.`);
@@ -349,13 +401,18 @@ io.on('connection', (socket) => {
         socket.emit('pair-error', `This number (${cleanNumber}) is already connected.`);
         return;
       }
-      if (session.isInitializing) {
-        socket.emit('pairing-status', { state: 'connecting', message: 'A WhatsApp pairing request is already in progress.' });
+      const now = Date.now();
+      if (now - session.lastRequestAt < 8000) {
+        socket.emit('pairing-status', { state: 'connecting', message: 'Please wait a few seconds before requesting another code.' });
         return;
       }
+      session.lastRequestAt = now;
+
+      // Always start from a clean slate instead of trusting leftover state
+      // from a previous attempt (this is what caused "stuck" pairing).
+      await session.reset();
+
       socket.emit('pairing-status', { state: 'connecting', message: 'Opening the WhatsApp secure channel…' });
-      session.pairingRetryCount = 0;
-      session.pairingCode = null;
       await session.initialize(cleanNumber);
     } catch (error) {
       const message = error?.message || 'Unknown WhatsApp pairing error';
@@ -516,10 +573,16 @@ async function startTelegramPairing(chatId, rawNumber) {
     `Number: ${cleanNumber}\n` +
     `Status: generating code...\n\n` +
     `Keep this chat open. The code will arrive here shortly.`;
+  const now = Date.now();
+  if (now - session.lastRequestAt < 8000) {
+    await tgBot.sendMessage(chatId, 'Please wait a few seconds before requesting another code.');
+    return;
+  }
+  session.lastRequestAt = now;
+  await session.reset();
+
   await tgBot.sendMessage(chatId, initMsg);
   session.tgChatId = chatId;
-  session.pairingRetryCount = 0;
-  session.pairingCode = null;
   try {
     const initialized = await session.initialize(cleanNumber);
     if (initialized === false) {
