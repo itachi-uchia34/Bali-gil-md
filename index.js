@@ -87,6 +87,8 @@ class BotSession {
     this.pairingCode = null;
     this.pairingExpiresAt = null;
     this.pairingRequested = false;
+    this.pairingRetryCount = 0;
+    this.suppressNextCloseError = false;
     this.tgChatId = null;
   }
 
@@ -137,11 +139,29 @@ class BotSession {
           }
         }
       } catch (err) {
+        const statusCode = err?.output?.statusCode || err?.statusCode;
         this.pairingRequested = false;
         this.pairingCode = null;
-        io.emit('pairing-status', { state: 'error', message: `Pairing request failed: ${err.message}` });
-        io.emit('pair-error', `Pairing request failed: ${err.message}`);
+        this.isInitializing = false;
         console.error('Pairing request failed:', err.message);
+
+        if (statusCode === 428 && !state.creds.registered && this.pairingRetryCount < 3) {
+          this.pairingRetryCount += 1;
+          this.suppressNextCloseError = true;
+          try { this.sock?.ws?.close(); } catch {}
+          this.sock = null;
+          try { await fs.remove(authFolder); } catch {}
+          const retryIn = this.pairingRetryCount * 2500;
+          io.emit('pairing-status', { state: 'retrying', message: `WhatsApp closed the pairing channel. Retrying (${this.pairingRetryCount}/3) in ${Math.ceil(retryIn / 1000)} seconds…` });
+          setTimeout(() => { void this.initialize(number).catch((retryError) => console.error('WhatsApp pairing retry failed:', retryError.message)); }, retryIn);
+          return;
+        }
+
+        const message = statusCode === 428
+          ? 'WhatsApp closed the pairing channel after several retries. Start a new request and ensure this number is not already linked on another session.'
+          : `Pairing request failed: ${err.message}`;
+        io.emit('pairing-status', { state: 'error', message });
+        io.emit('pair-error', message);
       }
     };
 
@@ -160,7 +180,9 @@ class BotSession {
         this.isInitializing = false;
         io.emit('connection-status', { connected: false });
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        io.emit('pairing-status', { state: 'error', message: `WhatsApp connection closed${statusCode ? ` (status ${statusCode})` : ''}. Retry the request.` });
+        const suppressCloseError = this.suppressNextCloseError;
+        this.suppressNextCloseError = false;
+        if (!suppressCloseError) io.emit('pairing-status', { state: 'error', message: `WhatsApp connection closed${statusCode ? ` (status ${statusCode})` : ''}. Retry the request.` });
         if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
           console.warn(`WhatsApp connection closed (status ${statusCode || 'unknown'}); retry the pairing request.`);
         }
@@ -332,6 +354,8 @@ io.on('connection', (socket) => {
         return;
       }
       socket.emit('pairing-status', { state: 'connecting', message: 'Opening the WhatsApp secure channel…' });
+      session.pairingRetryCount = 0;
+      session.pairingCode = null;
       await session.initialize(cleanNumber);
     } catch (error) {
       const message = error?.message || 'Unknown WhatsApp pairing error';
@@ -494,6 +518,8 @@ async function startTelegramPairing(chatId, rawNumber) {
     `Keep this chat open. The code will arrive here shortly.`;
   await tgBot.sendMessage(chatId, initMsg);
   session.tgChatId = chatId;
+  session.pairingRetryCount = 0;
+  session.pairingCode = null;
   try {
     const initialized = await session.initialize(cleanNumber);
     if (initialized === false) {
