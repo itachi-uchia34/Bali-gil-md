@@ -69,6 +69,9 @@
     .card-kicker { color: var(--red-bright); font-size: .68rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
     .live { display: inline-flex; align-items: center; gap: 7px; color: var(--success); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; }
     .live::before { width: 7px; height: 7px; border-radius: 50%; content: ""; background: currentColor; box-shadow: 0 0 12px currentColor; }
+    .live.busy { color: var(--gold); }
+    .live.error { color: var(--danger); }
+    .live.connected { color: var(--success); }
     h2 { margin: 6px 0 0; font-family: Georgia, serif; font-size: clamp(1.75rem, 4vw, 2.4rem); font-weight: 500; }
     .form-label { display: block; margin: 0 0 8px; color: var(--muted); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
     .input-row { display: flex; gap: 9px; }
@@ -80,6 +83,14 @@
     .status { min-height: 28px; margin: 18px 0 0; color: var(--muted); font-size: .9rem; }
     .status.error { color: var(--danger); }
     .status.success { color: var(--success); }
+    .progress { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 18px; }
+    .step { padding: 8px 6px; border-top: 1px solid var(--line); color: #77747a; font-size: .62rem; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+    .step.active { border-color: var(--gold); color: var(--gold); }
+    .step.done { border-color: var(--success); color: var(--success); }
+    .step.failed { border-color: var(--danger); color: var(--danger); }
+    .copy-row { display: flex; align-items: center; justify-content: center; gap: 9px; }
+    .copy-button { min-width: auto; padding: 8px 12px; border-color: rgba(130,213,255,.55); background: rgba(130,213,255,.12); color: var(--blue); font-size: .64rem; box-shadow: none; }
+    .countdown { margin: 7px 0 0; color: var(--gold); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
     .code-panel { display: none; margin-top: 21px; padding: 20px; border: 1px solid rgba(130,213,255,.48); background: rgba(31,105,135,.12); text-align: center; }
     .code-panel.visible { display: block; animation: reveal .35s ease both; }
     .code-label { color: var(--blue); font-size: .67rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; }
@@ -108,7 +119,7 @@
       <section class="card" aria-labelledby="pairing-title">
         <div class="card-head">
           <div><div class="card-kicker">Protocol 01 / Pairing</div><h2 id="pairing-title">WhatsApp Link</h2></div>
-          <div class="live">System ready</div>
+          <div id="live-badge" class="live">System ready</div>
         </div>
         <form id="pair-form">
           <label class="form-label" for="number">Number with country code</label>
@@ -118,9 +129,15 @@
           </div>
         </form>
         <p id="status" class="status" role="status" aria-live="polite">Ready to establish a secure link.</p>
+        <div class="progress" aria-label="Pairing progress">
+          <div id="step-connecting" class="step">Connecting</div>
+          <div id="step-code" class="step">Code ready</div>
+          <div id="step-linked" class="step">Linked</div>
+        </div>
         <section id="code-panel" class="code-panel" aria-live="polite">
           <div class="code-label">Temporary pairing code</div>
-          <code id="pairing-code"></code>
+          <div class="copy-row"><code id="pairing-code"></code><button id="copy-button" class="copy-button" type="button">Copy</button></div>
+          <p id="countdown" class="countdown">Code expires in 60s</p>
           <p class="hint">WhatsApp → Settings → Linked Devices → Link with phone number.</p>
         </section>
         <div class="foot"><span>CODE EXPIRES QUICKLY</span><span>POWERED BY ITACHI-UCHIHA</span></div>
@@ -136,21 +153,31 @@
       const status = document.getElementById('status');
       const panel = document.getElementById('code-panel');
       const code = document.getElementById('pairing-code');
+      const copyButton = document.getElementById('copy-button');
+      const countdown = document.getElementById('countdown');
+      const liveBadge = document.getElementById('live-badge');
+      const steps = { connecting: document.getElementById('step-connecting'), code: document.getElementById('step-code'), linked: document.getElementById('step-linked') };
+      let countdownTimer;
       const setStatus = (message, type = '') => { status.textContent = message; status.className = `status ${type}`; };
+      const setLive = (label, type = '') => { liveBadge.textContent = label; liveBadge.className = `live ${type}`; };
+      const setProgress = (active) => { Object.values(steps).forEach((step) => step.className = 'step'); if (active === 'connecting') steps.connecting.classList.add('active'); if (active === 'code') { steps.connecting.classList.add('done'); steps.code.classList.add('active'); } if (active === 'linked') Object.values(steps).forEach((step) => step.classList.add('done')); if (active === 'error') Object.values(steps).forEach((step) => step.classList.add('failed')); };
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         const number = input.value.trim();
         if (!/^\+?[1-9][\d\s-]{9,18}$/.test(number)) { setStatus('Enter a complete number with country code.', 'error'); return; }
-        panel.classList.remove('visible'); code.textContent = ''; button.disabled = true; setStatus('Opening the secure WhatsApp channel…'); socket.emit('pair-request', { number });
+        panel.classList.remove('visible'); code.textContent = ''; clearInterval(countdownTimer); button.disabled = true; setLive('Connecting…', 'busy'); setProgress('connecting'); setStatus('Opening the secure WhatsApp channel…'); socket.emit('pair-request', { number });
       });
       socket.on('pairing-code', (payload) => {
         const raw = String(payload?.code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         if (!raw) { button.disabled = false; setStatus('The server returned an empty pairing code.', 'error'); return; }
-        code.textContent = raw; panel.classList.add('visible'); button.disabled = false; setStatus('Pairing code ready. Enter it in WhatsApp.', 'success');
+        code.textContent = raw; panel.classList.add('visible'); button.disabled = false; setLive('Code ready', 'connected'); setProgress('code'); setStatus('Pairing code ready. Enter it in WhatsApp.', 'success');
+        const expiry = Number(payload?.expiresAt || Date.now() + 60000); clearInterval(countdownTimer); const tick = () => { const remaining = Math.max(0, Math.ceil((expiry - Date.now()) / 1000)); countdown.textContent = remaining ? `Code expires in ${remaining}s` : 'Code expired — request a new code.'; if (!remaining) { clearInterval(countdownTimer); panel.classList.remove('visible'); setStatus('The pairing code expired. Request a new one.', 'error'); setLive('Ready', ''); } }; tick(); countdownTimer = setInterval(tick, 1000);
       });
-      socket.on('pair-error', (message) => { button.disabled = false; setStatus(message || 'Pairing failed. Please retry.', 'error'); });
-      socket.on('connection-status', (payload) => { if (payload?.connected) { button.disabled = false; setStatus('WhatsApp connected successfully.', 'success'); } });
-      socket.on('connect_error', () => { button.disabled = false; setStatus('Unable to reach the pairing server.', 'error'); });
+      copyButton.addEventListener('click', async () => { if (!code.textContent) return; try { await navigator.clipboard.writeText(code.textContent); copyButton.textContent = 'Copied'; setTimeout(() => { copyButton.textContent = 'Copy'; }, 1400); } catch { setStatus('Copy failed. Select the code manually.', 'error'); } });
+      socket.on('pairing-status', (payload) => { const state = payload?.state; if (state === 'connecting' || state === 'waiting' || state === 'requesting') { setLive(state === 'waiting' ? 'Preparing…' : 'Connecting…', 'busy'); setProgress('connecting'); setStatus(payload.message || 'Connecting to WhatsApp…'); } if (state === 'code-ready') { setLive('Code ready', 'connected'); setProgress('code'); } if (state === 'connected') { button.disabled = false; setLive('Connected', 'connected'); setProgress('linked'); setStatus(payload.message || 'WhatsApp connected successfully.', 'success'); } if (state === 'error') { button.disabled = false; setLive('Retry needed', 'error'); setProgress('error'); setStatus(payload.message || 'Pairing failed. Please retry.', 'error'); } });
+      socket.on('pair-error', (message) => { button.disabled = false; setLive('Retry needed', 'error'); setProgress('error'); setStatus(message || 'Pairing failed. Please retry.', 'error'); });
+      socket.on('connection-status', (payload) => { if (payload?.connected) { button.disabled = false; setLive('Connected', 'connected'); setProgress('linked'); setStatus('WhatsApp connected successfully.', 'success'); } });
+      socket.on('connect_error', () => { button.disabled = false; setLive('Offline', 'error'); setProgress('error'); setStatus('Unable to reach the pairing server.', 'error'); });
     })();
   </script>
 </body>

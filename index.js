@@ -111,12 +111,14 @@ class BotSession {
 
     // Pairing codes must be requested after Baileys emits a QR update.
     // Calling requestPairingCode immediately can produce status 428.
+    io.emit('pairing-status', { state: 'connecting', message: 'Opening the WhatsApp secure channel…' });
     this.sock.ev.on('creds.update', saveCreds);
     let pairingTimer = null;
     const requestPairingCode = async () => {
       if (!number || this.pairingCode || this.pairingRequested || state.creds.registered) return;
       this.pairingRequested = true;
       pairingTimer = null;
+      io.emit('pairing-status', { state: 'requesting', message: 'Requesting a temporary pairing code…' });
       try {
         await new Promise((resolve) => setTimeout(resolve, 5000));
         if (!this.sock || state.creds.registered) return;
@@ -124,6 +126,7 @@ class BotSession {
         this.pairingCode = code;
         this.pairingExpiresAt = Date.now() + 60000;
         this.isInitializing = false;
+        io.emit('pairing-status', { state: 'code-ready', message: 'Pairing code ready. Enter it in WhatsApp.' });
         io.emit('pairing-code', { code, expiresAt: this.pairingExpiresAt });
         if (this.tgChatId && tgBot) {
           try {
@@ -135,6 +138,7 @@ class BotSession {
       } catch (err) {
         this.pairingRequested = false;
         this.pairingCode = null;
+        io.emit('pairing-status', { state: 'error', message: `Pairing request failed: ${err.message}` });
         io.emit('pair-error', `Pairing request failed: ${err.message}`);
         console.error('Pairing request failed:', err.message);
       }
@@ -143,6 +147,7 @@ class BotSession {
     this.sock.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
       if (qr && number && !state.creds.registered && !this.pairingRequested && !pairingTimer) {
+        io.emit('pairing-status', { state: 'waiting', message: 'WhatsApp is ready. Preparing your pairing code…' });
         pairingTimer = setTimeout(() => { void requestPairingCode(); }, 100);
       }
       if (connection === 'close') {
@@ -154,6 +159,7 @@ class BotSession {
         this.isInitializing = false;
         io.emit('connection-status', { connected: false });
         const statusCode = lastDisconnect?.error?.output?.statusCode;
+        io.emit('pairing-status', { state: 'error', message: `WhatsApp connection closed${statusCode ? ` (status ${statusCode})` : ''}. Retry the request.` });
         if (statusCode !== getBaileys().DisconnectReason.loggedOut) {
           console.warn(`WhatsApp connection closed (status ${statusCode || 'unknown'}); retry the pairing request.`);
         }
@@ -162,6 +168,7 @@ class BotSession {
         this.phoneNumber = this.sock?.user?.id?.split('@')[0] || this.phoneNumber;
         this.isInitializing = Boolean(number && !state.creds.registered && !this.pairingCode);
         io.emit('connection-status', { connected: true });
+        io.emit('pairing-status', { state: 'connected', message: 'WhatsApp connected successfully.' });
         if (!botData.statusSettings[this.sessionId]) {
           botData.statusSettings[this.sessionId] = { isPublic: true };
           saveBotData();
