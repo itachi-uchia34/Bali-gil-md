@@ -15,7 +15,7 @@ module.exports = async function(sock, chatId, message, q) {
         if (target.length < 10) return await sock.sendMessage(chatId, { text: '❌ Invalid number' }, { quoted: message });
 
         await sock.sendMessage(chatId, { 
-            text: `📞 *BALI CALL BOMBER* 📞\n\n👤 *Target:* +${target}\n📊 *Status:* Initiating Call Bombing Attack\n\n_Please wait..._` 
+            text: `📞 *SYED CALL BOMBER* 📞\n\n👤 *Target:* +${target}\n📊 *Status:* Initiating Call Bombing Attack\n\n_Please wait..._` 
         }, { quoted: message });
 
         // Using a reliable API for call bombing if available, otherwise simulate

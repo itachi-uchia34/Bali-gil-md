@@ -3,77 +3,37 @@ const sharp = require('sharp');
 const fs = require('fs-extra');
 const path = require('path');
 
-// Command configuration
-async function stickerCommand(sock, from, msg, isAdmin, q) {
+module.exports = async function(sock, chatId, msg) {
     try {
-        // Find current or quoted message for media
-        const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-        const messageContent = quotedMessage || msg.message;
-
-        // support direct sticker resend, image -> sticker
-        const imageMessage = messageContent?.imageMessage;
-        const videoMessage = messageContent?.videoMessage;
-        const stickerMessage = messageContent?.stickerMessage;
-
-        if (!imageMessage && !videoMessage && !stickerMessage) {
-            return await sock.sendMessage(from, {
-                text: '⚠️ Please reply to an image to create a sticker (or reply to a sticker to resend).'
-            }, { quoted: msg });
+        const quoted = msg.message?.imageMessage || msg.message?.videoMessage ||
+            msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage ||
+            msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage;
+        
+        if (!quoted) return await sock.sendMessage(chatId, { text: '\u26A0\uFE0F Reply to an image/video!' }, { quoted: msg });
+        
+        await sock.sendMessage(chatId, { text: '\u2728 Converting to sticker...' }, { quoted: msg });
+        
+        const type = quoted.imageMessage ? 'image' : 'video';
+        const stream = await downloadContentFromMessage(quoted[type + 'Message'] || quoted, type);
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
+        
+        const tmpFile = path.join(__dirname, '..', 'data', `sticker_${Date.now()}.webp`);
+        
+        if (type === 'image') {
+            await sharp(buffer)
+                .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+                .webp({ quality: 80 })
+                .toFile(tmpFile);
         }
-
-        // If it's already a sticker, download and re-send (useful for re-packaging)
-        if (stickerMessage && !imageMessage && !videoMessage) {
-            const stream = await downloadContentFromMessage(stickerMessage, 'sticker');
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-            if (!buffer.length) throw new Error('Failed to download sticker');
-
-            await sock.sendMessage(from, { sticker: buffer }, { quoted: msg });
-            return;
-        }
-
-        // Notify user
-        await sock.sendMessage(from, {
-            text: '✨ Converting to sticker...'
+        
+        const stickerBuffer = await fs.readFile(tmpFile);
+        await sock.sendMessage(chatId, { 
+            sticker: stickerBuffer 
         }, { quoted: msg });
-
-        // Handle image -> webp (static sticker)
-        if (imageMessage) {
-            const stream = await downloadContentFromMessage(imageMessage, 'image');
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-            if (!buffer.length) throw new Error('Failed to download image');
-
-            // Normalize/resize and convert to webp using sharp (in-memory)
-            const webpBuffer = await sharp(buffer)
-                .resize(512, 512, {
-                    fit: 'contain',
-                    background: { r: 0, g: 0, b: 0, alpha: 0 }
-                })
-                .webp({ quality: 80, effort: 6 })
-                .toBuffer();
-
-            await sock.sendMessage(from, { sticker: webpBuffer }, { quoted: msg });
-            return;
-        }
-
-        // Video case: if you want animated stickers, implement ffmpeg -> webp conversion.
-        if (videoMessage) {
-            return await sock.sendMessage(from, {
-                text: '⚠️ Video stickers (animated) are not supported yet. Please use an image.'
-            }, { quoted: msg });
-        }
-
-    } catch (error) {
-        console.error('Sticker Error:', error);
-        try {
-            await sock.sendMessage(from, {
-                text: `❌ Error: ${error.message}`
-            }, { quoted: msg });
-        } catch (e) {
-            console.error('Failed to send error message for sticker command', e);
-        }
+        
+        await fs.remove(tmpFile);
+    } catch (e) {
+        await sock.sendMessage(chatId, { text: '\u274C Error: ' + e.message }, { quoted: msg });
     }
-}
-
-module.exports = stickerCommand;
+};

@@ -1,10 +1,10 @@
 const fetch = require('node-fetch');
 
-async function handleTranslateCommand(sock, from, message, match) {
+async function handleTranslateCommand(sock, chatId, message, match) {
     try {
         // Show typing indicator
-        await sock.presenceSubscribe(from);
-        await sock.sendPresenceUpdate('composing', from);
+        await sock.presenceSubscribe(chatId);
+        await sock.sendPresenceUpdate('composing', chatId);
 
         let textToTranslate = '';
         let lang = '';
@@ -25,8 +25,8 @@ async function handleTranslateCommand(sock, from, message, match) {
             // Parse command arguments for direct message
             const args = match.trim().split(' ');
             if (args.length < 2) {
-                return sock.sendMessage(from, {
-                    text: `*TRANSLATOR*\n\nUsage:\n1. Reply to a message with: .translate <lang> or .trt <lang>\n2. Or type: .translate <text> <lang> or .trt <text> <lang>\n\nExample:\n.translate hello es`,
+                return sock.sendMessage(chatId, {
+                    text: `*TRANSLATOR*\n\nUsage:\n1. Reply to a message with: .translate <lang> or .trt <lang>\n2. Or type: .translate <text> <lang> or .trt <text> <lang>\n\nExample:\n.translate hello fr\n.trt hello fr\n\nLanguage codes:\nfr - French\nes - Spanish\nde - German\nit - Italian\npt - Portuguese\nru - Russian\nja - Japanese\nko - Korean\nzh - Chinese\nar - Arabic\nhi - Hindi`,
                     quoted: message
                 });
             }
@@ -36,7 +36,7 @@ async function handleTranslateCommand(sock, from, message, match) {
         }
 
         if (!textToTranslate) {
-            return sock.sendMessage(from, {
+            return sock.sendMessage(chatId, {
                 text: '❌ No text found to translate. Please provide text or reply to a message.',
                 quoted: message
             });
@@ -94,7 +94,7 @@ async function handleTranslateCommand(sock, from, message, match) {
         }
 
         // Send translation
-        await sock.sendMessage(from, {
+        await sock.sendMessage(chatId, {
             text: `${translatedText}`,
         }, {
             quoted: message
@@ -102,11 +102,13 @@ async function handleTranslateCommand(sock, from, message, match) {
 
     } catch (error) {
         console.error('❌ Error in translate command:', error);
-        await sock.sendMessage(from, {
+        await sock.sendMessage(chatId, {
             text: '❌ Failed to translate text. Please try again later.\n\nUsage:\n1. Reply to a message with: .translate <lang> or .trt <lang>\n2. Or type: .translate <text> <lang> or .trt <text> <lang>',
             quoted: message
         });
     }
 }
 
-module.exports = handleTranslateCommand;
+module.exports = {
+    handleTranslateCommand
+}; 

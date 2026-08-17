@@ -9,10 +9,6 @@ async function acceptCommand(sock, from, msg, isAdmin) {
 
     try {
         // Fetch pending join requests
-        if (!sock.groupRequestParticipantsList) {
-            return await sock.sendMessage(from, { text: '⚠️ This feature requires a newer version of Baileys.' }, { quoted: msg });
-        }
-
         const response = await sock.groupRequestParticipantsList(from);
         
         if (!response || response.length === 0) {
@@ -24,10 +20,6 @@ async function acceptCommand(sock, from, msg, isAdmin) {
         let acceptedCount = 0;
         for (const participant of response) {
             try {
-                if (!sock.groupRequestParticipantsUpdate) {
-                    console.warn('groupRequestParticipantsUpdate not available');
-                    continue;
-                }
                 await sock.groupRequestParticipantsUpdate(from, [participant.jid], 'approve');
                 acceptedCount++;
                 // Small delay to prevent rate limiting

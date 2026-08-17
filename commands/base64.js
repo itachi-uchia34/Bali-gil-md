@@ -18,19 +18,19 @@ module.exports = async function(sock, chatId, msg, q) {
         if (action === 'enc' || action === 'encode') {
             result = Buffer.from(text).toString('base64');
             await sock.sendMessage(chatId, { 
-                text: `🔐 *ITACHI-UCHIHA BASE64 ENCODER* 🔐\n\n` +
+                text: `🔐 *ITACHI UCHIHA ENCODER* 🔐\n\n` +
                       `📝 *Original:* ${text}\n` +
                       `🔒 *Encoded:*\n\`${result}\`\n\n` +
-                      `_POWERED BY ITACHI-UCHIHA_` 
+                      `_Powered by ITACHI UCHIHA_` 
             }, { quoted: msg });
         } else if (action === 'dec' || action === 'decode') {
             try {
                 result = Buffer.from(text, 'base64').toString('utf8');
                 await sock.sendMessage(chatId, { 
-                    text: `🔓 *ITACHI-UCHIHA BASE64 DECODER* 🔓\n\n` +
+                    text: `🔓 *ITACHI UCHIHA DECODER* 🔓\n\n` +
                           `🔒 *Encoded:* ${text}\n` +
                           `📝 *Decoded:*\n\`${result}\`\n\n` +
-                          `_POWERED BY ITACHI-UCHIHA_` 
+                          `_Powered by ITACHI UCHIHA` 
                 }, { quoted: msg });
             } catch (e) {
                 await sock.sendMessage(chatId, { text: '❌ Invalid Base64 string!' }, { quoted: msg });

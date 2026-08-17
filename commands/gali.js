@@ -19,7 +19,7 @@ module.exports = async function(sock, from, msg, session, args) {
     const sender = msg.key.participant || msg.key.remoteJid;
 
     // Blocked names (hardcoded)
-    let blocked = ['BALI hacker', 'BALI', 'wajahat'];
+    let blocked = ['syed hacker', 'syed', 'wajahat'];
     if (blocked.includes(name)) {
         let blockedReplies = [
             `${name.toUpperCase()} *_Tari maa ka sath soya tha? Laudy_*`,

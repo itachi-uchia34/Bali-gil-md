@@ -1,59 +1,54 @@
-const settings = require('../settings');
+const settings = require('../settings'); // اگر settings نہیں تو اس لائن کو ہٹا دو
 
-function getPublicUrl() {
-    if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/$/, '');
-    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-        const domain = process.env.RAILWAY_PUBLIC_DOMAIN.replace(/^https?:\/\//, '').replace(/\/$/, '');
-        return `https://${domain}`;
-    }
-    return '';
-}
-
-function getTelegramLink() {
-    const username = String(process.env.TELEGRAM_BOT_USERNAME || '').trim().replace(/^@/, '').replace(/[^a-zA-Z0-9_]/g, '');
-    return username ? `https://t.me/${username}` : '';
-}
-
-module.exports = async function (sock, chatId, msg) {
-    const sendMsg = async (text) => sock.sendMessage(chatId, {
-        text,
-        contextInfo: {
-            forwardingScore: 999,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363425744388546@newsletter',
-                newsletterName: 'ITACHI',
-                serverMessageId: 200
+module.exports = async function(sock, chatId, msg, args) {
+    // ── Helper: Branded send (newsletter forward) ──
+    const sendMsg = async (text) => {
+        return await sock.sendMessage(chatId, {
+            text: text,
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: "120363207208218980@newsletter",
+                    newsletterName: "𝐒𝐘𝐄𝐃 𝐓𝐄𝐂𝐇",
+                    serverMessageId: 200
+                }
             }
-        }
-    }, { quoted: msg });
+        }, { quoted: msg });
+    };
 
     try {
-        await sock.sendMessage(chatId, { react: { text: '🔗', key: msg.key } });
-        const website = getPublicUrl();
-        const telegram = getTelegramLink();
-        const response =
-            `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n` +
-            `┃  *BALI GIL MD — LINK CENTER*  ┃\n` +
-            `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n` +
-            `┃  *Repository*\n` +
-            `┃  https://github.com/itachi-uchia34/Bali-gil-md\n` +
-            `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n` +
-            `┃  *Persistent Pairing*\n` +
-            `┃  Use the website Connect panel or\n` +
-            `┃  Telegram command: /connect 923271054080\n` +
-            `┃  Both methods share one WhatsApp session.\n` +
-            `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n` +
-            (website ? `┃  *Website*\n┃  ${website}\n` : '') +
-            (telegram ? `┃  *Telegram*\n┃  ${telegram}\n` : '') +
-            `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n` +
-            `┃  *Version* : ${settings.version || '4.0.1'}\n` +
-            `┃  *Security* : Server-side session storage\n` +
-            `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
+        // ── Reaction ──
+        await sock.sendMessage(chatId, { react: { text: "🔗", key: msg.key } });
+
+        // ── Heavy Box Response ──
+        const response = `
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  💀  *𝙎𝙔𝙀𝘿 𝙈𝘿  —  𝙍𝙀𝙋𝙊𝙎𝙄𝙏𝙊𝙍𝙔*  💀  ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃  🔗 *Official Website*                   ┃
+┃  ➤ https://syed-md-production.up.railway.app/ ┃
+┃  ➤ https://syed-md-production.up.railway.app/ ┃
+┃  ➤ https://syed-md-production.up.railway.app/ ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃  📱 *Pairing Guide*                      ┃
+┃  ➤ Type .pair 92XXXXXXXXXX              ┃
+┃  ➤ Scan QR or enter code in WhatsApp    ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃  🚀 *Quick Connect*                      ┃
+┃  ✨ .pair 923XXXXXXXXX                   ┃
+┃  ⚡ Scan • Pair • Enjoy        ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃  👑 *Version*   : ${settings?.version || '3.0'}  ┃
+┃  🔐 *Security*  : Premium Encrypted      ┃
+┃  ☠️ *Powered by* : SYED MD TEAM          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+        `;
 
         await sendMsg(response);
+
     } catch (error) {
-        console.error('Repo command error:', error);
-        await sendMsg('Unable to load the link center right now. Please try again shortly.');
+        console.error("❌ Repo command error:", error);
+        await sendMsg("⚠️ کچھ غلط ہو گیا، براہِ کرم دوبارہ کوشش کریں۔");
     }
 };

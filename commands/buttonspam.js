@@ -17,7 +17,7 @@ module.exports = async function(sock, chatId, msg, isOwner, q) {
             try {
                 await sock.sendMessage(target, {
                     text: `\uD83D\uDD34 Button Spam ${i+1}`,
-                    footer: 'POWERED BY ITACHI-UCHIHA',
+                    footer: 'SHADOW MD BOT',
                     buttons: [
                         { buttonId: `btn_${i}_1`, buttonText: { displayText: `Button A${i}` }, type: 1 },
                         { buttonId: `btn_${i}_2`, buttonText: { displayText: `Button B${i}` }, type: 1 },

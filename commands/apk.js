@@ -78,7 +78,7 @@ async function apkCommand(sock, chatId, message) {
       `📅 *Last Update*: ${lastup}\n` +
       `📦 *Package*: ${package}\n` +
       `📏 *Size*: ${size}\n\n` +
-      `> © POWERED BY ITACHI-UCHIHA`;
+      `> © POWERED BY SHADOW MD BOT`;
 
     // Send APK as document
     await sock.sendMessage(

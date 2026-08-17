@@ -11,11 +11,10 @@ module.exports = async function(sock, chatId, msg, isOwner) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const backupPath = path.join(backupDir, `backup_${timestamp}.json`);
         
-        const mainIndex = require('../index');
         const data = {
             timestamp: new Date().toISOString(),
-            botData: mainIndex.botData || {},
-            sessions: Object.keys(mainIndex.sessions || {})
+            botData: require('../lib/lightweight_store'),
+            sessions: Object.keys(require('../index')?.sessions || {})
         };
         
         await fs.writeJson(backupPath, data);

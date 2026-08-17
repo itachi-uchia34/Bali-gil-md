@@ -1,6 +1,5 @@
 const axios = require('axios');
 const yts = require('yt-search');
-const { createDownloadProgress } = require('../lib/downloadProgress');
 
 const AXIOS_DEFAULTS = {
     timeout: 60000,
@@ -52,48 +51,21 @@ async function getOkatsuVideoByUrl(youtubeUrl) {
     throw new Error('Okatsu failed');
 }
 
-// Additional fallback APIs
-async function getAlyaVideoByUrl(youtubeUrl) {
+async function videoCommand(sock, chatId, message) {
     try {
-        const res = await axios.get(`https://api.alyachan.pro/api/ytmp4?url=${encodeURIComponent(youtubeUrl)}&apikey=G7I6X7`, AXIOS_DEFAULTS);
-        if (res?.data?.status && res?.data?.data?.url) {
-            return { download: res.data.data.url, title: res.data.data.title };
+        // Loading reactions
+        const loadEmojis = ['📥', '⏳', '🎥'];
+        for (const emoji of loadEmojis) {
+            await sock.sendMessage(chatId, { react: { text: emoji, key: message.key } });
         }
-        throw new Error('Alya failed');
-    } catch (e) {
-        throw e;
-    }
-}
-
-async function getVredenVideoByUrl(youtubeUrl) {
-    try {
-        const res = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(youtubeUrl)}`, AXIOS_DEFAULTS);
-        if (res?.data?.status && res?.data?.result?.download?.url) {
-            return { download: res.data.result.download.url, title: res.data.result.metadata.title };
-        }
-        throw new Error('Vreden failed');
-    } catch (e) {
-        throw e;
-    }
-}
-
-async function videoCommand(sock, from, message) {
-    let loader;
-    try {
-        await sock.sendMessage(from, { react: { text: '☁️', key: message.key } });
         const messageContent = message.message?.ephemeralMessage?.message || message.message?.viewOnceMessage?.message || message.message?.viewOnceMessageV2?.message || message.message;
         const text = (messageContent.conversation || messageContent.extendedTextMessage?.text || messageContent.imageMessage?.caption || messageContent.videoMessage?.caption || '').trim();
         const query = text.replace(/^\.video\s+/i, '').trim();
         
         if (!query || query.toLowerCase() === '.video') {
-            await sock.sendMessage(from, { text: 'Usage: .video <name or link>' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: 'Usage: .video <name or link>' }, { quoted: message });
             return;
         }
-
-        loader = await createDownloadProgress(sock, from, message, {
-            title: query,
-            detail: 'Searching the crimson cloud for a video source'
-        });
 
         let videoUrl = '';
         let videoTitle = '';
@@ -105,7 +77,7 @@ async function videoCommand(sock, from, message) {
         } else {
             const { videos } = await yts(query);
             if (!videos || videos.length === 0) {
-                await loader.fail('No matching video source was found');
+                await sock.sendMessage(chatId, { text: 'No videos found!' }, { quoted: message });
                 return;
             }
             videoUrl = videos[0].url;
@@ -113,8 +85,7 @@ async function videoCommand(sock, from, message) {
             videoThumbnail = videos[0].thumbnail;
         }
 
-        await loader.update('SOURCE FOUND', 35, videoTitle || 'Reliable video source selected');
-        await sock.sendMessage(from, {
+        await sock.sendMessage(chatId, {
             image: { url: videoThumbnail || 'https://i.postimg.cc/y6GV9P3H/file-000000004c307206bc366893b817568c-(1).png' },
             caption: `🎥 Downloading: *${videoTitle}*`
         }, { quoted: message });
@@ -124,15 +95,11 @@ async function videoCommand(sock, from, message) {
         const apiMethods = [
             { name: 'EliteProTech', method: () => getEliteProTechVideoByUrl(videoUrl) },
             { name: 'Yupra', method: () => getYupraVideoByUrl(videoUrl) },
-            { name: 'Okatsu', method: () => getOkatsuVideoByUrl(videoUrl) },
-            { name: 'Alya', method: () => getAlyaVideoByUrl(videoUrl) },
-            { name: 'Vreden', method: () => getVredenVideoByUrl(videoUrl) }
+            { name: 'Okatsu', method: () => getOkatsuVideoByUrl(videoUrl) }
         ];
         
-        for (let index = 0; index < apiMethods.length; index++) {
-            const apiMethod = apiMethods[index];
+        for (const apiMethod of apiMethods) {
             try {
-                await loader.update('RETRIEVING VIDEO', 50 + (index * 7), `Trying ${apiMethod.name}`);
                 videoData = await apiMethod.method();
                 if (videoData.download) {
                     downloadSuccess = true;
@@ -145,21 +112,16 @@ async function videoCommand(sock, from, message) {
         
         if (!downloadSuccess) throw new Error('All download sources failed.');
 
-        await loader.update('SENDING FILE', 94, 'Uploading video to your chat');
-        await sock.sendMessage(from, {
+        await sock.sendMessage(chatId, {
             video: { url: videoData.download },
             mimetype: 'video/mp4',
             fileName: `${videoData.title.replace(/[^\w\s-]/g, '')}.mp4`,
-            caption: `*${videoData.title}*\n\n> *Downloaded by BALI-GIL*`
+            caption: `*${videoData.title}*\n\n> *Downloaded by OLD-STUDIO*`
         }, { quoted: message });
-        await loader.complete('Video delivered to your chat');
-        await sock.sendMessage(from, { react: { text: '✅', key: message.key } });
 
     } catch (error) {
         console.error('Video error:', error);
-        if (loader) await loader.fail(error.message);
-        else await sock.sendMessage(from, { text: `❌ Error: ${error.message}` }, { quoted: message });
-        await sock.sendMessage(from, { react: { text: '❌', key: message.key } });
+        await sock.sendMessage(chatId, { text: `❌ Error: ${error.message}` }, { quoted: message });
     }
 }
 

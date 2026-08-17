@@ -3,7 +3,6 @@ const yts = require('yt-search');
 const fs = require('fs').promises;
 const path = require('path');
 const { toAudio } = require('../lib/converter');
-const { createDownloadProgress } = require('../lib/downloadProgress');
 
 const AXIOS_DEFAULTS = {
     timeout: 60000,
@@ -67,43 +66,22 @@ async function getOkatsuDownloadByUrl(youtubeUrl) {
     throw new Error('Okatsu returned no download');
 }
 
-// Additional fallback APIs
-async function getAlyaDownloadByUrl(youtubeUrl) {
-    const apiUrl = `https://api.alyachan.pro/api/ytmp3?url=${encodeURIComponent(youtubeUrl)}&apikey=G7I6X7`;
-    const res = await tryRequest(() => axios.get(apiUrl, AXIOS_DEFAULTS));
-    if (res?.data?.status && res?.data?.data?.url) {
-        return { download: res.data.data.url, title: res.data.data.title };
-    }
-    throw new Error('Alya failed');
-}
-
-async function getVredenDownloadByUrl(youtubeUrl) {
-    const apiUrl = `https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-    const res = await tryRequest(() => axios.get(apiUrl, AXIOS_DEFAULTS));
-    if (res?.data?.status && res?.data?.result?.download?.url) {
-        return { download: res.data.result.download.url, title: res.data.result.metadata.title };
-    }
-    throw new Error('Vreden failed');
-}
-
-async function songCommand(sock, from, message) {
-    let loader;
+async function songCommand(sock, chatId, message) {
     try {
-        await sock.sendMessage(from, { react: { text: '☁️', key: message.key } });
+        // Loading reactions
+        const loadEmojis = ['📥', '⏳', '🎵'];
+        for (const emoji of loadEmojis) {
+            await sock.sendMessage(chatId, { react: { text: emoji, key: message.key } });
+        }
 
         const messageContent = message.message?.ephemeralMessage?.message || message.message?.viewOnceMessage?.message || message.message?.viewOnceMessageV2?.message || message.message;
         const text = (messageContent.conversation || messageContent.extendedTextMessage?.text || messageContent.imageMessage?.caption || messageContent.videoMessage?.caption || '').trim();
         const query = text.replace(/^\.song\s+/i, '').trim();
 
         if (!query || query.toLowerCase() === '.song') {
-            await sock.sendMessage(from, { text: 'Usage: .song <song name or YouTube link>' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: 'Usage: .song <song name or YouTube link>' }, { quoted: message });
             return;
         }
-
-        loader = await createDownloadProgress(sock, from, message, {
-            title: query,
-            detail: 'Searching the crimson cloud for an audio source'
-        });
 
         let video;
         if (query.includes('youtube.com') || query.includes('youtu.be')) {
@@ -111,16 +89,14 @@ async function songCommand(sock, from, message) {
         } else {
             const search = await yts(query);
             if (!search || !search.videos.length) {
-                await loader.fail('No matching audio source was found');
+                await sock.sendMessage(chatId, { text: 'No results found.' }, { quoted: message });
                 return;
             }
             video = search.videos[0];
         }
 
-        await loader.update('SOURCE FOUND', 35, video.title || 'Reliable audio source selected');
-
         // Inform user
-        await sock.sendMessage(from, {
+        await sock.sendMessage(chatId, {
             image: { url: video.thumbnail },
             caption: `🎵 Downloading: *${video.title}*\n⏱ Duration: ${video.timestamp || 'N/A'}`
         }, { quoted: message });
@@ -134,21 +110,26 @@ async function songCommand(sock, from, message) {
             { name: 'EliteProTech', method: () => getEliteProTechDownloadByUrl(video.url) },
             { name: 'Yupra', method: () => getYupraDownloadByUrl(video.url) },
             { name: 'Okatsu', method: () => getOkatsuDownloadByUrl(video.url) },
-            { name: 'Alya', method: () => getAlyaDownloadByUrl(video.url) },
-            { name: 'Vreden', method: () => getVredenDownloadByUrl(video.url) }
+            { name: 'Alya', method: async () => {
+                const res = await axios.get(`https://api.alyachan.pro/api/ytmp3?url=${encodeURIComponent(video.url)}&apikey=G7I6X7`, AXIOS_DEFAULTS);
+                if (res.data.status && res.data.data.url) return { download: res.data.data.url, title: res.data.data.title };
+                throw new Error('Alya failed');
+            }},
+            { name: 'Vreden', method: async () => {
+                const res = await axios.get(`https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(video.url)}`, AXIOS_DEFAULTS);
+                if (res.data.status && res.data.result.download.url) return { download: res.data.result.download.url, title: res.data.result.metadata.title };
+                throw new Error('Vreden failed');
+            }}
         ];
         
-        for (let index = 0; index < apiMethods.length; index++) {
-            const apiMethod = apiMethods[index];
+        for (const apiMethod of apiMethods) {
             try {
-                await loader.update('RETRIEVING AUDIO', 48 + (index * 7), `Trying ${apiMethod.name}`);
                 const audioData = await apiMethod.method();
                 const audioUrl = audioData.download;
                 finalTitle = audioData.title || video.title;
                 
                 if (!audioUrl) continue;
-                await loader.update('DOWNLOADING AUDIO', 76, 'Fetching the media file');
-
+                
                 const audioResponse = await axios.get(audioUrl, {
                     responseType: 'arraybuffer',
                     timeout: 120000,
@@ -179,31 +160,21 @@ async function songCommand(sock, from, message) {
         else if (audioBuffer.toString('ascii', 0, 4) === 'OggS') fileExtension = 'ogg';
         else if (audioBuffer.toString('ascii', 0, 4) === 'RIFF') fileExtension = 'wav';
 
-        await loader.update('PROCESSING AUDIO', 86, 'Preparing a WhatsApp-compatible file');
         let finalBuffer = audioBuffer;
         if (fileExtension !== 'mp3') {
-            try {
-                finalBuffer = await toAudio(audioBuffer, fileExtension);
-            } catch (convErr) {
-                console.warn('Conversion failed, sending original:', convErr.message);
-            }
+            finalBuffer = await toAudio(audioBuffer, fileExtension);
         }
 
-        await loader.update('SENDING FILE', 94, 'Uploading audio to your chat');
-        await sock.sendMessage(from, {
+        await sock.sendMessage(chatId, {
             audio: finalBuffer,
             mimetype: 'audio/mpeg',
             fileName: `${finalTitle.replace(/[^\w\s-]/g, '')}.mp3`,
             ptt: false
         }, { quoted: message });
-        await loader.complete('Audio delivered to your chat');
-        await sock.sendMessage(from, { react: { text: '✅', key: message.key } });
 
     } catch (err) {
         console.error('Song command error:', err);
-        if (loader) await loader.fail(err.message);
-        else await sock.sendMessage(from, { text: `❌ Error: ${err.message}` }, { quoted: message });
-        await sock.sendMessage(from, { react: { text: '❌', key: message.key } });
+        await sock.sendMessage(chatId, { text: `❌ Error: ${err.message}` }, { quoted: message });
     }
 }
 

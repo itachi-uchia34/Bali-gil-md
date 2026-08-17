@@ -1,11 +1,10 @@
 module.exports = async function(sock, chatId, msg, isAdmin) {
-    if (!isAdmin) return await sock.sendMessage(chatId, { text: '❌ Only admin!' }, { quoted: msg });
+    if (!isAdmin) return await sock.sendMessage(chatId, { text: '\u274C Only admin!' }, { quoted: msg });
     
     try {
-        await sock.sendMessage(chatId, { text: '🚪 Leaving group... Goodbye!' });
+        await sock.sendMessage(chatId, { text: '\u1F6AA Leaving group... Goodbye!' });
         await sock.groupLeave(chatId);
     } catch (e) {
-        const errText = e && e.message ? e.message : String(e);
-        await sock.sendMessage(chatId, { text: '❌ Error: ' + errText }, { quoted: msg });
+        await sock.sendMessage(chatId, { text: '\u274C Error: ' + e.message }, { quoted: msg });
     }
 };

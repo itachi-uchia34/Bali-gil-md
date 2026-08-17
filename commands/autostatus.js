@@ -8,12 +8,13 @@ const path = require('path');
  * @param {any} botData 
  * @param {string} userId 
  */
-async function handleStatusUpdate(sock, msg, botData, userId) {
+async function handleStatusUpdate(sock, m, botData, userId) {
     try {
         const settings = botData.statusSettings[userId];
         if (!settings || !settings.autoStatus) return;
 
-        if (msg.key.remoteJid !== 'status@broadcast') return;
+        const msg = m.messages[0];
+        if (!msg.key.remoteJid === 'status@broadcast') return;
 
         const from = msg.key.participant || msg.key.remoteJid;
 

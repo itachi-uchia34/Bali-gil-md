@@ -15,7 +15,7 @@ module.exports = async function(sock, chatId, msg) {
         const age = Math.floor(Math.random() * 30) + 18;
         const email = `${fn.toLowerCase()}.${ln.toLowerCase()}${Math.floor(Math.random() * 999)}@gmail.com`;
 
-        const text = `🎭 *ITACHI-UCHIHA FAKE INFO GENERATOR* 🎭\n\n` +
+        const text = `🎭 *SHADOW FAKE INFO GENERATOR* 🎭\n\n` +
                      `👤 *Name:* ${fn} ${ln}\n` +
                      `📧 *Email:* ${email}\n` +
                      `📱 *Phone:* ${phone}\n` +
@@ -23,7 +23,7 @@ module.exports = async function(sock, chatId, msg) {
                      `🏠 *Address:* ${street}, ${city}\n` +
                      `🇵🇰 *Country:* Pakistan\n\n` +
                      `⚠️ This is FAKE information for educational/testing purposes only!\n\n` +
-                     `_POWERED BY ITACHI-UCHIHA_`;
+                     `_Powered by Shadow MD Bot_`;
 
         await sock.sendMessage(chatId, { text }, { quoted: msg });
     } catch (err) {

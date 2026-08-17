@@ -28,7 +28,7 @@ module.exports = async function(sock, chatId, msg) {
     const text = mentioned ? `@${mentioned.split('@')[0]} ${roast}` : roast;
     
     // Heavy Roast Header + Footer
-    const caption = `🔥 *KHATARNAK ROAST* 🔥\n\n${text}\n\n_✦ Bas mazaak hai, dil te na lao ✦_\n☠️ _BALI GIL MINI khatarnak mode ON_ ☠️`;
+    const caption = `🔥 *KHATARNAK ROAST* 🔥\n\n${text}\n\n_✦ Bas mazaak hai, dil te na lao ✦_\n☠️ _SYED MINI khatarnak mode ON_ ☠️`;
 
     await sock.sendMessage(chatId, { 
         text: caption,

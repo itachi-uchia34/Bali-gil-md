@@ -19,7 +19,7 @@ module.exports = async function(sock, chatId, msg, q) {
             const response = await axios.get(`https://ipapi.co/${ip}/json/`, { timeout: 5000 });
             const data = response.data;
 
-            const text = `🌐 *ITACHI-UCHIHA IP INFO* 🌐\n\n` +
+            const text = `🌐 *SHADOW IP INFO* 🌐\n\n` +
                          `📍 *IP:* ${data.ip || ip}\n` +
                          `🏙️ *City:* ${data.city || 'N/A'}\n` +
                          `🏛️ *Region:* ${data.region || 'N/A'}\n` +
@@ -28,15 +28,15 @@ module.exports = async function(sock, chatId, msg, q) {
                          `🌐 *ISP:* ${data.org || 'N/A'}\n` +
                          `📡 *ASN:* ${data.asn || 'N/A'}\n` +
                          `⏰ *Timezone:* ${data.timezone || 'N/A'}\n\n` +
-                         `_POWERED BY ITACHI-UCHIHA_`;
+                         `_Powered by Shadow MD Bot_`;
 
             await sock.sendMessage(chatId, { text }, { quoted: msg });
         } catch (apiErr) {
-            const text = `🌐 *ITACHI-UCHIHA IP INFO* 🌐\n\n` +
+            const text = `🌐 *SHADOW IP INFO* 🌐\n\n` +
                          `📍 *IP:* ${ip}\n` +
                          `⚠️ *Status:* API limit reached or IP not found\n` +
                          `🔄 Try again later or use a different IP.\n\n` +
-                         `_POWERED BY ITACHI-UCHIHA_`;
+                         `_Powered by Shadow MD Bot_`;
             await sock.sendMessage(chatId, { text }, { quoted: msg });
         }
     } catch (err) {
