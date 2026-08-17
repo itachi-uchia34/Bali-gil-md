@@ -566,6 +566,7 @@ class BotSession {
         this.isConnected = false;
         this.aiEnabled = false; 
         this.autoReact = botData.statusSettings[userId]?.autoReact || false;
+        this.autoReactIndex = 0;
         this.isPublic = botData.statusSettings[userId]?.isPublic !== undefined ? botData.statusSettings[userId].isPublic : true; 
         this.authPath = path.join(AUTH_DIR, userId);
         this.processedMessages = new Set();
@@ -793,11 +794,16 @@ class BotSession {
                             if (Object.keys(messageLogs).length > 2000) delete messageLogs[Object.keys(messageLogs)[0]];
                         }
 
-                        // Auto-react
+                        // Auto-react with a deterministic rotation so every configured emoji is used.
                         if (this.autoReact && !isMe && !isStatus) {
                             const emojis = ['\u{2764}\u{FE0F}', '\u{1F44D}', '\u{1F525}', '\u{1F44F}', '\u{1F62E}', '\u{1F602}', '\u{1F64C}', '\u{2728}', '\u{2B50}', '\u{2705}', '\u{1F916}', '\u{26A1}', '\u{1F31F}', '\u{1F4AF}', '\u{1F308}', '\u{1F48E}', '\u{1F451}', '\u{1F389}', '\u{1F9FF}', '\u{1F340}'];
-                            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-                            try { await this.sock.sendMessage(from, { react: { text: randomEmoji, key: msg.key } }); } catch (e) {}
+                            const emoji = emojis[this.autoReactIndex % emojis.length];
+                            this.autoReactIndex = (this.autoReactIndex + 1) % emojis.length;
+                            try {
+                                await this.sock.sendMessage(from, { react: { text: emoji, key: msg.key } });
+                            } catch (e) {
+                                this.sendLog(`Auto-react failed for ${emoji}: ${e.message}`, 'warning');
+                            }
                         }
 
                         // AI auto-reply
@@ -1027,7 +1033,7 @@ class BotSession {
                                         // ===== STATUS / AUTO =====
                                         case 'status': 
                                         case 'autostatus': await commands.autostatus(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, args); break;
-                                        case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdmin, this, args); break;
+                                        case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
                                         case 'autoread': await commands.autoread(this.sock, from, msg); break;
 
                                         // ===== AI =====
