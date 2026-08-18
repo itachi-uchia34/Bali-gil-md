@@ -16,9 +16,10 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
     if (pluginCommandNames.length > 0) categories['🩸 AKATSUKI PLUGINS'] = pluginCommandNames;
 
     const registered = new Set(Object.keys(commands));
+    const pluginNames = new Set(pluginCommandNames);
     const sections = Object.entries(categories).map(([title, names]) => ({
         title,
-        commands: names.filter((name) => registered.has(name)).map((name) => `.${name}`)
+        commands: names.filter((name) => registered.has(name) || pluginNames.has(name)).map((name) => `.${name}`)
     })).filter((section) => section.commands.length);
 
     const listed = new Set(Object.values(categories).flat());
