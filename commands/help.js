@@ -35,6 +35,9 @@ ${prefix}ai <question> — ask the assistant
 ${prefix}akatsuki — view the member registry
 ${prefix}painquote — hear Pain’s scroll
 ${prefix}tobiquote — hear Tobi’s scroll
+${prefix}deidaraquote — hear explosive art
+${prefix}sasoriquote — hear puppet control
+${prefix}artquote — compare both disciplines
 
 *📜 OPERATIONS*
 ${prefix}menu — open the main menu

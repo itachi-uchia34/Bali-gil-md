@@ -177,7 +177,7 @@ module.exports = {
 };
 ```
 
-The example plugin at `plugins/akatsuki.js` adds `.akatsuki`, `.painquote`, and `.tobiquote`. After creating or changing a plugin, restart the bot so the loader can validate and register it. Command names must contain only letters, numbers, underscores, or hyphens, and duplicate plugin command names are rejected at startup.
+The example plugin at `plugins/akatsuki.js` adds `.akatsuki`, `.painquote`, and `.tobiquote`. The companion plugin at `plugins/deidara-sasori.js` adds `.deidaraquote`, `.sasoriquote`, and `.artquote`, featuring explosive-art and puppet-control themes. After creating or changing a plugin, restart the bot so the loader can validate and register it. Command names must contain only letters, numbers, underscores, or hyphens, and duplicate plugin command names are rejected at startup.
 
 ## Command catalog
 
@@ -193,6 +193,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.owner`, `.creator` | Itachi Uchiha-themed owner and creator profile. |
 | `.quote` | Rotating Akatsuki quote featuring Pain, Tobi, Itachi, Konan, Kisame, Deidara, or Sasori. |
 | `.akatsuki`, `.painquote`, `.tobiquote` | Example plugin commands for member registry and themed quotes. |
+| `.deidaraquote`, `.sasoriquote`, `.artquote` | Deidara explosive-art, Sasori puppet-control, and combined artistry quotes. |
 | `.ping`, `.runtime`, `.uptime` | Check response time and process uptime. |
 | `.serverinfo`, `.speedtest`, `.device` | Inspect server, network, and device information. |
 
