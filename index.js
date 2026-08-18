@@ -188,7 +188,8 @@ const commands = {
     news: require('./commands/news'),
     crypto: require('./commands/crypto'),
     movie: require('./commands/movie'),
-    anime: require('./commands/anime'),
+    allmenu: require('./commands/allmenu'),
+    help: require('./commands/help'),
     manga: require('./commands/manga'),
     lyrics: require('./commands/lyrics'),
     chatbot: require('./commands/chatbot'),
@@ -987,6 +988,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                     // =================== 120+ COMMAND SWITCH ===================
                                     switch (commandName) {
                                         // ===== MENU =====
+                                        case 'help':
+                                        case 'h': await commands.help(this.sock, from, msg, this); break;
                                         case 'menu': {
                                             const customName = botData.userNames[this.userId] || msg.pushName || 'User';
                                             const menuText = generateMenuText(customName, this);
