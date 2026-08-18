@@ -23,14 +23,14 @@ module.exports = async function(sock, chatId, msg, q) {
         const country = countries[parseInt(bin[2]) % countries.length];
         const bank = banks[parseInt(bin[3]) % banks.length];
 
-        const text = `💳 *ITACHI BIN LOOKUP* 💳\n\n` +
+        const text = `💳 *BALI GIL BIN LOOKUP* 💳\n\n` +
                      `🔢 *BIN:* ${bin}\n` +
                      `🏦 *Scheme:* ${scheme}\n` +
                      `💰 *Type:* ${type}\n` +
                      `🏛️ *Bank:* ${bank}\n` +
                      `🌍 *Country:* ${country}\n\n` +
                      `⚠️ For educational purposes only!\n\n` +
-                     `_Powered by ITACHI UCHIHA`;
+                     `_Powered by BALI GIL`;
 
         await sock.sendMessage(chatId, { text }, { quoted: msg });
     } catch (err) {

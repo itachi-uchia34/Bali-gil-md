@@ -1,7 +1,7 @@
 module.exports = async function helpCommand(sock, chatId, msg, session) {
     const prefix = '.';
     const mode = session?.isPublic ? 'PUBLIC' : 'PRIVATE';
-    const text = `🩸 *━───── 🔴 AKATSUKI MD 🔴 ─────━* 🩸
+    const text = `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸
 
 *☠️ SHROUD COMMAND CENTER ☠️*
 

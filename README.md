@@ -18,13 +18,13 @@
     0 0 36px #d896ff,
     0 0 48px #ab47bc;
   padding: 12px 0;
-"> Built on Baileys • Designed for Speed • Enhanced for Stability • Powered by ITACHI UCHIHA 
+"> Built on Baileys • Designed for Speed • Enhanced for Stability • Powered by BALI GIL
 </div>
 </p>
 
 <div align="center">
 
-# 🩸 AKATSUKI MD bot v4.0.1
+# 🩸 BALI GIL bot v4.0.1
 **"Even the strongest of opponents always has a weakness."**
 
 [![Status](https://img.shields.io/badge/status-Active-brightgreen?style=flat-square)](https://github.com/itachi-uchia34)
@@ -32,18 +32,18 @@
 [![Owner](https://img.shields.io/badge/developer-Itachi%20Uchiha-red?style=flat-square)](https://github.com/itachi-uchia34)
 [![Language](https://img.shields.io/badge/language-JavaScript-orange?style=flat-square)](https://github.com/itachi-uchia34)
 
-![AKATSUKI MD BOT](https://lh3.googleusercontent.com/d/18DX3oRbQ1E__z-64MUMOM-mRtmSfsLqr)
+![BALI GIL BOT](https://lh3.googleusercontent.com/d/18DX3oRbQ1E__z-64MUMOM-mRtmSfsLqr)
 
 ---
 <div align="center">
 <sub>Built with ❤️ and Genjutsu.</sub>
 </div>
 
-# 🩸 AKATSUKI MD
+# 🩸 BALI GIL
 
 > *A Shroud-themed WhatsApp automation bot for group management, media, utilities, security, AI, games, and daily operations.*
 
-**Akatsuki MD** is a Node.js WhatsApp bot powered by [Baileys](https://github.com/WhiskeySockets/Baileys). It includes a web pairing/dashboard layer, optional Telegram integration, persistent bot settings, media conversion, group moderation, automated protections, and a large command library.
+**BALI GIL** is a Node.js WhatsApp bot powered by [Baileys](https://github.com/WhiskeySockets/Baileys). It includes a web pairing/dashboard layer, optional Telegram integration, persistent bot settings, media conversion, group moderation, automated protections, and a large command library.
 
 > ⚔️ *Wear your ring. Honor the cloak. Follow the dynamic.*
 
@@ -229,7 +229,7 @@ module.exports = {
 
 The example plugin at `plugins/akatsuki.js` adds `.akatsuki`, `.painquote`, and `.tobiquote`. The companion plugin at `plugins/deidara-sasori.js` adds `.deidaraquote`, `.sasoriquote`, and `.artquote`, featuring explosive-art and puppet-control themes. After creating or changing a plugin, restart the bot so the loader can validate and register it. Command names must contain only letters, numbers, underscores, or hyphens, and duplicate plugin command names are rejected at startup.
 
-All built-in and plugin commands receive a shared response layer from `lib/akatsuki-theme.js`. Plain text responses are given an Akatsuki MD header, while messages that already contain member-specific or Shroud-themed branding are preserved unchanged. Media payloads, reactions, mentions, group updates, and command APIs are not altered.
+All built-in and plugin commands receive a shared response layer from `lib/akatsuki-theme.js`. Plain text responses are given a BALI GIL bot header, while messages that already contain member-specific or Shroud-themed branding are preserved unchanged. Media payloads, reactions, mentions, group updates, and command APIs are not altered.
 
 ## Command catalog
 
@@ -242,7 +242,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.menu` | Main Akatsuki command-center menu with bot information. |
 | `.help`, `.h` | Concise Akatsuki help menu. |
 | `.allmenu` | Full command index. |
-| `.owner`, `.creator` | Itachi Uchiha-themed owner and creator profile. |
+| `.owner`, `.creator` | BALI GIL-themed owner and creator profile. |
 | `.quote` | Rotating Akatsuki quote featuring Pain, Tobi, Itachi, Konan, Kisame, Deidara, or Sasori. |
 | `.akatsuki`, `.painquote`, `.tobiquote` | Example plugin commands for member registry and themed quotes. |
 | `.deidaraquote`, `.sasoriquote`, `.artquote` | Deidara explosive-art, Sasori puppet-control, and combined artistry quotes. |

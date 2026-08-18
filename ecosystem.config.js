@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'akatsuki-md-bot',
+    name: 'bali-gil-bot',
     script: './index.js',
     instances: 1,
     autorestart: true,

@@ -1,9 +1,9 @@
 const settings = require('../settings');
 
 async function ownerCommand(sock, from, msg) {
-    const ownerName = settings.ownerName || 'Itachi Uchiha';
+    const ownerName = settings.ownerName || 'BALI GIL';
     const ownerNumber = String(settings.ownerNumber || '').replace(/\D/g, '');
-    const ownerText = `🩸 *━───── 🔴 ITACHI UCHIHA 🔴 ─────━* 🩸\n\n` +
+    const ownerText = `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸\n\n` +
         `*☠️ SHROUD ARCHITECT ☠️*\n\n` +
         `👤 *CREATOR:* ${ownerName}\n` +
         `📱 *CONTACT:* ${ownerNumber ? `+${ownerNumber}` : 'Not configured'}\n` +

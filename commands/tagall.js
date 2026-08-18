@@ -18,7 +18,7 @@ module.exports = async function tagallCommand(sock, chatId, msg, isAdmin, query)
         const announcement = String(query || '').trim() || 'The Akatsuki has summoned every member. Stand by for further orders.';
         const names = participants.map((jid) => `@${jid.split('@')[0]}`).join(' ');
 
-        const text = `🩸 *━───── 🔴 AKATSUKI MD 🔴 ─────━* 🩸
+        const text = `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸
 
 *⚔️ ORGANIZATION SUMMONS ⚔️*
 

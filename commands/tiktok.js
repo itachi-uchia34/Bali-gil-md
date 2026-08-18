@@ -19,7 +19,7 @@ async function tiktokCommand(sock, from, msg, q) {
             const caption = `*\u1F3A5 TikTok Downloader*\n\n` +
                 `📝 *Title:* ${title}\n` +
                 `👤 *Author:* ${author}\n\n` +
-                `> © POWERED BY ITACHI UCHIHA`;
+                `> © POWERED BY BALI GIL`;
 
             // Send Video
             await sock.sendMessage(from, { 
