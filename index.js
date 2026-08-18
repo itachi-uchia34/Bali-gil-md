@@ -1410,46 +1410,56 @@ function generateMenuText(userName, session) {
     const mode = session.isPublic ? 'PUBLIC' : 'PRIVATE';
     const prefix = settings.prefix || '.';
     const categories = {
-        '⚔️ GROUP MANAGEMENT': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'revoke', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'tagadmin', 'tagme', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'welcome', 'goodbye', 'antilink', 'kickoffline'],
-        '👑 OWNER & ADMIN': ['owner', 'creator', 'public', 'private', 'mode', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'backup', 'restore', 'clone', 'nuke', 'deleteall', 'ghostmode', 'status'],
-        '🛡️ SECURITY & AUTOMATION': ['autoreacts', 'autoread', 'autostatus', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
-        '🎴 MEDIA & DOWNLOADS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
-        '🛠️ TOOLS & LOOKUPS': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
-        '🤖 AI & KNOWLEDGE': ['ai', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
-        '🎭 FUN & GAMES': ['joke', 'meme', 'dare', 'truth', 'ascii', 'roast', 'compliment', 'ship', 'emojimix', 'character', 'coinflip', 'roll', 'riddle', 'wouldyourather', 'report'],
-        '🩸 AKATSUKI MEMBER SCROLLS': ['akatsuki', 'painquote', 'tobiquote', 'deidaraquote', 'sasoriquote', 'artquote']
+        'GROUP MANAGEMENT': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'revoke', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'tagadmin', 'tagme', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'welcome', 'goodbye', 'antilink', 'kickoffline'],
+        'OWNER & ADMIN': ['owner', 'creator', 'public', 'private', 'mode', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'backup', 'restore', 'clone', 'nuke', 'deleteall', 'ghostmode', 'status'],
+        'SECURITY & AUTOMATION': ['autoreacts', 'autoread', 'autostatus', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
+        'MEDIA & DOWNLOADS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
+        'TOOLS & LOOKUPS': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
+        'AI & KNOWLEDGE': ['ai', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
+        'FUN & GAMES': ['joke', 'meme', 'dare', 'truth', 'ascii', 'roast', 'compliment', 'ship', 'emojimix', 'character', 'coinflip', 'roll', 'riddle', 'wouldyourather', 'report'],
+        'AKATSUKI MEMBER SCROLLS': ['akatsuki', 'painquote', 'tobiquote', 'deidaraquote', 'sasoriquote', 'artquote']
     };
 
     const registeredCommands = new Set(Object.keys(commands));
-    const sections = Object.entries(categories).map(([title, names]) => {
+    const renderSection = (title, names) => {
         const listed = names.filter((name) => registeredCommands.has(name));
-        return `*${title}*\n${listed.map((name) => `${prefix}${name}`).join('  ')}`;
-    }).join('\n\n');
+        if (!listed.length) return '';
+        return [
+            `┏━━━〔 ${title} 〕━━━┓`,
+            ...listed.map((name) => `┃ ◇ ${prefix}${name}`),
+            '┗━━━━━━━━━━━━━━━━━━┛'
+        ].join('\n');
+    };
 
+    const sections = Object.entries(categories)
+        .map(([title, names]) => renderSection(title, names))
+        .filter(Boolean);
     const listedNames = new Set(Object.values(categories).flat());
     const additional = Object.keys(commands).filter((name) => !listedNames.has(name)).sort();
-    const additionalSection = additional.length
-        ? `*📜 ADDITIONAL REGISTERED COMMANDS*\n${additional.map((name) => `${prefix}${name}`).join('  ')}`
-        : '';
+    if (additional.length) sections.push(renderSection('ADDITIONAL COMMANDS', additional));
 
-    return `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸\n` +
-        `*☠️ THE LONG SHROUD COMMAND SCROLL ☠️*\n\n` +
-        `Welcome, ${userName}. Every path is open.\n\n` +
-        `┌─ *CONNECTION INTEL* ─────────────┐\n` +
-        `│ ⚔️ Name: ${settings.ownerName || 'BALI GIL'}\n` +
-        `│ 📦 Version: ${settings.version}\n` +
-        `│ ⚙️ Mode: ${mode}\n` +
-        `│ 🔑 Prefix: ${prefix}\n` +
-        `└─────────────────────────────────┘\n\n` +
-        `${sections}\n\n` +
-        `${additionalSection}\n\n` +
-        `*📌 QUICK ALIASES*\n` +
-        `${prefix}help / ${prefix}h — concise command guidance\n` +
-        `${prefix}menu — this complete long scroll\n` +
-        `${prefix}allmenu — categorized command index\n\n` +
-        `> _"Those who do not understand true pain can never understand true peace."_\n` +
-        `⚔️ Wear your ring. Honor the cloak. Follow the dynamic.\n` +
-        `☠️ *POWERED BY BALI GIL* ☠️`;
+    return [
+        '╭━━━━━━━━━━━━━━━━━━━━━━╮',
+        '┃      BALI GIL MENU    ┃',
+        '╰━━━━━━━━━━━━━━━━━━━━━━╯',
+        `┃ USER   : ${userName}`,
+        `┃ MODE   : ${mode}`,
+        `┃ PREFIX : ${prefix}`,
+        '┃ STATUS : SHROUD ONLINE',
+        '╰━━━━━━━━━━━━━━━━━━━━━━╯',
+        '',
+        ...sections.flatMap((section) => [section, '']),
+        '┏━━━〔 QUICK ACCESS 〕━━━┓',
+        `┃ ◇ ${prefix}help`,
+        `┃ ◇ ${prefix}h`,
+        `┃ ◇ ${prefix}menu`,
+        `┃ ◇ ${prefix}allmenu`,
+        '┗━━━━━━━━━━━━━━━━━━━━━━┛',
+        '',
+        '╭━━━━━━━━━━━━━━━━━━━━━━╮',
+        '┃  POWERED BY BALI GIL  ┃',
+        '╰━━━━━━━━━━━━━━━━━━━━━━╯'
+    ].join('\n');
 }
 
 
