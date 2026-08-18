@@ -942,8 +942,21 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                 try {
                                     const mode = botData.antilinkGroups[from];
                                     await this.sock.sendMessage(from, { delete: msg.key });
-                                    if (mode === 'kick') await this.sock.groupParticipantsUpdate(from, [sender], "remove");
-                                } catch (e) {}
+                                    if (mode === 'kick') {
+                                        await this.sock.groupParticipantsUpdate(from, [sender], 'remove');
+                                        await this.sock.sendMessage(from, {
+                                            text: `🩸 *AKATSUKI BARRIER*\n\n@${sender.split('@')[0]} has been removed for breaking the link restriction.`,
+                                            mentions: [sender]
+                                        });
+                                    } else {
+                                        await this.sock.sendMessage(from, {
+                                            text: `🩸 *AKATSUKI BARRIER*\n\n@${sender.split('@')[0]}, external links are forbidden in this organization. Your message was removed.`,
+                                            mentions: [sender]
+                                        });
+                                    }
+                                } catch (e) {
+                                    this.sendLog(`Anti-link action failed: ${e.message}`, 'warning');
+                                }
                                 return;
                             }
                         }
