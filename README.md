@@ -154,7 +154,9 @@ Examples:
 .kick @member             # Pain’s Almighty Push removal
 .ban @member              # Alias for the Almighty Push removal order
 .mute                     # Pain’s Silent Shroud; admins only
+.gcoff                    # Alias for .mute
 .unmute                   # Restore group messaging
+.gcon                     # Alias for .unmute
 ```
 
 ## Modular plugin system
@@ -213,7 +215,8 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.tagall`, `.hidetag`, `.tagadmin`, `.tagme` | Announce to members, mention silently, tag administrators, or tag yourself. |
 | `.groupinfo`, `.grouplink` | View group information or retrieve the group link. |
 | `.setname`, `.setdesc`, `.setppgc` | Update group name, description, or profile picture. |
-| `.mute`, `.unmute` | Activate or deactivate Pain’s Silent Shroud by restricting group messages to admins, where supported. |
+| `.mute`, `.gcoff` | Activate Pain’s Silent Shroud and restrict group messages to admins, where supported. |
+| `.unmute`, `.gcon` | Release the Shroud and reopen messaging for all members, where supported. |
 | `.leave`, `.listonline`, `.everyonemsg` | Leave a group, inspect online members, or send an everyone message. |
 | `.welcome`, `.goodbye` | Configure themed arrival and departure messages with `on`, `off`, or `status`. |
 | `.poll`, `.editmsg`, `.react`, `.send`, `.forward`, `.save`, `.clear` | Group communication and message utilities. |
@@ -308,7 +311,9 @@ The themed management commands are designed for controlled group administration:
 .kick @member
 .ban @member
 .mute
+.gcoff
 .unmute
+.gcon
 ```
 
 The bot must be a group administrator for actions such as removing members, changing ranks, deleting messages, muting a group, or changing group metadata. Use moderation commands transparently and only with the group’s consent and applicable platform rules.

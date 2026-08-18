@@ -40,6 +40,8 @@ const commands = {
     invite: require('./commands/invite'),
     mute: require('./commands/mute'),
     unmute: require('./commands/unmute'),
+    gcoff: require('./commands/gcoff'),
+    gcon: require('./commands/gcon'),
     kickoffline: require('./commands/kickoffline'),
     hidetag: require('./commands/hidetag'),
     tagall: require('./commands/tagall'),
@@ -1037,7 +1039,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo`;
+                                            const text = `🩸 *AKATSUKI GROUP CONTROL* 🩸\n\n⚔️ .kick\n⚔️ .add\n⚔️ .promote\n⚔️ .demote\n🌀 .mute / .gcoff — Pain’s Silent Shroud\n🌀 .unmute / .gcon — release the Shroud\n⚔️ .tagall\n⚔️ .hidetag\n⚔️ .grouplink\n⚔️ .groupinfo`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -1081,8 +1083,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'revoke': await commands.revoke(this.sock, from, msg, isAdmin); break;
                                         case 'invite': await commands.invite(this.sock, from, msg, isAdmin); break;
                                         case 'grouplink': case 'gclink': await commands.grouplink(this.sock, from, msg, isAdmin); break;
-                                        case 'mute': await commands.mute(this.sock, from, msg, isAdmin); break;
-                                        case 'unmute': await commands.unmute(this.sock, from, msg, isAdmin); break;
+                                        case 'mute': case 'gcoff': await commands[command](this.sock, from, msg, isAdmin); break;
+                                        case 'unmute': case 'gcon': await commands[command](this.sock, from, msg, isAdmin); break;
                                         case 'join': await commands.join(this.sock, from, msg, q); break;
                                         case 'leave': await commands.leave(this.sock, from, msg, isAdmin); break;
                                         case 'setdesc': await commands.setdesc(this.sock, from, msg, isAdmin, q); break;
