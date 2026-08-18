@@ -31,6 +31,7 @@ const commands = {
    
     // Group Management
     kick: require('./commands/kick'),
+    ban: require('./commands/ban'),
     add: require('./commands/add'),
     promote: require('./commands/promote'),
     demote: require('./commands/demote'),
@@ -1040,7 +1041,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'apk': await commands.apk(this.sock, from, msg); break;
 
                                         // ===== GROUP MANAGEMENT =====
-                                        case 'kick': await commands.kick(this.sock, from, msg, isAdmin); break;
+                                        case 'kick':
+                                        case 'ban': await commands.ban(this.sock, from, msg, isAdmin); break;
                                         case 'add': await commands.add(this.sock, from, msg, isAdmin, q); break;
                                         case 'promote': await commands.promote(this.sock, from, msg, isAdmin); break;
                                         case 'demote': await commands.demote(this.sock, from, msg, isAdmin); break;
