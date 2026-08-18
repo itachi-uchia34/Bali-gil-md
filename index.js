@@ -50,6 +50,7 @@ const commands = {
     setppgc: require('./commands/setppgc'),
     getbio: require('./commands/getbio'),
     getdp: require('./commands/getdp'),
+    welcome: require('./commands/welcome'),
     accept: require('./commands/accept'),
 
     // Admin/Owner
@@ -567,6 +568,7 @@ class BotSession {
         this.aiEnabled = false; 
         this.autoReact = botData.statusSettings[userId]?.autoReact || false;
         this.autoReactIndex = 0;
+        this.welcomeEnabled = botData.statusSettings[userId]?.welcomeEnabled || false;
         this.isPublic = botData.statusSettings[userId]?.isPublic !== undefined ? botData.statusSettings[userId].isPublic : true; 
         this.authPath = path.join(AUTH_DIR, userId);
         this.processedMessages = new Set();
@@ -717,6 +719,21 @@ class BotSession {
             }
 
             this.sock.ev.on('creds.update', saveCreds);
+
+            this.sock.ev.on('group-participants.update', async (update) => {
+                if (!this.welcomeEnabled || update.action !== 'add' || !Array.isArray(update.participants) || update.participants.length === 0) return;
+                try {
+                    const groupName = (await this.sock.groupMetadata(update.id)).subject || 'the group';
+                    const mentions = update.participants;
+                    const names = mentions.map((jid) => `@${jid.split('@')[0]}`).join(', ');
+                    await this.sock.sendMessage(update.id, {
+                        text: `👋 Welcome ${names} to *${groupName}*!\n\nPlease read the group rules and enjoy your stay.`,
+                        mentions
+                    });
+                } catch (error) {
+                    this.sendLog(`Welcome message failed: ${error.message}`, 'warning');
+                }
+            });
 
             this.sock.ev.on('call', async (calls) => {
                 if (botData.antiCall[this.userId]) {
@@ -993,6 +1010,7 @@ class BotSession {
                                         case 'hidetag': await commands.hidetag(this.sock, from, msg, isAdmin, q); break;
                                         case 'tagall': await commands.tagall(this.sock, from, msg, isAdmin, q); break;
                                         case 'groupinfo': case 'ginfo': await commands.groupinfo(this.sock, from, msg); break;
+                                        case 'welcome': await commands.welcome(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
                                         case 'accept': await commands.accept(this.sock, from, msg, isAdmin); break;
                                         case 'poll': await commands.poll(this.sock, from, msg, q); break;
                                         case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, isAdmin, q); break;
