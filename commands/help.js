@@ -25,6 +25,7 @@ ${prefix}autoread on/off — manage read status
 
 *🎴 MEDIA & TOOLS*
 ${prefix}sticker — convert replied media
+${prefix}dpz @member — view an Akatsuki profile picture
 ${prefix}toimg — convert a sticker to image
 ${prefix}song <query> — download audio
 ${prefix}video <query> — download video

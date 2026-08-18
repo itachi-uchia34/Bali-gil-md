@@ -147,6 +147,7 @@ Examples:
 .quote
 .weather London
 .sticker                 # Reply to an image or video
+.dpz @member             # View a member profile picture
 .tagall Team meeting at 20:00
 .promote @member
 .demote @member
@@ -229,6 +230,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | Commands | Purpose |
 |---|---|
 | `.sticker` | Convert replied-to images or videos into WebP stickers. |
+| `.dpz`, `.dp` | Show a tagged or replied-to member’s profile picture with an Akatsuki member-themed caption. |
 | `.toimg` | Convert a sticker to an image. |
 | `.tomp3`, `.song`, `.video` | Convert or retrieve audio/video media. |
 | `.youtube`, `.ytmp3`, `.ytmp4`, `.yts` | YouTube search and media utilities. |

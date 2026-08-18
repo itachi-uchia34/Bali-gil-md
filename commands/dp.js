@@ -37,9 +37,21 @@ async function dpCommand(sock, from, msg) {
             }
         }
 
-        await sock.sendMessage(from, { 
-            image: { url: ppUrl }, 
-            caption: `✅ *Profile Picture*\n👤 *User:* @${target.split('@')[0]}`,
+        const members = [
+            ['Pain', 'The Six Paths observe from the Shroud.'],
+            ['Tobi', 'The masked shadow has identified the target.'],
+            ['Itachi Uchiha', 'The Sharingan remembers every face.'],
+            ['Deidara', 'Art captures the moment before the explosion.'],
+            ['Sasori', 'Every face becomes part of the collection.']
+        ];
+        const [member, line] = members[Math.floor(Math.random() * members.length)];
+        await sock.sendMessage(from, {
+            image: { url: ppUrl },
+            caption: `🩸 *━───── 🔴 AKATSUKI PROFILE 🔴 ─────━* 🩸\n\n` +
+                `👤 *TARGET:* @${target.split('@')[0]}\n` +
+                `☠️ *WITNESS:* ${member}\n\n` +
+                `> _${line}_\n\n` +
+                `⚔️ The Shroud remembers every face.`,
             mentions: [target]
         }, { quoted: msg });
 

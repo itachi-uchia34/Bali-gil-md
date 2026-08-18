@@ -106,6 +106,7 @@ const commands = {
     // Tools
     ping: require('./commands/ping'),
     dp: require('./commands/dp'),
+    dpz: require('./commands/dp'),
     vv: require('./commands/vv'),
     translate: require('./commands/translate').handleTranslateCommand,
     base64: require('./commands/base64'),
@@ -1159,7 +1160,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                                         // ===== TOOLS =====
                                         case 'ping': await commands.utils.ping(this.sock, from, msg); break;
-                                        case 'dp': await commands.dp(this.sock, from, msg); break;
+                                        case 'dp':
+                                        case 'dpz': await commands.dp(this.sock, from, msg); break;
                                         case 'vv': await commands.vv(this.sock, from, msg); break;
                                         case 'translate': case 'trt': await commands.utils.trt(this.sock, from, msg, q); break;
                                         case 'base64': await commands.base64(this.sock, from, msg, q); break;
