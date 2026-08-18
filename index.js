@@ -326,7 +326,7 @@ if (tgBot) {
         const isOwner = isTgOwner(chatId);
         
         const welcomeMessage = 
-            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MINI BOT* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
+            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *AKATSUKI MD* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
             `*\u{1F311} LUXURY WHATSAPP AUTOMATION* \u{1F311}\n\n` +
             `Welcome to the most premium WhatsApp bot experience.\n\n` +
             `*\u{1F4F1} AVAILABLE COMMANDS:*\n` +
@@ -408,7 +408,7 @@ if (tgBot) {
         const numbersList = botNumbers.length > 0 ? botNumbers.join('\n') : 'None';
 
         const statusMsg = 
-            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MINI STATUS* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
+            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *AKATSUKI MD STATUS* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
             `\u{1F4F1} *Connected Bots:* ${connectedCount}\n` +
             `\u{26A1} *Total Sessions:* ${Object.keys(sessions).length}\n\n` +
             `\u{1F522} *Active Numbers:*\n\`${numbersList}\`\n\n` +
@@ -651,7 +651,7 @@ class BotSession {
                 try {
                     const botNumber = jidNormalizedUser(this.sock.user.id);
                     await this.sock.sendMessage(botNumber, { 
-                        text: "BALI \u{1D5D4}\u{1D5E5}\u{1D5D8}-\u{1D5D3}\u{1D5E6}\u{1D601} \u{1D5F1}\u{1D600} \u{1D603}\u{1D608}\u{1D5F1}\u{1D5F1}\u{1D5F2}\u{1D5F7}\u{1D5F2} \u{1F680}\n\n_24/7 Active System Working..._" 
+                        text: "AKATSUKI MD — THE SHROUD \u{1F680}\n\n_24/7 Active System Working..._"
                     });
                     this.sendLog("24/7 Keep-alive message sent to own DM. \u{2705}", "success");
                 } catch (e) {
@@ -1436,7 +1436,7 @@ function generateMenuText(userName, session) {
         `*☠️ THE LONG SHROUD COMMAND SCROLL ☠️*\n\n` +
         `Welcome, ${userName}. Every path is open.\n\n` +
         `┌─ *CONNECTION INTEL* ─────────────┐\n` +
-        `│ ⚔️ Name: ${settings.ownerName || 'BALI'}\n` +
+        `│ ⚔️ Name: ${settings.ownerName || 'AKATSUKI MD'}\n` +
         `│ 📦 Version: ${settings.version}\n` +
         `│ ⚙️ Mode: ${mode}\n` +
         `│ 🔑 Prefix: ${prefix}\n` +
@@ -1521,7 +1521,7 @@ io.on('connection', (socket) => {
                 for (const jid of personalChats) {
                     try {
                         await bot.sock.sendMessage(jid, { 
-                            text: `\u{1F4E2} *BROADCAST MESSAGE* \u{1F4E2}\n\n${message}\n\n_From: BALI GIL MINI Bot Admin_` 
+                            text: `\u{1F4E2} *BROADCAST MESSAGE* \u{1F4E2}\n\n${message}\n\n_From: AKATSUKI MD Admin_`
                         });
                         totalSent++;
                     } catch (e) {}
@@ -1615,7 +1615,7 @@ io.on('connection', (socket) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
-    console.log(`\u{1F311} BALI GIL MINI BOT v${settings.version} Server running on port ${PORT}`);
+    console.log(`\u{1F311} AKATSUKI MD v${settings.version} — Shroud server running on port ${PORT}`);
     console.log(`\u{1F4E1} Total commands loaded: 120+`);
     console.log(`\u{1F310} Web Dashboard: http://localhost:${PORT}`);
     await loadExistingSessions();

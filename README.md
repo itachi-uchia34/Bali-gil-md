@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&height=230&color=0:6a0dad,100:ab47bc&text=BALI%20GIL&fontColor=ffffff&fontSize=85&fontAlignY=40&animation=twinkling&desc=Powered%20By%20ITACHI%20UCHIHA" />
+<img src="https://capsule-render.vercel.app/api?type=waving&height=230&color=0:6a0dad,100:ab47bc&text=AKATSUKI%20MD&fontColor=ffffff&fontSize=85&fontAlignY=40&animation=twinkling&desc=Powered%20By%20ITACHI%20UCHIHA" />
 
 <div style="
   margin-top: -60px;
@@ -24,7 +24,7 @@
 
 <div align="center">
 
-# 🌌 BALI GIL bot v4.0.1
+# 🩸 AKATSUKI MD bot v4.0.1
 **"Even the strongest of opponents always has a weakness."**
 
 [![Status](https://img.shields.io/badge/status-Active-brightgreen?style=flat-square)](https://github.com/itachi-uchia34)
@@ -32,14 +32,14 @@
 [![Owner](https://img.shields.io/badge/developer-Itachi%20Uchiha-red?style=flat-square)](https://github.com/itachi-uchia34)
 [![Language](https://img.shields.io/badge/language-JavaScript-orange?style=flat-square)](https://github.com/itachi-uchia34)
 
-![BALI GIL BOT](https://lh3.googleusercontent.com/d/18DX3oRbQ1E__z-64MUMOM-mRtmSfsLqr)
+![AKATSUKI MD BOT](https://lh3.googleusercontent.com/d/18DX3oRbQ1E__z-64MUMOM-mRtmSfsLqr)
 
 ---
 <div align="center">
 <sub>Built with ❤️ and Genjutsu.</sub>
 </div>
 
-# 🩸 AKATSUKI MD — BALI GIL BOT
+# 🩸 AKATSUKI MD
 
 > *A Shroud-themed WhatsApp automation bot for group management, media, utilities, security, AI, games, and daily operations.*
 

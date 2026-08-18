@@ -3,7 +3,7 @@ const settings = require('../settings');
 async function allMenu(sock, from, msg, session, commands, pluginCommandNames = []) {
     // ===== HEAVY BOX HEADER =====
     let allMenuText = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-    allMenuText += `┃  💀  *BALI GIL MINI ALL MENU*  💀               ┃\n`;
+    allMenuText += `┃  💀  *AKATSUKI MD COMPLETE ALL MENU*  💀               ┃\n`;
     allMenuText += `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n`;
     allMenuText += `┃  📋 TOTAL COMMANDS: 300+                   ┃\n`;
     allMenuText += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
