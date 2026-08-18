@@ -1133,8 +1133,10 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'revoke': await commands.revoke(this.sock, from, msg, isAdmin); break;
                                         case 'invite': await commands.invite(this.sock, from, msg, isAdmin); break;
                                         case 'grouplink': case 'gclink': await commands.grouplink(this.sock, from, msg, isAdmin); break;
-                                        case 'mute': case 'gcoff': await commands[command](this.sock, from, msg, isAdmin); break;
-                                        case 'unmute': case 'gcon': await commands[command](this.sock, from, msg, isAdmin); break;
+                                        case 'mute': await commands.mute(this.sock, from, msg, isAdmin); break;
+                                        case 'gcoff': await commands.gcoff(this.sock, from, msg, isAdmin); break;
+                                        case 'unmute': await commands.unmute(this.sock, from, msg, isAdmin); break;
+                                        case 'gcon': await commands.gcon(this.sock, from, msg, isAdmin); break;
                                         case 'join': await commands.join(this.sock, from, msg, q); break;
                                         case 'leave': await commands.leave(this.sock, from, msg, isAdmin); break;
                                         case 'setdesc': await commands.setdesc(this.sock, from, msg, isAdmin, q); break;
