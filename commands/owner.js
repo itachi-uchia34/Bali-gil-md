@@ -9,7 +9,7 @@ async function ownerCommand(sock, from, msg) {
         `📱 *CONTACT:* ${ownerNumber ? `+${ownerNumber}` : 'Not configured'}\n` +
         `⚔️ *TITLE:* Keeper of the Akatsuki Command Center\n\n` +
         `🔗 *OFFICIAL WHATSAPP CHANNEL:*\n` +
-        `> *https://whatsapp.com/channel/0029Vb8RIvDHVvTgHqEiRY1N*\n\n` +
+        `> *https://whatsapp.com/channel/0029VbC1gR3J3jv22YgI511b*\n\n` +
         `> _"Those who break the rules are scum, but those who abandon their comrades are worse than scum."_\n\n` +
         `🩸 Honor the cloak. Follow the dynamic.`;
 
