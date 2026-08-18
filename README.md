@@ -29,7 +29,7 @@
 
 | Area | Included capabilities |
 |---|---|
-| **Akatsuki interface** | Themed `.menu`, `.help`, `.owner`, `.creator`, `.quote`, group announcements, and rank messages. |
+| **Akatsuki interface** | Themed `.menu`, `.help`, `.owner`, `.creator`, `.quote`, group announcements, rank messages, and the Akatsuki pairing gate. |
 | **WhatsApp automation** | Pairing flow, persistent sessions, group events, media handling, reactions, read status, and status automation. |
 | **Group management** | Add, remove, promote, demote, mute, tag, group information, links, descriptions, and profile pictures. |
 | **Protection** | Anti-link, anti-call, anti-delete, anti-status, anti-bug, anti-spam-related controls, and configurable moderation behavior. |
@@ -107,13 +107,14 @@ npm run dev
 
 The web service normally listens on `http://localhost:3000`. The actual port is controlled by `PORT` when it is set.
 
-## WhatsApp pairing
+## WhatsApp pairing — Akatsuki Gate
 
 1. Start the bot with `npm start`.
-2. Open the dashboard URL shown by the running process or visit the configured host.
+2. Open the dashboard and enter the **Akatsuki Gate** connection panel.
 3. Enter the WhatsApp number using country code and digits. The recommended format is `923001234567`, without spaces or a leading `+`.
-4. Request the pairing code and complete the pairing flow in WhatsApp under **Linked devices**.
-5. Keep the session storage persistent in production. If the host uses an ephemeral filesystem, the bot may require pairing again after a restart.
+4. Select **Summon Pairing Code**, then enter the Shroud code in WhatsApp under **Linked devices**.
+5. When the connection opens, the dashboard and optional Telegram notifications report that the Shroud and Six Paths are online.
+6. Keep the session storage persistent in production. If the host uses an ephemeral filesystem, the bot may require pairing again after a restart.
 
 For group commands, the bot account must be a group administrator. The sender must also have the required owner or admin permission for the command.
 

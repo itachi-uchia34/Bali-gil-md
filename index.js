@@ -478,10 +478,10 @@ if (tgBot) {
             }
 
             const initMsg = 
-                `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MINI PAIRING* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
-                `*\u{1F504} REQUESTING CODE...*\n` +
+                `🩸 *━───── 🔴 AKATSUKI PAIRING GATE 🔴 ─────━* 🩸\n\n` +
+                `🌀 *SUMMONING THE SIX PATHS...*\n` +
                 `Target Number: \`${text}\`\n\n` +
-                `_Please wait a few seconds..._`;
+                `_Pain is preparing your connection. Stand by for the code..._`;
 
             await tgBot.sendMessage(chatId, initMsg, { parse_mode: 'Markdown' });
             sessions[userId].tgChatId = chatId;
@@ -718,23 +718,24 @@ class BotSession {
                     try {
                         let code = await this.sock.requestPairingCode(pairingNumber);
                         code = code?.match(/.{1,4}/g)?.join("-") || code;
-                        this.sendLog(`\u{1F511} Pairing Code: ${code}`, 'success');
+                        this.sendLog(`🩸 Akatsuki pairing code prepared: ${code}`, 'success');
 
                         if (this.tgChatId && tgBot) {
                             const codeMsg = 
-                                `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MINI CODE* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
-                                `*\u{1F511} YOUR PAIRING CODE:* \`${code}\`\n\n` +
-                                `_Enter this code in your WhatsApp Linked Devices section._\n\n` +
-                                `> © POWERED BY ITACHI UCHIHA  v3.0`;
+                                `🩸 *━───── 🔴 AKATSUKI LINK CODE 🔴 ─────━* 🩸\n\n` +
+                                `🔑 *YOUR SHROUD CODE:* \`${code}\`\n\n` +
+                                `_Enter this code in WhatsApp → Linked Devices to awaken the connection._\n\n` +
+                                `> _"Those who do not understand true pain can never understand true peace."_\n` +
+                                `> POWERED BY ITACHI UCHIHA`;
                             await tgBot.sendMessage(this.tgChatId, codeMsg, { parse_mode: 'Markdown' });
                         }
 
                         const socketId = userSockets[this.userId];
                         if (socketId) io.to(socketId).emit('pairing-code', code);
                     } catch (err) {
-                        this.sendLog(`\u{274C} Pairing error: ${err.message}`, 'error');
+                        this.sendLog(`❌ Akatsuki pairing gate failed: ${err.message}`, 'error');
                         if (this.tgChatId && tgBot) {
-                            await tgBot.sendMessage(this.tgChatId, "\u{274C} Pairing Error: " + err.message);
+                            await tgBot.sendMessage(this.tgChatId, `❌ *AKATSUKI PAIRING FAILED*\n\n${err.message}\n\n_Pain could not open the connection gate. Try again._`, { parse_mode: 'Markdown' });
                         }
                     }
                 }
@@ -1298,12 +1299,12 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                     const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
                     this.isConnected = false;
                     this.isInitializing = false;
-                    this.sendLog(`Connection closed. Reconnecting: ${shouldReconnect}`, 'warning');
+                    this.sendLog(`🩸 Akatsuki link closed. Reconnect protocol: ${shouldReconnect ? 'active' : 'stopped'}.`, 'warning');
                     this.sendConnectionStatus();
                     const statusCode = (lastDisconnect.error)?.output?.statusCode;
 
                     if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-                        this.sendLog('Session expired or logged out. Clearing auth data...', 'error');
+                        this.sendLog('❌ *AKATSUKI SESSION EXPIRED* — clearing the old Shroud credentials...', 'error');
                         try {
                             if (fs.existsSync(this.authPath)) {
                                 const backupPath = `${this.authPath}_backup_${Date.now()}`;
@@ -1316,19 +1317,19 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         delete sessions[this.userId];
                         this.sendConnectionStatus();
                     } else if (statusCode === DisconnectReason.restartRequired || statusCode === DisconnectReason.connectionLost || statusCode === 428) {
-                        this.sendLog(`Connection issue (${statusCode}). Restarting in 3s...`, 'warning');
+                        this.sendLog(`🌀 *SIX PATHS RECOVERY* — connection issue (${statusCode}); restarting in 3s...`, 'warning');
                         setTimeout(() => this.initialize(), 3000);
                     } else if (statusCode === 515) {
-                        this.sendLog('Stream error. Reconnecting immediately...', 'warning');
+                        this.sendLog('🩸 *PAIN’S RECOVERY PATH* — stream error; reconnecting immediately...', 'warning');
                         this.initialize();
                     } else {
-                        this.sendLog(`Connection closed (${statusCode}). Reconnecting in 5s...`, 'info');
+                        this.sendLog(`🩸 Akatsuki link closed (${statusCode}); reopening the gate in 5s...`, 'info');
                         setTimeout(() => this.initialize(), 5000);
                     }
                 } else if (connection === 'open') {
                     this.isConnected = true;
                     this.isInitializing = false;
-                    this.sendLog('Connected successfully! \u{2705}', 'success');
+                    this.sendLog('🩸 *AKATSUKI LINK ESTABLISHED* — Itachi’s Shroud is online. ✅', 'success');
                     this.sendConnectionStatus();
                     this.startActiveCheck();
 
@@ -1344,11 +1345,12 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                     if (this.tgChatId && tgBot) {
                         const successMsg = 
-                            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MINI* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
-                            `*\u{2705} CONNECTION SUCCESSFUL!* \n\n` +
-                            `Your WhatsApp number has been successfully linked.\n` +
-                            `You can now use all commands in your WhatsApp.\n\n` +
-                            `> © POWERED BY ITACHI UCHIHA  v3.0`;
+                            `🩸 *━───── 🔴 AKATSUKI LINK ESTABLISHED 🔴 ─────━* 🩸\n\n` +
+                            `✅ *THE SHROUD IS CONNECTED*\n\n` +
+                            `Your WhatsApp number has entered the Akatsuki network.\n` +
+                            `The Six Paths are ready, and every command is now available.\n\n` +
+                            `> _"The moment people come to know love, they risk carrying hate."_\n` +
+                            `> POWERED BY ITACHI UCHIHA`;
                         await tgBot.sendMessage(this.tgChatId, successMsg, { parse_mode: 'Markdown' });
                     }
 
@@ -1359,26 +1361,26 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             await this.sock.query({
                                 tag: 'iq',
                                 attrs: { to: '@s.whatsapp.net', type: 'set', xmlns: 'status' },
-                                content: [{ tag: 'status', attrs: {}, content: Buffer.from("BALI GIL MINI BOT v3.0 - 120+ Commands | Powered by ITACHI UCHIHA", 'utf-8') }]
+                                content: [{ tag: 'status', attrs: {}, content: Buffer.from("AKATSUKI MD - THE SHROUD IS ONLINE | Powered by ITACHI UCHIHA", 'utf-8') }]
                             });
-                            this.sendLog("Bio updated successfully! \u{2705}", "success");
+                            this.sendLog("🩸 Akatsuki status seal updated successfully. ✅", "success");
                         } catch (e) {
-                            this.sendLog("Bio update failed: " + e.message, "error");
+                            this.sendLog("❌ Akatsuki status seal failed: " + e.message, "error");
                         }
                     }, 5000);
 
                     if (!this.lastConnectMessageTime || (Date.now() - this.lastConnectMessageTime > 60 * 60 * 1000)) {
-                        const welcomeText = `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MINI BOT* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
-                            `*\u{1F311} CONNECTED SUCCESSFULLY* \u{2705}\n\n` +
-                            `Your WhatsApp has been linked to the most powerful automation system.\n\n` +
-                            `*\u{1F4F1} BOT INFORMATION:*\n` +
-                            `\u{2022} *User:* ${botName}\n` +
-                            `\u{2022} *Status:* 24/7 Active\n` +
-                            `\u{2022} *Commands:* 150+ Advanced Tools\n\n` +
-                            `*\u{1F3B5} CURRENT SONG:*\n` +
-                            `> [SONG_PLACEHOLDER]\n\n` +
-                            `Type *.menu* to explore all features.\n\n` +
-                            `> © POWERED BY ITACHI UCHIHA v3.0`;
+                        const welcomeText = `🩸 *━───── 🔴 AKATSUKI MD CONNECTION 🔴 ─────━* 🩸\n\n` +
+                            `🌑 *THE SHROUD IS ONLINE* ✅\n\n` +
+                            `WhatsApp has been linked to the Akatsuki network.\n\n` +
+                            `*⚔️ CONNECTION INTEL:*\n` +
+                            `• *Vessel:* ${botName}\n` +
+                            `• *Status:* 24/7 Active\n` +
+                            `• *Arsenal:* 150+ Advanced Commands\n\n` +
+                            `*🌀 PAIN’S DIRECTIVE:*\n` +
+                            `> All paths lead to understanding.\n\n` +
+                            `Type *.menu* to enter the command center.\n\n` +
+                            `> _POWERED BY ITACHI UCHIHA_`;
 
                         await this.sock.sendMessage(botNumber, { 
                             image: { url: settings.startimage },

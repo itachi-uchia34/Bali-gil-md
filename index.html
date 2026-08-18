@@ -297,8 +297,8 @@
   <div class="brand">
     <div class="mark">$_</div>
     <div>
-      <div class="name">BALI GIL MINI MD</div>
-      <div class="tag">whatsapp automation</div>
+      <div class="name">AKATSUKI MD</div>
+      <div class="tag">the shroud // whatsapp command center</div>
     </div>
   </div>
   <div class="nav-links" id="navLinks">
@@ -310,9 +310,9 @@
 </nav>
 
 <header>
-  <div class="eyebrow"><span class="pulse"></span> SESSION READY // NODE ONLINE</div>
-  <h1><span class="glitch-wrap" data-text="BALI GIL MINI MD">BALI GIL MINI MD</span></h1>
-  <p class="sub">A fast, minimal WhatsApp automation core — built &amp; maintained by <strong>ITACHI UCHIHA</strong>.</p>
+  <div class="eyebrow"><span class="pulse"></span> AKATSUKI GATE READY // SHROUD ONLINE</div>
+  <h1><span class="glitch-wrap" data-text="AKATSUKI MD">AKATSUKI MD</span></h1>
+  <p class="sub">A Shroud-themed WhatsApp command center — built &amp; maintained by <strong>ITACHI UCHIHA</strong>.</p>
 
   <div class="stats-row">
     <div class="stat-card"><i class="fas fa-signal"></i><div><div class="stat-value" id="activeSockets">0</div><div class="stat-label">Active Sockets</div></div></div>
@@ -332,12 +332,12 @@
   </section>
 
   <section id="connect" class="panel" data-label="./connect">
-    <h2><i class="fas fa-link"></i> Connect to WhatsApp</h2>
+    <h2><i class="fas fa-link"></i> Enter the Akatsuki Gate</h2>
     <div class="instructions">
-      <h3>How to connect</h3>
+      <h3>How to awaken the Shroud</h3>
       <ol>
         <li>Enter your WhatsApp number with country code (no "+", no spaces, no brackets)</li>
-        <li>Click "Request Pairing Code"</li>
+        <li>Click "Summon Pairing Code" to open the Akatsuki gate</li>
         <li>Copy the 8-digit code</li>
         <li>Open WhatsApp → Settings → Linked Devices → Link a Device</li>
         <li>Paste the code when prompted</li>
@@ -349,7 +349,7 @@
         <i class="fas fa-phone"></i>
         <input type="tel" id="phone" placeholder="e.g. 923300000000 (with country code)">
       </div>
-      <button class="btn" id="requestPairing"><i class="fas fa-key"></i> Request Pairing Code</button>
+      <button class="btn" id="requestPairing"><i class="fas fa-key"></i> Summon Pairing Code</button>
     </div>
 
     <div id="status"></div>
@@ -357,7 +357,7 @@
     <div class="code-wrap" id="codeWrap">
       <div class="code-box" id="pairingCode" onclick="copyCode()">0000 0000</div>
       <div class="copy-hint">Tap the code to copy</div>
-      <div class="waiting"><span class="dot"></span> Waiting for device to link...</div>
+      <div class="waiting"><span class="dot"></span> Waiting for the Shroud to link...</div>
     </div>
   </section>
 
@@ -374,17 +374,17 @@
 
 <footer>&copy; <span id="year"></span> <span>ITACHI UCHIHA</span> — All rights reserved.</footer>
 
-<div id="toast">CODE COPIED!</div>
+<div id="toast">SHROUD CODE COPIED!</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 /* ---------------- Boot sequence ---------------- */
 const bootLines = [
-  "booting bali gill-mini-md kernel...",
-  "loading whatsapp bridge module... OK",
-  "initializing socket layer... OK",
-  "verifying session store... OK",
-  "welcome, operator."
+  "awakening akatsuki-md shroud...",
+  "summoning whatsapp bridge module... OK",
+  "opening six paths socket layer... OK",
+  "verifying shroud session store... OK",
+  "welcome, shinobi."
 ];
 const bootEl = document.getElementById('bootText');
 let li = 0, ci = 0;
@@ -472,13 +472,13 @@ function copyCode(){
 requestBtn.addEventListener('click', ()=>{
   const number = phoneInput.value.replace(/\D/g,'');
   if(!number || number.length < 10){
-    setStatus('Enter a valid phone number with country code.', 'error');
+    setStatus('The gate requires a valid number with country code.', 'error');
     phoneInput.focus();
     return;
   }
   requestBtn.disabled = true;
-  requestBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Requesting...';
-  setStatus('Sending pairing request to server...', 'warning');
+  requestBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Summoning...';
+  setStatus('Pain is opening the Akatsuki pairing gate...', 'warning');
 
   const userId = 'user_' + Math.random().toString(36).substr(2,9);
   socket.emit('set-user', userId);
@@ -487,16 +487,16 @@ requestBtn.addEventListener('click', ()=>{
 
 socket.on('pairing-code', (code)=>{
   requestBtn.disabled = false;
-  requestBtn.innerHTML = '<i class="fas fa-key"></i> Request Pairing Code';
-  setStatus('Pairing code generated. Link it in WhatsApp within 60 seconds.', 'success');
+  requestBtn.innerHTML = '<i class="fas fa-key"></i> Summon Pairing Code';
+  setStatus('The Shroud code is ready. Link it in WhatsApp within 60 seconds.', 'success');
   codeWrap.style.display = 'block';
   pairingCode.innerText = code;
 });
 
 socket.on('pair-error', (msg)=>{
   requestBtn.disabled = false;
-  requestBtn.innerHTML = '<i class="fas fa-key"></i> Request Pairing Code';
-  setStatus(msg || 'Failed to generate pairing code. Try again.', 'error');
+  requestBtn.innerHTML = '<i class="fas fa-key"></i> Summon Pairing Code';
+  setStatus(msg || 'The Akatsuki gate rejected the request. Try again.', 'error');
 });
 
 socket.on('connection-status', (status)=>{
@@ -504,8 +504,8 @@ socket.on('connection-status', (status)=>{
     pairingCode.innerText = 'LINKED';
     pairingCode.style.color = '#39ff14';
     pairingCode.style.borderColor = '#39ff14';
-    setStatus('Device linked successfully!', 'success');
-    showToast('CONNECTED SUCCESSFULLY!');
+    setStatus('The Shroud is connected. The Six Paths are online.', 'success');
+    showToast('AKATSUKI LINK ESTABLISHED!');
     setTimeout(()=>location.reload(), 3000);
   }
 });
