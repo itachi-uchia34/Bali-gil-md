@@ -51,6 +51,7 @@ const commands = {
     getbio: require('./commands/getbio'),
     getdp: require('./commands/getdp'),
     welcome: require('./commands/welcome'),
+    goodbye: require('./commands/goodbye'),
     accept: require('./commands/accept'),
 
     // Admin/Owner
@@ -569,6 +570,7 @@ class BotSession {
         this.autoReact = botData.statusSettings[userId]?.autoReact || false;
         this.autoReactIndex = 0;
         this.welcomeEnabled = botData.statusSettings[userId]?.welcomeEnabled || false;
+        this.goodbyeEnabled = botData.statusSettings[userId]?.goodbyeEnabled || false;
         this.isPublic = botData.statusSettings[userId]?.isPublic !== undefined ? botData.statusSettings[userId].isPublic : true; 
         this.authPath = path.join(AUTH_DIR, userId);
         this.processedMessages = new Set();
@@ -751,6 +753,35 @@ You have entered: *@gname*
                     });
                 } catch (error) {
                     this.sendLog(`Welcome message failed: ${error.message}`, 'warning');
+                }
+            });
+
+            this.sock.ev.on('group-participants.update', async (update) => {
+                if (!this.goodbyeEnabled || !['remove', 'leave'].includes(update.action) || !Array.isArray(update.participants) || update.participants.length === 0) return;
+                try {
+                    const metadata = await this.sock.groupMetadata(update.id);
+                    const groupName = metadata.subject || 'the group';
+                    const mentions = update.participants;
+                    const names = mentions.map((jid) => `@${jid.split('@')[0]}`).join(', ');
+                    const memberCount = metadata.participants?.length || 0;
+                    const farewellText = `🩸 *━───── 🔴 AKATSUKI MD 🔴 ─────━* 🩸
+
+*The Shroud bids farewell to,* ${names} 👋
+
+You have departed from: *@gname*
+👥 *Ranks Remaining:* *@count* members
+
+📜 *ORGANIZATION NOTICE:*
+Your path has left the Akatsuki. The cloak and ring remain with those who endure.
+
+> _"Those who do not understand true pain can never understand true peace."_
+
+⚔️ The dynamic continues. Weakness will not be tolerated.`
+                        .replace('@gname', `*${groupName}*`)
+                        .replace('@count', String(memberCount));
+                    await this.sock.sendMessage(update.id, { text: farewellText, mentions });
+                } catch (error) {
+                    this.sendLog(`Goodbye message failed: ${error.message}`, 'warning');
                 }
             });
 
@@ -1030,6 +1061,7 @@ You have entered: *@gname*
                                         case 'tagall': await commands.tagall(this.sock, from, msg, isAdmin, q); break;
                                         case 'groupinfo': case 'ginfo': await commands.groupinfo(this.sock, from, msg); break;
                                         case 'welcome': await commands.welcome(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
+                                        case 'goodbye': await commands.goodbye(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
                                         case 'accept': await commands.accept(this.sock, from, msg, isAdmin); break;
                                         case 'poll': await commands.poll(this.sock, from, msg, q); break;
                                         case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, isAdmin, q); break;
