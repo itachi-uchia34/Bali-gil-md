@@ -1483,7 +1483,7 @@ function generateMenuText(userName, session) {
 
     return [
         '╭━━━━━━━━━━━━━━━━━━━━━━╮',
-        '┃   🩸 AKATSUKI SHROUD MENU   ┃',
+        '┃   🩸 BALI GIL MENU   ┃',
         '╰━━━━━━━━━━━━━━━━━━━━━━╯',
         `┃ USER   : ${userName}`,
         `┃ MODE   : ${mode}`,
@@ -1501,7 +1501,7 @@ function generateMenuText(userName, session) {
         '┗━━━━━━━━━━━━━━━━━━━━━━┛',
         '',
         '╭━━━━━━━━━━━━━━━━━━━━━━╮',
-        '┃  🔴 BALI GIL MD // AKATSUKI  ┃',
+        '┃  🔴 ITACHI UCHIHA // AKATSUKI  ┃',
         '╰━━━━━━━━━━━━━━━━━━━━━━╯'
     ].join('\n');
 }
