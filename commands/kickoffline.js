@@ -2,7 +2,7 @@ const { jidNormalizedUser } = require('@whiskeysockets/baileys');
 
 async function kickOfflineCommand(sock, from, msg, isAdmin, botData, saveBotData, args) {
     if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: "❌ This command only works in groups." }, { quoted: msg });
-    if (!isAdmin) return await sock.sendMessage(from, { text: "❌ Only admins can use this command." }, { quoted: msg });
+    if (!isAdmin) return await sock.sendMessage(from, { text: '🩸 *AKATSUKI ACCESS DENIED*\nOnly group admins can issue this command.' }, { quoted: msg });
 
     const action = args[0]?.toLowerCase();
     if (!botData.kickOffline) botData.kickOffline = {};

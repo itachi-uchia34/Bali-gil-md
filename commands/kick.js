@@ -1,5 +1,5 @@
 async function kickCommand(sock, from, msg, isAdmin) {
-    if (!isAdmin) return await sock.sendMessage(from, { text: "❌ Only admin can use this command." }, { quoted: msg });
+    if (!isAdmin) return await sock.sendMessage(from, { text: '🩸 *AKATSUKI ACCESS DENIED*\nOnly group admins can issue this command.' }, { quoted: msg });
     if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: "❌ This command can only be used in groups." }, { quoted: msg });
 
     const quoted = msg.message?.extendedTextMessage?.contextInfo?.participant || 

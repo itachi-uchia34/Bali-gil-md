@@ -1,5 +1,5 @@
 async function hidetagCommand(sock, from, msg, isAdmin, q) {
-    if (!isAdmin || !from.endsWith('@g.us')) return await sock.sendMessage(from, { text: "❌ Only admin can use this command in groups." }, { quoted: msg });
+    if (!isAdmin || !from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '🩸 *AKATSUKI ACCESS DENIED*\nOnly group admins can issue this command.' }, { quoted: msg });
     
     const groupMetadata = await sock.groupMetadata(from);
     const participants = groupMetadata.participants.map(p => p.id);
