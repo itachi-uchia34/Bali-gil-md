@@ -1033,6 +1033,7 @@ class BotSession {
                                         // ===== STATUS / AUTO =====
                                         case 'status': 
                                         case 'autostatus': await commands.autostatus(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, args); break;
+                                        case 'autoreact':
                                         case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
                                         case 'autoread': await commands.autoread(this.sock, from, msg); break;
 
