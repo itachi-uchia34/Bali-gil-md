@@ -279,6 +279,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.autoread`, `.autostatus` | Configure read-status and status automation. |
 | `.autochat on`, `.autochat off`, `.autochat status` | Open or seal Pain’s AI Shroud for a group. Admin-only; replies to ordinary non-command group messages when an AI provider is available. |
 | `.autoreply on`, `.autoreply off`, `.autoreply status` | Open or seal the global AI response gate for ordinary private messages. Admin/owner-only and separate from group `.autochat`. |
+| `.keyword on`, `.keyword off`, `.keyword status` | Enable, disable, or inspect automatic Akatsuki quote triggers. Admin/owner-only; matching words include pain, peace, akatsuki, Itachi, Tobi, Madara, Deidara, and Sasori. |
 | `.mode`, `.public`, `.private` | Control bot operating mode. |
 
 ### 🎴 Media and downloads
@@ -299,7 +300,7 @@ The following catalog reflects the command families registered by the bot. Some 
 
 | Commands | Purpose |
 |---|---|
-| `.ai`, `.chatbot`, `.autochat`, `.autoreply`, `.chatgpt`, `.gemini`, `.llama`, `.deepseek`, `.blackbox` | AI assistant integrations, subject to configured providers and keys. `.autochat` controls concise group replies with a five-second per-group cooldown; `.autoreply` controls automatic private-message replies. |
+| `.ai`, `.chatbot`, `.autochat`, `.autoreply`, `.keyword`, `.chatgpt`, `.gemini`, `.llama`, `.deepseek`, `.blackbox` | AI assistant integrations, subject to configured providers and keys. `.autochat` controls concise group replies with a five-second per-group cooldown; `.autoreply` controls automatic private-message replies; `.keyword` sends matching Akatsuki quotes with an eight-second per-chat cooldown. |
 | `.imagine`, `.flux`, `.pixart`, `.dalle`, `.bingai`, `.midjourney` | Image-generation integrations where configured. |
 | `.translate`, `.dict`, `.wiki`, `.google`, `.define`, `.weather`, `.ipinfo`, `.whois`, `.dnslookup` | Translation, reference, search, weather, network, and domain utilities. |
 | `.news`, `.crypto`, `.movie`, `.lyrics`, `.manga`, `.github`, `.npm`, `.playstore` | Information and service lookup utilities. |
