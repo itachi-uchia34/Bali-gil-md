@@ -1,3 +1,5 @@
+const { sendGroupModeResponse } = require('../lib/group-mode-response');
+
 module.exports = async function unmuteCommand(sock, chatId, msg, isAdmin) {
     if (!chatId.endsWith('@g.us')) {
         await sock.sendMessage(chatId, {
@@ -5,23 +7,15 @@ module.exports = async function unmuteCommand(sock, chatId, msg, isAdmin) {
         }, { quoted: msg });
         return;
     }
-
     if (!isAdmin) {
         await sock.sendMessage(chatId, {
             text: '❌ *PAIN’S DECREE DENIED*\nOnly group admins can release the Silent Shroud.'
         }, { quoted: msg });
         return;
     }
-
     try {
         await sock.groupSettingUpdate(chatId, 'not_announcement');
-        await sock.sendMessage(chatId, {
-            text: `🩸 *━───── 🔴 PAIN’S SHROUD RELEASED 🔴 ─────━* 🩸\n\n` +
-                `🌀 *ALL PATHS RECONNECTED*\n\n` +
-                `The group is open again. Every member may speak, while the Six Paths return to watchful silence.\n\n` +
-                `> _"Peace is not something that can be given. It must be understood."_\n\n` +
-                `Use *.gcoff* or *.mute* to invoke Almighty Silence again.`,
-        }, { quoted: msg });
+        await sendGroupModeResponse(sock, chatId, msg, true);
     } catch (error) {
         console.error('Pain shroud release error:', error);
         await sock.sendMessage(chatId, {
