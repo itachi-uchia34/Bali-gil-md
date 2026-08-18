@@ -1,4 +1,5 @@
-const { formatFramedMenu } = require('../lib/menu-format');
+const { formatFramedMenu, sendFramedMenu } = require('../lib/menu-format');
+const settings = require('../settings');
 
 async function allMenu(sock, from, msg, session, commands, pluginCommandNames = []) {
     const categories = {
@@ -31,7 +32,7 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
         subtitle: `COMPLETE AKATSUKI COMMAND INDEX // ${registered.size} REGISTERED`,
         sections
     });
-    await sock.sendMessage(from, { text: allMenuText }, { quoted: msg });
+    await sendFramedMenu(sock, from, msg, allMenuText, settings.startimage);
 }
 
 module.exports = allMenu;
