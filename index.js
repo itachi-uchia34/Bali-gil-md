@@ -89,6 +89,7 @@ const commands = {
 
     // AI
     ai: require('./commands/ai'),
+    autochat: require('./commands/autochat'),
 
     // Fun
     joke: require('./commands/joke'),
@@ -589,7 +590,8 @@ class BotSession {
         this.userId = userId;
         this.sock = null;
         this.isConnected = false;
-        this.aiEnabled = false; 
+        this.aiEnabled = false;
+        this.autochatGroups = botData.statusSettings[userId]?.autochatGroups || {};
         this.autoReact = botData.statusSettings[userId]?.autoReact || false;
         this.autoReactIndex = 0;
         this.welcomeEnabled = botData.statusSettings[userId]?.welcomeEnabled || false;
@@ -907,6 +909,25 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             }
                         }
 
+                        // Group autochat AI response
+                        if (this.autochatGroups?.[from] && !isMe && isGroup && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
+                            this.autochatLastReplyAt ||= {};
+                            const now = Date.now();
+                            const lastReply = this.autochatLastReplyAt[from] || 0;
+                            if (now - lastReply >= 5000) {
+                                this.autochatLastReplyAt[from] = now;
+                                try {
+                                    const groupPrompt = 'You are BALI GIL MD in an Akatsuki-themed WhatsApp group. Reply naturally and briefly in one or two sentences. Be helpful, respectful, and never claim to be human. Do not use a command prefix.';
+                                    const aiResponse = await this.getAIResponse(from, text, groupPrompt);
+                                    if (aiResponse && !aiResponse.startsWith('❌ AI Error')) {
+                                        await this.sock.sendMessage(from, { text: `🩸 *PAIN AI SHROUD* 🩸\\n\\n${aiResponse}` }, { quoted: msg });
+                                    }
+                                } catch (e) {
+                                    this.sendLog(`Autochat response failed: ${e.message}`, 'warning');
+                                }
+                            }
+                        }
+
                         // Status handling
                         if (isStatus && !isMe) {
                             await handleStatusUpdate(this.sock, m, botData, this.userId);
@@ -1156,6 +1177,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                                         // ===== AI =====
                                         case 'ai': await commands.ai(this.sock, from, msg, isAdmin, this, args); break;
+                                        case 'autochat': await commands.autochat(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
                                         case 'chatbot': await commands.chatbot(this.sock, from, msg, this, args); break;
                                         case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
 
@@ -1433,7 +1455,7 @@ function generateMenuText(userName, session) {
     const categories = {
         '🩸 AKATSUKI GROUP CONTROL': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'revoke', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'tagadmin', 'tagme', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'welcome', 'goodbye', 'antilink', 'kickoffline'],
         '🔴 SHADOW LEADERSHIP': ['owner', 'creator', 'public', 'private', 'mode', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'backup', 'restore', 'clone', 'nuke', 'deleteall', 'ghostmode', 'status'],
-        '🛡️ PAIN’S SECURITY BARRIERS': ['autoreacts', 'autoread', 'autostatus', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
+        '🛡️ PAIN’S SECURITY BARRIERS': ['autoreacts', 'autoread', 'autostatus', 'autochat', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
         '🎴 SHROUD MEDIA SCROLLS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
         '⚔️ SIX PATHS TOOLKIT': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
         '🧠 PAIN’S INTELLIGENCE NETWORK': ['ai', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],

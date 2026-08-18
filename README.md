@@ -277,6 +277,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.antibug`, `.anticall`, `.antidelete`, `.antistatus` | Configure the corresponding protection modules where enabled. |
 | `.autoreact`, `.autoreacts` | Enable or disable rotating emoji reactions. |
 | `.autoread`, `.autostatus` | Configure read-status and status automation. |
+| `.autochat on`, `.autochat off`, `.autochat status` | Open or seal Pain’s AI Shroud for a group. Admin-only; replies to ordinary non-command group messages when an AI provider is available. |
 | `.mode`, `.public`, `.private` | Control bot operating mode. |
 
 ### 🎴 Media and downloads
@@ -297,7 +298,7 @@ The following catalog reflects the command families registered by the bot. Some 
 
 | Commands | Purpose |
 |---|---|
-| `.ai`, `.chatbot`, `.chatgpt`, `.gemini`, `.llama`, `.deepseek`, `.blackbox` | AI assistant integrations, subject to configured providers and keys. |
+| `.ai`, `.chatbot`, `.autochat`, `.chatgpt`, `.gemini`, `.llama`, `.deepseek`, `.blackbox` | AI assistant integrations, subject to configured providers and keys. `.autochat` is an admin-controlled group mode with concise replies and a five-second per-group cooldown. |
 | `.imagine`, `.flux`, `.pixart`, `.dalle`, `.bingai`, `.midjourney` | Image-generation integrations where configured. |
 | `.translate`, `.dict`, `.wiki`, `.google`, `.define`, `.weather`, `.ipinfo`, `.whois`, `.dnslookup` | Translation, reference, search, weather, network, and domain utilities. |
 | `.news`, `.crypto`, `.movie`, `.lyrics`, `.manga`, `.github`, `.npm`, `.playstore` | Information and service lookup utilities. |
