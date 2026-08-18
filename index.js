@@ -1380,38 +1380,44 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
 // =================== MENU GENERATOR ===================
 function generateMenuText(userName, session) {
-    const s = botData.statusSettings[session.userId] || {};
-    const mode = session.isPublic ? 'Public' : 'Private';
-    
-    return `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃   💀  *BALI GIL MINI BOT*  💀      ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃  🤖 *BOT NAME*  : BALI GIL MINI    ┃
-┃  👤 *OWNER*     : ${settings.ownerName || 'BALI'}
-┃  📦 *VERSION*   : ${settings.version}
-┃  ⚙️ *MODE*      : ${mode}
-┃  🔑 *PREFIX*    : ${settings.prefix}
-┃  👥 *USER*      : ${userName}
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃  📋 *CATEGORIES*                ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃  ✨ .allmenu      (300+ Commands) ┃
-┃  👑 .ownermenu              ┃
-┃  👥 .groupmenu            ┃
-┃  🤖 .aimenu                    ┃
-┃  ⬇️ .downloadmenu     ┃
-┃  🛠️ .toolsmenu           ┃
-┃  🎉 .funmenu          ┃
-┃  🎮 .gamemenu           ┃
-┃  🎌 .animemenu                 ┃
-┃  🏷️ .stickermenu             ┃
-┃  🖼️ .imagemenu                ┃
-┃  ✏️ .textmakermenu       ┃
-┃  🏢 .logomenu         ┃
-┃  🕌 .islamicmenu          ┃
-┃  🎯 .miscmenu                 ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-☠️  *POWERED BY : ITACHI UCHIHA*  ☠️`;
+    const mode = session.isPublic ? 'PUBLIC' : 'PRIVATE';
+    return `🩸 *━───── 🔴 AKATSUKI MD 🔴 ─────━* 🩸
+
+*☠️ SHROUD COMMAND CENTER ☠️*
+
+Welcome, ${userName}. The organization is watching.
+
+┌─ *INTEL* ───────────────┐
+│ ⚔️ Name: ${settings.ownerName || 'BALI'}
+│ 📦 Version: ${settings.version}
+│ ⚙️ Mode: ${mode}
+│ 🔑 Prefix: ${settings.prefix}
+└─────────────────────────┘
+
+*📜 AVAILABLE SCROLLS*
+
+*⚔️ RANKS & GROUPS*
+${settings.prefix}groupmenu  — group operations
+${settings.prefix}ownermenu  — owner operations
+${settings.prefix}help       — command guidance
+${settings.prefix}allmenu    — complete command index
+
+*🛡️ SECURITY BARRIERS*
+${settings.prefix}antilink on/kick/off
+${settings.prefix}autoreact on/off
+${settings.prefix}welcome on/off/status
+${settings.prefix}goodbye on/off/status
+
+*🎴 TOOLS & MISSIONS*
+${settings.prefix}sticker  — convert replied media
+${settings.prefix}tagall    — summon the ranks
+${settings.prefix}ai        — consult the assistant
+${settings.prefix}ping      — check system response
+
+> _"Those who do not understand true pain can never understand true peace."_
+
+⚔️ Wear your ring. Honor the cloak. Follow the dynamic.
+☠️ *POWERED BY ITACHI UCHIHA* ☠️`;
 }
 
 
