@@ -22,7 +22,7 @@ module.exports = async function helpCommand(sock, chatId, msg, session) {
                 title: '🛡️ PAIN’S SECURITY BARRIERS',
                 commands: [
                     command('antilink', ' on'), command('antilink', ' kick'), command('antilink', ' off/status'),
-                    command('autoreact', ' on/off'), command('autoread', ' on/off'), command('autochat', ' on/off/status')
+                    command('autoreact', ' on/off'), command('autoread', ' on/off'), command('autochat', ' on/off/status'), command('autoreply', ' on/off/status')
                 ]
             },
             {

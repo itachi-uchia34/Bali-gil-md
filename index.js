@@ -90,6 +90,7 @@ const commands = {
     // AI
     ai: require('./commands/ai'),
     autochat: require('./commands/autochat'),
+    autoreply: require('./commands/autoreply'),
 
     // Fun
     joke: require('./commands/joke'),
@@ -1178,6 +1179,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         // ===== AI =====
                                         case 'ai': await commands.ai(this.sock, from, msg, isAdmin, this, args); break;
                                         case 'autochat': await commands.autochat(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
+                                        case 'autoreply': await commands.autoreply(this.sock, from, msg, isAdmin, this, args); break;
                                         case 'chatbot': await commands.chatbot(this.sock, from, msg, this, args); break;
                                         case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
 
@@ -1458,7 +1460,7 @@ function generateMenuText(userName, session) {
         '🛡️ PAIN’S SECURITY BARRIERS': ['autoreacts', 'autoread', 'autostatus', 'autochat', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
         '🎴 SHROUD MEDIA SCROLLS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
         '⚔️ SIX PATHS TOOLKIT': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
-        '🧠 PAIN’S INTELLIGENCE NETWORK': ['ai', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
+        '🧠 PAIN’S INTELLIGENCE NETWORK': ['ai', 'autochat', 'autoreply', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
         '🎭 TOBI’S CHAOS ZONE': ['joke', 'meme', 'dare', 'truth', 'ascii', 'roast', 'compliment', 'ship', 'emojimix', 'character', 'coinflip', 'roll', 'riddle', 'wouldyourather', 'report'],
         '☁️ AKATSUKI MEMBER REGISTRY': ['akatsuki', 'painquote', 'tobiquote', 'deidaraquote', 'sasoriquote', 'artquote']
     };
