@@ -1,4 +1,5 @@
-const { formatFramedMenu } = require('../lib/menu-format');
+const { formatFramedMenu, sendFramedMenu } = require('../lib/menu-format');
+const settings = require('../settings');
 
 module.exports = async function helpCommand(sock, chatId, msg, session) {
     const prefix = '.';
@@ -38,5 +39,5 @@ module.exports = async function helpCommand(sock, chatId, msg, session) {
             }
         ]
     });
-    await sock.sendMessage(chatId, { text }, { quoted: msg });
+    await sendFramedMenu(sock, chatId, msg, text, settings.startimage);
 };

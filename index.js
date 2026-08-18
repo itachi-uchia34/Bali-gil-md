@@ -1049,7 +1049,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🔴 SHADOW LEADERSHIP // OWNER SCROLL',
                                                 sections: [{ title: '👑 OWNER COMMANDS', commands: ['.public', '.private', '.block', '.unblock', '.restart', '.shutdown', '.bcall', '.bcgc'] }]
                                             });
-                                            await this.sock.sendMessage(from, { text }, { quoted: msg });
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
                                             break;
                                         }
                                         case 'groupmenu': {
@@ -1058,7 +1058,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🩸 PAIN’S GROUP CONTROL // SHROUD ONLINE',
                                                 sections: [{ title: '⚔️ GROUP COMMANDS', commands: ['.kick', '.ban', '.tobiban', '.add', '.promote', '.madarapromote', '.demote', '.mute / .gcoff', '.unmute / .gcon', '.tagall', '.hidetag', '.grouplink', '.groupinfo'] }]
                                             });
-                                            await this.sock.sendMessage(from, { text }, { quoted: msg });
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
                                             break;
                                         }
                                         case 'downloadmenu': {
@@ -1067,16 +1067,16 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🎴 SHROUD MEDIA SCROLLS // READY',
                                                 sections: [{ title: '⬇️ DOWNLOAD COMMANDS', commands: ['.song', '.video', '.insta', '.tiktok', '.facebook', '.youtube', '.spotify', '.apk'] }]
                                             });
-                                            await this.sock.sendMessage(from, { text }, { quoted: msg });
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
                                             break;
                                         }
                                         case 'aimenu': {
                                             const text = formatFramedMenu({
                                                 title: 'PAIN AI MENU',
                                                 subtitle: '🧠 INTELLIGENCE NETWORK // ONLINE',
-                                                sections: [{ title: '🤖 AI COMMANDS', commands: ['.ai', '.chatbot', '.gali'] }]
+                                                sections: [{ title: '🤖 AI COMMANDS', commands: ['.ai', '.autochat', '.chatbot', '.gali'] }]
                                             });
-                                            await this.sock.sendMessage(from, { text }, { quoted: msg });
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
                                             break;
                                         }
                                         case 'bugmenu': {
@@ -1085,7 +1085,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🛡️ SECURITY BARRIERS // TEST SCROLL',
                                                 sections: [{ title: '🐛 BUG COMMANDS', commands: ['.crash', '.freeze', '.bug'] }]
                                             });
-                                            await this.sock.sendMessage(from, { text }, { quoted: msg });
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
                                             break;
                                         }
 
