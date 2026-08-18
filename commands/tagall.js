@@ -16,24 +16,35 @@ module.exports = async function tagallCommand(sock, chatId, msg, isAdmin, query)
             .filter(Boolean);
         const groupName = metadata.subject || 'the group';
         const announcement = String(query || '').trim() || 'The Akatsuki has summoned every member. Stand by for further orders.';
-        const names = participants.map((jid) => `@${jid.split('@')[0]}`).join(' ');
+        const mentionNames = participants.map((jid) => `@${jid.split('@')[0]}`);
+        const mentionRows = [];
+        for (let i = 0; i < mentionNames.length; i += 4) {
+            mentionRows.push(mentionNames.slice(i, i + 4).join(' '));
+        }
 
-        const text = `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸
+        const text = `🩸 ───── 🔴 *BALI GIL* 🔴 ───── 🩸
 
-*⚔️ ORGANIZATION SUMMONS ⚔️*
+` +
+            `⚔️ *AKATSUKI ORGANIZATION SUMMONS* ⚔️
 
-The Shroud calls upon every shinobi in *${groupName}*.
+` +
+            `The Shroud calls upon every shinobi in *${groupName}*.
 
-📜 *ANNOUNCEMENT:*
+` +
+            `📜 *ANNOUNCEMENT:*
 ${announcement}
 
-👥 *RANKS SUMMONED:* ${participants.length}
+` +
+            `👥 *RANKS SUMMONED:* ${participants.length}
 
-${names}
+` +
+            `${mentionRows.join('\n')}
 
-> _"Those who do not understand true pain can never understand true peace."_
+` +
+            `> _"Those who do not understand true pain can never understand true peace."_
 
-⚔️ Wear your ring, honor the cloak, and respond to the call. 🩸`;
+` +
+            `🩸 Wear the cloak. Honor the ring. Respond to the call.`;
 
         await sock.sendMessage(chatId, { text, mentions: participants }, { quoted: msg });
     } catch (error) {
