@@ -39,5 +39,5 @@ module.exports = async function helpCommand(sock, chatId, msg, session) {
             }
         ]
     });
-    await sendFramedMenu(sock, chatId, msg, text, settings.startimage);
+    await sendFramedMenu(sock, chatId, msg, text, settings.startimage, settings.startimageFallbacks);
 };

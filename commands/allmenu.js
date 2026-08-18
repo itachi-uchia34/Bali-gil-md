@@ -32,7 +32,7 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
         subtitle: `COMPLETE AKATSUKI COMMAND INDEX // ${registered.size} REGISTERED`,
         sections
     });
-    await sendFramedMenu(sock, from, msg, allMenuText, settings.startimage);
+    await sendFramedMenu(sock, from, msg, allMenuText, settings.startimage, settings.startimageFallbacks);
 }
 
 module.exports = allMenu;

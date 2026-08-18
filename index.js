@@ -1053,7 +1053,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'menu': {
                                             const customName = botData.userNames[this.userId] || msg.pushName || 'User';
                                             const menuText = generateMenuText(customName, this);
-                                            await sendMenuWithSong(this.sock, from, msg, menuText, settings.startimage, settings.startsong);
+                                            await sendMenuWithSong(this.sock, from, msg, menuText, settings.startimage, settings.startsong, settings.startimageFallbacks, settings.startsongFallbacks);
                                             break;
                                         }
                                         case 'allmenu': 
@@ -1066,7 +1066,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🔴 SHADOW LEADERSHIP // OWNER SCROLL',
                                                 sections: [{ title: '👑 OWNER COMMANDS', commands: ['.public', '.private', '.block', '.unblock', '.restart', '.shutdown', '.bcall', '.bcgc'] }]
                                             });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
                                             break;
                                         }
                                         case 'groupmenu': {
@@ -1075,7 +1075,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🩸 PAIN’S GROUP CONTROL // SHROUD ONLINE',
                                                 sections: [{ title: '⚔️ GROUP COMMANDS', commands: ['.kick', '.ban', '.tobiban', '.add', '.promote', '.madarapromote', '.demote', '.mute / .gcoff', '.unmute / .gcon', '.tagall', '.hidetag', '.grouplink', '.groupinfo'] }]
                                             });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
                                             break;
                                         }
                                         case 'downloadmenu': {
@@ -1084,7 +1084,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🎴 SHROUD MEDIA SCROLLS // READY',
                                                 sections: [{ title: '⬇️ DOWNLOAD COMMANDS', commands: ['.song', '.video', '.insta', '.tiktok', '.facebook', '.youtube', '.spotify', '.apk'] }]
                                             });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
                                             break;
                                         }
                                         case 'aimenu': {
@@ -1093,7 +1093,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🧠 INTELLIGENCE NETWORK // ONLINE',
                                                 sections: [{ title: '🤖 AI COMMANDS', commands: ['.ai', '.autochat', '.chatbot', '.gali'] }]
                                             });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
                                             break;
                                         }
                                         case 'bugmenu': {
@@ -1102,7 +1102,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                 subtitle: '🛡️ SECURITY BARRIERS // TEST SCROLL',
                                                 sections: [{ title: '🐛 BUG COMMANDS', commands: ['.crash', '.freeze', '.bug'] }]
                                             });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage);
+                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
                                             break;
                                         }
 
