@@ -12,6 +12,7 @@ const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
 const { createThemedSocket } = require('./lib/akatsuki-theme');
+const { formatFramedMenu } = require('./lib/menu-format');
 // Import all commands
 const commands = {
     // Media & Download
@@ -1022,27 +1023,47 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                             await allMenuCmd(this.sock, from, msg, this, commands, Object.keys(pluginRegistry.commands));
                                             break;
                                         case 'ownermenu': {
-                                            const text = `*\u{1F451} OWNER MENU*\n\n\u{25FB} .public\n\u{25FB} .private\n\u{25FB} .block\n\u{25FB} .unblock\n\u{25FB} .restart\n\u{25FB} .shutdown\n\u{25FB} .bcall\n\u{25FB} .bcgc`;
+                                            const text = formatFramedMenu({
+                                                title: 'BALI GIL MD OWNER MENU',
+                                                subtitle: '🔴 SHADOW LEADERSHIP // OWNER SCROLL',
+                                                sections: [{ title: '👑 OWNER COMMANDS', commands: ['.public', '.private', '.block', '.unblock', '.restart', '.shutdown', '.bcall', '.bcgc'] }]
+                                            });
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `🩸 *AKATSUKI GROUP CONTROL* 🩸\n\n⚔️ .kick\n⚔️ .add\n⚔️ .promote\n⚔️ .demote\n🌀 .mute / .gcoff — Pain’s Silent Shroud\n🌀 .unmute / .gcon — release the Shroud\n⚔️ .tagall\n⚔️ .hidetag\n⚔️ .grouplink\n⚔️ .groupinfo`;
+                                            const text = formatFramedMenu({
+                                                title: 'AKATSUKI GROUP MENU',
+                                                subtitle: '🩸 PAIN’S GROUP CONTROL // SHROUD ONLINE',
+                                                sections: [{ title: '⚔️ GROUP COMMANDS', commands: ['.kick', '.ban', '.tobiban', '.add', '.promote', '.madarapromote', '.demote', '.mute / .gcoff', '.unmute / .gcon', '.tagall', '.hidetag', '.grouplink', '.groupinfo'] }]
+                                            });
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
                                         case 'downloadmenu': {
-                                            const text = `*\u{1F4E5} DOWNLOAD MENU*\n\n\u{25FB} .song\n\u{25FB} .video\n\u{25FB} .insta\n\u{25FB} .tiktok\n\u{25FB} .facebook\n\u{25FB} .youtube\n\u{25FB} .spotify\n\u{25FB} .apk`;
+                                            const text = formatFramedMenu({
+                                                title: 'BALI GIL MD DOWNLOAD MENU',
+                                                subtitle: '🎴 SHROUD MEDIA SCROLLS // READY',
+                                                sections: [{ title: '⬇️ DOWNLOAD COMMANDS', commands: ['.song', '.video', '.insta', '.tiktok', '.facebook', '.youtube', '.spotify', '.apk'] }]
+                                            });
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
                                         case 'aimenu': {
-                                            const text = `*\u{1F916} AI MENU*\n\n\u{25FB} .ai\n\u{25FB} .chatbot\n\u{25FB} .gali`;
+                                            const text = formatFramedMenu({
+                                                title: 'PAIN AI MENU',
+                                                subtitle: '🧠 INTELLIGENCE NETWORK // ONLINE',
+                                                sections: [{ title: '🤖 AI COMMANDS', commands: ['.ai', '.chatbot', '.gali'] }]
+                                            });
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
                                         case 'bugmenu': {
-                                            const text = `*\u{1F41B} BUG MENU*\n\n\u{25FB} .crash\n\u{25FB} .freeze\n\u{25FB} .bug`;
+                                            const text = formatFramedMenu({
+                                                title: 'AKATSUKI BUG MENU',
+                                                subtitle: '🛡️ SECURITY BARRIERS // TEST SCROLL',
+                                                sections: [{ title: '🐛 BUG COMMANDS', commands: ['.crash', '.freeze', '.bug'] }]
+                                            });
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
