@@ -151,7 +151,8 @@ Examples:
 .tagall Team meeting at 20:00
 .promote @member
 .demote @member
-.kick @member
+.kick @member             # Pain’s Almighty Push removal
+.ban @member              # Alias for the Almighty Push removal order
 ```
 
 ## Modular plugin system
@@ -203,7 +204,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | Commands | Purpose |
 |---|---|
 | `.add`, `.invite`, `.join` | Add members, manage invitations, or join a group where permitted. |
-| `.kick`, `.ban` | Remove a tagged or replied-to member with an Akatsuki judgment response. |
+| `.kick`, `.ban` | Invoke Pain’s Almighty Push (`SHINRA TENSEI!`) to remove a tagged or replied-to member. Both commands use the same protected moderation flow. |
 | `.promote`, `.demote`, `.revoke` | Grant or revoke group administrator rank. |
 | `.tagall`, `.hidetag`, `.tagadmin`, `.tagme` | Announce to members, mention silently, tag administrators, or tag yourself. |
 | `.groupinfo`, `.grouplink` | View group information or retrieve the group link. |
@@ -301,6 +302,7 @@ The themed management commands are designed for controlled group administration:
 .promote @member
 .demote @member
 .kick @member
+.ban @member
 ```
 
 The bot must be a group administrator for actions such as removing members, changing ranks, deleting messages, muting a group, or changing group metadata. Use moderation commands transparently and only with the group’s consent and applicable platform rules.

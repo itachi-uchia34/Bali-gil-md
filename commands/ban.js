@@ -5,7 +5,7 @@ module.exports = async function banCommand(sock, chatId, msg, isAdmin) {
     }
 
     if (!isAdmin) {
-        await sock.sendMessage(chatId, { text: '❌ Only group admins can issue an Akatsuki removal order.' }, { quoted: msg });
+        await sock.sendMessage(chatId, { text: '❌ *PAIN’S DECREE DENIED*\nOnly group admins can invoke Almighty Push.' }, { quoted: msg });
         return;
     }
 
@@ -23,7 +23,7 @@ module.exports = async function banCommand(sock, chatId, msg, isAdmin) {
 
     const botJid = sock.user?.id;
     if (botJid && target.split(':')[0] === botJid.split(':')[0]) {
-        await sock.sendMessage(chatId, { text: '❌ The Akatsuki cannot remove itself.' }, { quoted: msg });
+        await sock.sendMessage(chatId, { text: '❌ Even Almighty Push cannot target the Akatsuki itself.' }, { quoted: msg });
         return;
     }
 
@@ -31,17 +31,17 @@ module.exports = async function banCommand(sock, chatId, msg, isAdmin) {
         await sock.groupParticipantsUpdate(chatId, [target], 'remove');
         const mention = `@${target.split('@')[0].split(':')[0]}`;
         await sock.sendMessage(chatId, {
-            text: `🩸 *━───── 🔴 AKATSUKI JUDGMENT 🔴 ─────━* 🩸\n\n` +
-                `⚔️ The Shroud has passed its judgment.\n\n` +
-                `${mention} has been expelled from the organization.\n` +
-                `The cloak is withdrawn, and the ranks move forward.\n\n` +
+            text: `🩸 *━───── 🔴 PAIN’S ALMIGHTY PUSH 🔴 ─────━* 🩸\n\n` +
+                `🌀 *SHINRA TENSEI!*\n\n` +
+                `${mention} has been repelled from the Shroud.\n` +
+                `The Six Paths have delivered judgment, and the organization remains in balance.\n\n` +
                 `> _"Those who do not understand true pain can never understand true peace."_`,
             mentions: [target]
         }, { quoted: msg });
     } catch (error) {
-        console.error('Akatsuki removal error:', error);
+        console.error('Pain Almighty Push ban error:', error);
         await sock.sendMessage(chatId, {
-            text: '❌ The removal order failed. Confirm that the bot is a group admin and that the target is removable.'
+            text: '❌ *ALMIGHTY PUSH FAILED*\nConfirm that the bot is a group admin and that the target can be removed.'
         }, { quoted: msg });
     }
 };

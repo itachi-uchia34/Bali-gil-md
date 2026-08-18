@@ -9,8 +9,8 @@ Welcome, shinobi. Choose an operation below.
 
 *⚔️ GROUP MANAGEMENT*
 ${prefix}tagall <message> — summon every member
-${prefix}kick @member — remove a member
-${prefix}ban @member — remove a member
+${prefix}kick @member — Pain’s Almighty Push removal
+${prefix}ban @member — Pain’s Almighty Push removal
 ${prefix}promote @member — grant admin rank
 ${prefix}demote @member — revoke admin rank
 ${prefix}welcome on/off/status — manage arrivals
