@@ -15,6 +15,8 @@ ${prefix}promote @member — grant admin rank
 ${prefix}demote @member — revoke admin rank
 ${prefix}welcome on/off/status — manage arrivals
 ${prefix}goodbye on/off/status — manage departures
+${prefix}mute — activate Pain’s Silent Shroud
+${prefix}unmute — restore group voices
 
 *🛡️ SECURITY BARRIERS*
 ${prefix}antilink on — delete links

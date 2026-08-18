@@ -11,6 +11,7 @@ const P = require('pino');
 const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
+const { createThemedSocket } = require('./lib/akatsuki-theme');
 // Import all commands
 const commands = {
     // Media & Download
@@ -218,6 +219,12 @@ const commands = {
 // Load modular Akatsuki plugins after the built-in commands.
 const pluginRegistry = loadPlugins(path.join(__dirname, 'plugins'), Object.keys(commands));
 Object.assign(commands, pluginRegistry.commands);
+
+// Give every command the shared Akatsuki response layer without changing command APIs.
+for (const [commandName, commandHandler] of Object.entries(commands)) {
+    if (typeof commandHandler !== 'function') continue;
+    commands[commandName] = (sock, ...args) => commandHandler(createThemedSocket(sock), ...args);
+}
 if (pluginRegistry.plugins.length > 0) {
     console.log(`Loaded ${pluginRegistry.plugins.length} plugin(s): ${pluginRegistry.plugins.map((plugin) => plugin.name).join(', ')}`);
 }

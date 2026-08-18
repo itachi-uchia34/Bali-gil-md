@@ -153,6 +153,8 @@ Examples:
 .demote @member
 .kick @member             # Pain’s Almighty Push removal
 .ban @member              # Alias for the Almighty Push removal order
+.mute                     # Pain’s Silent Shroud; admins only
+.unmute                   # Restore group messaging
 ```
 
 ## Modular plugin system
@@ -180,6 +182,8 @@ module.exports = {
 ```
 
 The example plugin at `plugins/akatsuki.js` adds `.akatsuki`, `.painquote`, and `.tobiquote`. The companion plugin at `plugins/deidara-sasori.js` adds `.deidaraquote`, `.sasoriquote`, and `.artquote`, featuring explosive-art and puppet-control themes. After creating or changing a plugin, restart the bot so the loader can validate and register it. Command names must contain only letters, numbers, underscores, or hyphens, and duplicate plugin command names are rejected at startup.
+
+All built-in and plugin commands receive a shared response layer from `lib/akatsuki-theme.js`. Plain text responses are given an Akatsuki MD header, while messages that already contain member-specific or Shroud-themed branding are preserved unchanged. Media payloads, reactions, mentions, group updates, and command APIs are not altered.
 
 ## Command catalog
 
@@ -209,7 +213,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.tagall`, `.hidetag`, `.tagadmin`, `.tagme` | Announce to members, mention silently, tag administrators, or tag yourself. |
 | `.groupinfo`, `.grouplink` | View group information or retrieve the group link. |
 | `.setname`, `.setdesc`, `.setppgc` | Update group name, description, or profile picture. |
-| `.mute`, `.unmute` | Change group message permissions where supported. |
+| `.mute`, `.unmute` | Activate or deactivate Pain’s Silent Shroud by restricting group messages to admins, where supported. |
 | `.leave`, `.listonline`, `.everyonemsg` | Leave a group, inspect online members, or send an everyone message. |
 | `.welcome`, `.goodbye` | Configure themed arrival and departure messages with `on`, `off`, or `status`. |
 | `.poll`, `.editmsg`, `.react`, `.send`, `.forward`, `.save`, `.clear` | Group communication and message utilities. |
@@ -303,6 +307,8 @@ The themed management commands are designed for controlled group administration:
 .demote @member
 .kick @member
 .ban @member
+.mute
+.unmute
 ```
 
 The bot must be a group administrator for actions such as removing members, changing ranks, deleting messages, muting a group, or changing group metadata. Use moderation commands transparently and only with the group’s consent and applicable platform rules.
