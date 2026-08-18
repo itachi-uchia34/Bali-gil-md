@@ -12,7 +12,7 @@ const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
 const { createThemedSocket } = require('./lib/akatsuki-theme');
-const { formatFramedMenu, sendFramedMenu } = require('./lib/menu-format');
+const { formatFramedMenu, sendFramedMenu, sendMenuWithSong } = require('./lib/menu-format');
 // Import all commands
 const commands = {
     // Media & Download
@@ -1036,7 +1036,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'menu': {
                                             const customName = botData.userNames[this.userId] || msg.pushName || 'User';
                                             const menuText = generateMenuText(customName, this);
-                                            await sendFramedMenu(this.sock, from, msg, menuText, settings.startimage);
+                                            await sendMenuWithSong(this.sock, from, msg, menuText, settings.startimage, settings.startsong);
                                             break;
                                         }
                                         case 'allmenu': 

@@ -1,5 +1,6 @@
 module.exports = {
     startimage: 'https://lh3.googleusercontent.com/d/18DX3oRbQ1E__z-64MUMOM-mRtmSfsLqr',
+    startsong: 'https://raw.githubusercontent.com/itachi-uchia34/Bali-gil-md/main/song.mp3',
     ownerNumber: process.env.OWNER_NUMBER || '+923196181562',
     botName: 'BALI GIL MD',
     ownerName: 'BALI GIL',
