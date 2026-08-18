@@ -151,9 +151,11 @@ Examples:
 .dpz @member             # View a member profile picture
 .tagall Team meeting at 20:00
 .promote @member
+.madarapromote @member    # Madara’s war-council promotion
 .demote @member
 .kick @member             # Pain’s Almighty Push removal
 .ban @member              # Alias for the Almighty Push removal order
+.tobiban @member          # Tobi’s Kamui ban
 .mute                     # Pain’s Silent Shroud; admins only
 .gcoff                    # Alias for .mute
 .unmute                   # Restore group messaging
@@ -212,7 +214,9 @@ The following catalog reflects the command families registered by the bot. Some 
 |---|---|
 | `.add`, `.invite`, `.join` | Add members, manage invitations, or join a group where permitted. |
 | `.kick`, `.ban` | Invoke Pain’s Almighty Push (`SHINRA TENSEI!`) to remove a tagged or replied-to member. Both commands use the same protected moderation flow. |
+| `.tobiban` | Tobi’s Kamui-themed removal order with the same admin and target protections. |
 | `.promote`, `.demote`, `.revoke` | Grant or revoke group administrator rank. |
+| `.madarapromote` | Madara’s war-council promotion command with multi-member mention support. |
 | `.tagall`, `.hidetag`, `.tagadmin`, `.tagme` | Announce to members, mention silently, tag administrators, or tag yourself. |
 | `.groupinfo`, `.grouplink` | View group information or retrieve the group link. |
 | `.setname`, `.setdesc`, `.setppgc` | Update group name, description, or profile picture. |

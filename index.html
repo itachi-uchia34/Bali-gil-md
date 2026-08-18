@@ -8,19 +8,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#030603;
-    --bg-panel:rgba(6,16,8,0.85);
-    --bg-panel-2:rgba(4,10,5,0.9);
-    --grid:rgba(57,255,20,0.05);
-    --green:#39ff14;
-    --green-dim:#12a52a;
-    --green-deep:#064d16;
-    --green-glass:rgba(57,255,20,0.08);
-    --border:rgba(57,255,20,0.25);
-    --text:#d4ffd4;
-    --muted:#5f9d6a;
-    --amber:#ffd23f;
-    --danger:#ff4d4d;
+    --bg:#08050a;
+    --bg-panel:rgba(25,7,14,0.88);
+    --bg-panel-2:rgba(17,6,12,0.94);
+    --grid:rgba(180,18,55,0.08);
+    --green:#e01b4f;
+    --green-dim:#8f1236;
+    --green-deep:#4a0b20;
+    --green-glass:rgba(224,27,79,0.12);
+    --border:rgba(224,27,79,0.32);
+    --text:#ffe7ee;
+    --muted:#c27a91;
+    --amber:#d8a84e;
+    --danger:#ff315b;
     --radius:14px;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -47,7 +47,7 @@
   .glow-orb{
     position:fixed;top:-10%;left:50%;transform:translateX(-50%);
     width:60vw;height:60vw;max-width:900px;max-height:900px;
-    background:radial-gradient(circle,rgba(57,255,20,0.10) 0%,transparent 65%);
+    background:radial-gradient(circle,rgba(224,27,79,0.10) 0%,transparent 65%);
     filter:blur(40px);z-index:-2;pointer-events:none;
     animation:orbPulse 8s ease-in-out infinite alternate;
   }
@@ -63,11 +63,11 @@
 
   /* ---------- Boot sequence overlay ---------- */
   #boot{
-    position:fixed;inset:0;z-index:999;background:#010301;
+    position:fixed;inset:0;z-index:999;background:#090308;
     display:flex;align-items:center;justify-content:center;
     font-family:'Share Tech Mono',monospace;
   }
-  #boot pre{color:var(--green);font-size:.85rem;white-space:pre-wrap;max-width:600px;padding:20px;text-shadow:0 0 8px rgba(57,255,20,.5);}
+  #boot pre{color:var(--green);font-size:.85rem;white-space:pre-wrap;max-width:600px;padding:20px;text-shadow:0 0 8px rgba(224,27,79,.5);}
   #boot .cursor{display:inline-block;width:8px;height:16px;background:var(--green);animation:blink 1s step-end infinite;vertical-align:middle;}
   @keyframes blink{50%{opacity:0;}}
   #boot.hide{animation:bootOut .5s ease forwards;}
@@ -84,7 +84,7 @@
     width:90%;max-width:460px;background:var(--bg-panel-2);
     border:1px solid var(--border);border-radius:var(--radius);
     transform:translateY(-30px);transition:transform .35s ease;
-    box-shadow:0 0 60px rgba(57,255,20,.08),0 25px 50px rgba(0,0,0,.6);
+    box-shadow:0 0 60px rgba(224,27,79,.08),0 25px 50px rgba(0,0,0,.6);
   }
   .modal.active .modal-content{transform:translateY(0);}
   .modal-head{
@@ -100,19 +100,19 @@
   .channel-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
   .channel-item{
     display:flex;align-items:center;gap:10px;padding:12px 14px;
-    background:rgba(57,255,20,.04);border:1px solid var(--border);border-radius:8px;
+    background:rgba(224,27,79,.04);border:1px solid var(--border);border-radius:8px;
     text-decoration:none;color:var(--text);font-size:.82rem;transition:.25s;
   }
   .channel-item:hover{background:var(--green-glass);border-color:var(--green);transform:translateX(4px);}
   .channel-item i{color:var(--green);width:18px;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:8px;
-    background:var(--green);color:#01120a;font-weight:700;font-size:.82rem;
+    background:var(--green);color:#210610;font-weight:700;font-size:.82rem;
     letter-spacing:.5px;padding:13px 22px;border:none;border-radius:8px;
     cursor:pointer;text-decoration:none;width:100%;text-transform:uppercase;
     transition:.25s;position:relative;overflow:hidden;
   }
-  .btn:hover{box-shadow:0 0 25px rgba(57,255,20,.45);transform:translateY(-2px);}
+  .btn:hover{box-shadow:0 0 25px rgba(224,27,79,.45);transform:translateY(-2px);}
   .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
   .btn-outline{background:transparent;color:var(--green);border:1px solid var(--border);}
   .btn-outline:hover{background:var(--green-glass);}
@@ -149,7 +149,7 @@
   header h1{
     font-family:'Share Tech Mono',monospace;
     font-size:clamp(2.2rem,6vw,4.2rem);letter-spacing:2px;
-    color:var(--green);text-shadow:0 0 18px rgba(57,255,20,.35);
+    color:var(--green);text-shadow:0 0 18px rgba(224,27,79,.35);
     margin-bottom:18px;position:relative;display:inline-block;
   }
   header h1 .glitch-wrap{position:relative;display:inline-block;}
@@ -194,14 +194,14 @@
   .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;}
   .feature-item{
     padding:24px;border:1px solid var(--border);border-radius:10px;
-    background:rgba(57,255,20,.03);transition:.3s;
+    background:rgba(224,27,79,.03);transition:.3s;
   }
   .feature-item:hover{background:var(--green-glass);transform:translateY(-4px);border-color:var(--green);}
   .feature-item i{font-size:1.6rem;color:var(--green);margin-bottom:14px;display:block;}
   .feature-item h3{font-size:.95rem;margin-bottom:8px;letter-spacing:.5px;}
   .feature-item p{color:var(--muted);font-size:.82rem;}
 
-  .instructions{background:rgba(57,255,20,.03);border-left:3px solid var(--green);border-radius:8px;padding:20px 22px;margin-bottom:26px;}
+  .instructions{background:rgba(224,27,79,.03);border-left:3px solid var(--green);border-radius:8px;padding:20px 22px;margin-bottom:26px;}
   .instructions h3{color:var(--green);font-size:.9rem;margin-bottom:12px;letter-spacing:.5px;}
   .instructions ol{padding-left:20px;color:var(--muted);font-size:.85rem;}
   .instructions li{margin-bottom:10px;}
@@ -215,12 +215,12 @@
     border:1px solid var(--border);background:rgba(0,0,0,.4);color:var(--text);
     font-family:'JetBrains Mono',monospace;font-size:.9rem;transition:.25s;
   }
-  .input-group input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(57,255,20,.12);}
-  .input-group input::placeholder{color:#3d5c42;}
+  .input-group input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(224,27,79,.12);}
+  .input-group input::placeholder{color:#6d3048;}
 
   #status{margin-top:20px;padding:16px 18px;border-radius:8px;background:rgba(0,0,0,.3);border-left:3px solid var(--muted);font-size:.85rem;display:none;}
   #status.show{display:block;}
-  #status.success{border-left-color:var(--green);background:rgba(57,255,20,.08);color:var(--green);}
+  #status.success{border-left-color:var(--green);background:rgba(224,27,79,.08);color:var(--green);}
   #status.error{border-left-color:var(--danger);background:rgba(255,77,77,.08);color:#ff9a9a;}
   #status.warning{border-left-color:var(--amber);background:rgba(255,210,63,.08);color:var(--amber);}
 
@@ -229,7 +229,7 @@
   .code-box{
     font-family:'Share Tech Mono',monospace;font-size:2rem;letter-spacing:8px;
     text-align:center;padding:22px;border:1px dashed var(--green);border-radius:10px;
-    background:rgba(0,0,0,.45);color:var(--green);text-shadow:0 0 12px rgba(57,255,20,.5);
+    background:rgba(0,0,0,.45);color:var(--green);text-shadow:0 0 12px rgba(224,27,79,.5);
     cursor:pointer;transition:.25s;
   }
   .code-box:hover{background:var(--green-glass);}
@@ -244,7 +244,7 @@
 
   #toast{
     position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(100px);
-    background:var(--green);color:#01120a;padding:12px 24px;border-radius:30px;
+    background:var(--green);color:#210610;padding:12px 24px;border-radius:30px;
     font-size:.8rem;font-weight:700;transition:.4s cubic-bezier(.175,.885,.32,1.275);z-index:900;
   }
   #toast.show{transform:translateX(-50%) translateY(0);}
@@ -257,7 +257,7 @@
       transform:translateY(-110%);opacity:0;visibility:hidden;transition:.3s;
     }
     .nav-links.active{transform:translateY(0);opacity:1;visibility:visible;}
-    .nav-links a{padding:14px;width:100%;text-align:center;border-bottom:1px solid rgba(57,255,20,.08);}
+    .nav-links a{padding:14px;width:100%;text-align:center;border-bottom:1px solid rgba(224,27,79,.08);}
     .nav-toggle{display:block;}
     header{padding:120px 16px 50px;}
     section.panel{padding:24px 18px;}

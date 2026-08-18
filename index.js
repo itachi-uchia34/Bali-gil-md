@@ -33,8 +33,10 @@ const commands = {
     // Group Management
     kick: require('./commands/kick'),
     ban: require('./commands/ban'),
+    tobiban: require('./commands/tobiban'),
     add: require('./commands/add'),
     promote: require('./commands/promote'),
+    madarapromote: require('./commands/madarapromote'),
     demote: require('./commands/demote'),
     revoke: require('./commands/revoke'),
     invite: require('./commands/invite'),
@@ -1078,8 +1080,10 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         // ===== GROUP MANAGEMENT =====
                                         case 'kick':
                                         case 'ban': await commands.ban(this.sock, from, msg, isAdmin); break;
+                                        case 'tobiban': await commands.tobiban(this.sock, from, msg, isAdmin); break;
                                         case 'add': await commands.add(this.sock, from, msg, isAdmin, q); break;
                                         case 'promote': await commands.promote(this.sock, from, msg, isAdmin); break;
+                                        case 'madarapromote': await commands.madarapromote(this.sock, from, msg, isAdmin); break;
                                         case 'demote': await commands.demote(this.sock, from, msg, isAdmin); break;
                                         case 'revoke': await commands.revoke(this.sock, from, msg, isAdmin); break;
                                         case 'invite': await commands.invite(this.sock, from, msg, isAdmin); break;

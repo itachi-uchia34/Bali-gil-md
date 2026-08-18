@@ -11,7 +11,9 @@ Welcome, shinobi. Choose an operation below.
 ${prefix}tagall <message> — summon every member
 ${prefix}kick @member — Pain’s Almighty Push removal
 ${prefix}ban @member — Pain’s Almighty Push removal
+${prefix}tobiban @member — Tobi’s Kamui ban
 ${prefix}promote @member — grant admin rank
+${prefix}madarapromote @member — Madara’s war-council promotion
 ${prefix}demote @member — revoke admin rank
 ${prefix}welcome on/off/status — manage arrivals
 ${prefix}goodbye on/off/status — manage departures
