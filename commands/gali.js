@@ -1,56 +1,114 @@
-module.exports = async function(sock, from, msg, session, args) {
-    const text = args.join(' ');
-    
-    // Extract target from mention or quoted message
-    let target = msg.mentionedJid?.[0] || msg.quoted?.sender || null;
-    let name = text ? text.trim().toLowerCase() : '';
-    
-    // If no target and no name, show usage
-    if (!target && !name) {
-        return await sock.sendMessage(from, { 
-            text: "❌ Example: .gali name or .gali @user" 
-        }, { quoted: msg });
+const VERSION_ALIASES = {
+    '1': 'pain',
+    'pain': 'pain',
+    'almighty-push': 'pain',
+    '2': 'itachi',
+    'itachi': 'itachi',
+    'sharingan': 'itachi',
+    '3': 'madara',
+    'madara': 'madara',
+    '4': 'tobi',
+    'tobi': 'tobi',
+    'obito': 'tobi',
+    '5': 'soft',
+    'soft': 'soft',
+    'friendly': 'soft'
+};
+
+const VERSION_LABELS = {
+    pain: 'PAIN // ALMIGHTY PUSH',
+    itachi: 'ITACHI // SHARINGAN ROAST',
+    madara: 'MADARA // WARLORD MODE',
+    tobi: 'TOBI // CHAOS MASK',
+    soft: 'AKATSUKI // FRIENDLY ROAST'
+};
+
+const ROASTS = {
+    pain: [
+        'Almighty Push! Your confidence has been scattered across six paths, but your logic is still missing.',
+        'You speak like a final boss, yet your strategy is still loading. Accept the pain and update your plan.',
+        'The Rinnegan has detected a critical weakness: too much noise, not enough impact.'
+    ],
+    itachi: [
+        'Tsukuyomi activated: in your imagination you are unbeatable; in reality, even the crows are confused.',
+        'Itachi has reviewed your plan. The verdict is calm: impressive confidence, questionable execution.',
+        'Your words have no weight. Even a shadow clone would ask for stronger evidence.'
+    ],
+    madara: [
+        'Madara has entered the battlefield. Your entire argument has been placed under a genjutsu called overconfidence.',
+        'You arrived with legendary energy and tutorial-level results. The war is over before your first move.',
+        'Perfect Susanoo detected. Unfortunately, it is protecting a very ordinary idea.'
+    ],
+    tobi: [
+        'Tobi report: the mask is mysterious, the plan is dramatic, and the result is still absolutely goofy.',
+        'Kamui activated! Your best excuse has disappeared into another dimension.',
+        'You tried to create chaos, but even Tobi is asking you to add more creativity.'
+    ],
+    soft: [
+        'Friendly roast from the Shroud: your confidence is premium, but your plan is still on the free trial.',
+        'You are not a disaster; you are just an unexpected plot twist with excellent timing.',
+        'The Akatsuki council has decided: take a breath, sharpen your strategy, and try that sentence again.'
+    ]
+};
+
+function pick(items) {
+    return items[Math.floor(Math.random() * items.length)];
+}
+
+function usage() {
+    return [
+        '🩸 *━───── GALI VARIANTS ─────━* 🩸',
+        '',
+        '`.gali @user` — random Akatsuki roast',
+        '`.gali pain @user` — Almighty Push mode',
+        '`.gali itachi @user` — Sharingan mode',
+        '`.gali madara @user` — Warlord mode',
+        '`.gali tobi @user` — Chaos Mask mode',
+        '`.gali soft @user` — friendly roast',
+        '',
+        '*POWERED BY ITACHI-UCHIHA ©*'
+    ].join('\n');
+}
+
+module.exports = async function(sock, from, msg, session, args = []) {
+    const input = Array.isArray(args) ? args.map(String) : [];
+    const mentioned = msg.mentionedJid?.[0] || msg.quoted?.sender || null;
+    let version = 'random';
+    let targetArgs = input.slice();
+
+    if (targetArgs[0]?.toLowerCase() === 'list' || targetArgs[0]?.toLowerCase() === 'help') {
+        return sock.sendMessage(from, { text: usage() }, { quoted: msg });
     }
 
-    // Add a reaction (optional, like in the first version)
-    await sock.sendMessage(from, { react: { text: '🤬', key: msg.key } });
-
-    // Get sender JID for blocked replies
-    const sender = msg.key.participant || msg.key.remoteJid;
-
-    // Blocked names (hardcoded)
-    let blocked = ['syed hacker', 'syed', 'wajahat'];
-    if (blocked.includes(name)) {
-        let blockedReplies = [
-            `${name.toUpperCase()} *_Tari maa ka sath soya tha? Laudy_*`,
-            `${name.toUpperCase()} *_Tari amma ka yaar ha...?_*`
-        ];
-        let randomBlocked = blockedReplies[Math.floor(Math.random() * blockedReplies.length)];
-        return await sock.sendMessage(from, { 
-            text: randomBlocked, 
-            mentions: [sender] 
-        }, { quoted: msg });
+    const requestedVersion = VERSION_ALIASES[targetArgs[0]?.toLowerCase()];
+    if (requestedVersion) {
+        version = requestedVersion;
+        targetArgs = targetArgs.slice(1);
     }
 
-    // List of insults (same as original)
-    let galis = [
-        `${name || '@' + target?.split('@')[0]} - *_teri mkc bc laudy gando bsdk bkl 💀 (3 baar)_*`,
-        `${name || '@' + target?.split('@')[0]} - *_salay tata madarchod randwe gando mkc Tari 🤡 (2 baar)_*`,
-        `${name || '@' + target?.split('@')[0]} - *_bkl habshi ki paidaawar barhwy mkc tari😈 (4 baar)_*`,
-        `${name || '@' + target?.split('@')[0]} *_Teri MKC Randi K Bachy (7 baar)🤡🚮_*`,
-        `${name || '@' + target?.split('@')[0]} *_Idher a Teri Mama K Oper Charh kr Dance krun🤡🥹_*`,
-        `${name || '@' + target?.split('@')[0]} *_Hi YATEEM TATTY Idher A Lun pr Beth kr Jholly kha_*`,
-        `${name || '@' + target?.split('@')[0]} *_Teri Ama Dy Akha Vch Akha Paa k Ondy Mou Vch Lul🤡🚮_*`,
-        `${name || '@' + target?.split('@')[0]} *_Idher A O Pooli Bondd Aliya🥸🤡_*`
-    ];
+    const targetName = targetArgs.join(' ').trim();
+    const displayName = targetName || (mentioned ? `@${mentioned.split('@')[0]}` : 'Shroud member');
 
-    let randomGali = galis[Math.floor(Math.random() * galis.length)];
-
-    // Prepare send options, mention target if available
-    let sendOptions = { text: randomGali };
-    if (target) {
-        sendOptions.mentions = [target];
+    if (!mentioned && !targetName) {
+        return sock.sendMessage(from, { text: usage() }, { quoted: msg });
     }
 
-    await sock.sendMessage(from, sendOptions, { quoted: msg });
+    const selectedVersion = version === 'random' ? pick(Object.keys(ROASTS)) : version;
+    const heading = VERSION_LABELS[selectedVersion];
+    const roast = pick(ROASTS[selectedVersion]);
+    const response = [
+        `🩸 *━───── ${heading} ─────━* 🩸`,
+        '',
+        `🎯 *Target:* ${displayName}`,
+        `💬 ${roast}`,
+        '',
+        '> _"Those who do not understand true pain can never understand true peace."_',
+        '',
+        '*POWERED BY ITACHI-UCHIHA ©*'
+    ].join('\n');
+
+    await sock.sendMessage(from, { react: { text: selectedVersion === 'soft' ? '😅' : '🩸', key: msg.key } });
+    const sendOptions = { text: response };
+    if (mentioned) sendOptions.mentions = [mentioned];
+    return sock.sendMessage(from, sendOptions, { quoted: msg });
 };
