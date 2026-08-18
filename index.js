@@ -723,11 +723,30 @@ class BotSession {
             this.sock.ev.on('group-participants.update', async (update) => {
                 if (!this.welcomeEnabled || update.action !== 'add' || !Array.isArray(update.participants) || update.participants.length === 0) return;
                 try {
-                    const groupName = (await this.sock.groupMetadata(update.id)).subject || 'the group';
+                    const metadata = await this.sock.groupMetadata(update.id);
+                    const groupName = metadata.subject || 'the group';
+                    const groupDescription = metadata.desc || 'No group description has been set.';
                     const mentions = update.participants;
                     const names = mentions.map((jid) => `@${jid.split('@')[0]}`).join(', ');
+                    const memberCount = metadata.participants?.length || 0;
+                    const welcomeText = `🩸 *━───── 🔴 AKATSUKI MD 🔴 ─────━* 🩸
+
+*Welcome to the Shroud,* ${names} 👋
+
+You have entered: *@gname*
+👥 *Ranks Count:* *@count* members
+
+📜 *ORGANIZATION LAWS:*
+@desc
+
+> _"Those who do not understand true pain can never understand true peace."_
+
+⚔️ Put on the cloak, wear your ring, and obey the dynamic. Weakness will not be tolerated.`
+                        .replace('@gname', `*${groupName}*`)
+                        .replace('@count', String(memberCount))
+                        .replace('@desc', groupDescription);
                     await this.sock.sendMessage(update.id, {
-                        text: `👋 Welcome ${names} to *${groupName}*!\n\nPlease read the group rules and enjoy your stay.`,
+                        text: welcomeText,
                         mentions
                     });
                 } catch (error) {
