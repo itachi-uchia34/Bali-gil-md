@@ -22,7 +22,7 @@ module.exports = async function tagallCommand(sock, chatId, msg, isAdmin, query)
             mentionRows.push(mentionNames.slice(i, i + 4).join(' '));
         }
 
-        const text = `🩸 ───── 🔴 *BALI GIL* 🔴 ───── 🩸
+        const text = `🩸 ───── 🔴 *BALI GIL MD* 🔴 ───── 🩸
 
 ` +
             `⚔️ *AKATSUKI ORGANIZATION SUMMONS* ⚔️

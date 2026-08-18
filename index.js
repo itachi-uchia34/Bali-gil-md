@@ -326,7 +326,7 @@ if (tgBot) {
         const isOwner = isTgOwner(chatId);
         
         const welcomeMessage = 
-            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
+            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MD* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
             `*\u{1F311} LUXURY WHATSAPP AUTOMATION* \u{1F311}\n\n` +
             `Welcome to the most premium WhatsApp bot experience.\n\n` +
             `*\u{1F4F1} AVAILABLE COMMANDS:*\n` +
@@ -338,7 +338,7 @@ if (tgBot) {
             `*\u{1F510} TO CONNECT:* \n` +
             `Simply send your WhatsApp number with country code.\n` +
             `Example: \`923271054080\`\n\n` +
-            `> © POWERED BY BALI GIL v3.0`;
+            `> © POWERED BY ITACHI-UCHIHA © v3.0`;
 
         try {
             await tgBot.sendPhoto(chatId, settings.startimage, { 
@@ -408,11 +408,11 @@ if (tgBot) {
         const numbersList = botNumbers.length > 0 ? botNumbers.join('\n') : 'None';
 
         const statusMsg = 
-            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL STATUS* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
+            `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *BALI GIL MD STATUS* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
             `\u{1F4F1} *Connected Bots:* ${connectedCount}\n` +
             `\u{26A1} *Total Sessions:* ${Object.keys(sessions).length}\n\n` +
             `\u{1F522} *Active Numbers:*\n\`${numbersList}\`\n\n` +
-            `> © POWERED BY BALI GIL  v3.0`;
+            `> © POWERED BY ITACHI-UCHIHA ©  v3.0`;
 
         await tgBot.sendMessage(chatId, statusMsg, { parse_mode: 'Markdown' });
     });
@@ -651,7 +651,7 @@ class BotSession {
                 try {
                     const botNumber = jidNormalizedUser(this.sock.user.id);
                     await this.sock.sendMessage(botNumber, { 
-                        text: "BALI GIL — THE SHROUD \u{1F680}\n\n_24/7 Active System Working..._"
+                        text: "BALI GIL MD — THE SHROUD \u{1F680}\n\n_24/7 Active System Working..._"
                     });
                     this.sendLog("24/7 Keep-alive message sent to own DM. \u{2705}", "success");
                 } catch (e) {
@@ -728,7 +728,7 @@ class BotSession {
                                 `🔑 *YOUR SHROUD CODE:* \`${code}\`\n\n` +
                                 `_Enter this code in WhatsApp → Linked Devices to awaken the connection._\n\n` +
                                 `> _"Those who do not understand true pain can never understand true peace."_\n` +
-                                `> POWERED BY BALI GIL`;
+                                `> POWERED BY ITACHI-UCHIHA ©`;
                             await tgBot.sendMessage(this.tgChatId, codeMsg, { parse_mode: 'Markdown' });
                         }
 
@@ -754,7 +754,7 @@ class BotSession {
                     const mentions = update.participants;
                     const names = mentions.map((jid) => `@${jid.split('@')[0]}`).join(', ');
                     const memberCount = metadata.participants?.length || 0;
-                    const welcomeText = `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸
+                    const welcomeText = `🩸 *━───── 🔴 BALI GIL MD 🔴 ─────━* 🩸
 
 *Welcome to the Shroud,* ${names} 👋
 
@@ -787,7 +787,7 @@ You have entered: *@gname*
                     const mentions = update.participants;
                     const names = mentions.map((jid) => `@${jid.split('@')[0]}`).join(', ');
                     const memberCount = metadata.participants?.length || 0;
-                    const farewellText = `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸
+                    const farewellText = `🩸 *━───── 🔴 BALI GIL MD 🔴 ─────━* 🩸
 
 *The Shroud bids farewell to,* ${names} 👋
 
@@ -821,7 +821,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                     text: `*\u{26A0}\uFE0F} ANTI-CALL SYSTEM ACTIVE* \n\n` +
                                           `I am a bot and cannot receive calls. \n` +
                                           `Please send a text message instead. \n\n` +
-                                          `> © POWERED BY BALI GIL `
+                                          `> © POWERED BY ITACHI-UCHIHA © `
                                 });
                             } catch (e) {}
                         }
@@ -1339,7 +1339,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             `Your WhatsApp number has entered the Akatsuki network.\n` +
                             `The Six Paths are ready, and every command is now available.\n\n` +
                             `> _"The moment people come to know love, they risk carrying hate."_\n` +
-                            `> POWERED BY BALI GIL`;
+                            `> POWERED BY ITACHI-UCHIHA ©`;
                         await tgBot.sendMessage(this.tgChatId, successMsg, { parse_mode: 'Markdown' });
                     }
 
@@ -1350,7 +1350,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             await this.sock.query({
                                 tag: 'iq',
                                 attrs: { to: '@s.whatsapp.net', type: 'set', xmlns: 'status' },
-                                content: [{ tag: 'status', attrs: {}, content: Buffer.from("BALI GIL - THE SHROUD IS ONLINE | Powered by BALI GIL", 'utf-8') }]
+                                content: [{ tag: 'status', attrs: {}, content: Buffer.from("BALI GIL MD - THE SHROUD IS ONLINE | POWERED BY ITACHI-UCHIHA ©", 'utf-8') }]
                             });
                             this.sendLog("🩸 Akatsuki status seal updated successfully. ✅", "success");
                         } catch (e) {
@@ -1359,7 +1359,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                     }, 5000);
 
                     if (!this.lastConnectMessageTime || (Date.now() - this.lastConnectMessageTime > 60 * 60 * 1000)) {
-                        const welcomeText = `🩸 *━───── 🔴 BALI GIL CONNECTION 🔴 ─────━* 🩸\n\n` +
+                        const welcomeText = `🩸 *━───── 🔴 BALI GIL MD CONNECTION 🔴 ─────━* 🩸\n\n` +
                             `🌑 *THE SHROUD IS ONLINE* ✅\n\n` +
                             `WhatsApp has been linked to the Akatsuki network.\n\n` +
                             `*⚔️ CONNECTION INTEL:*\n` +
@@ -1369,7 +1369,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             `*🌀 PAIN’S DIRECTIVE:*\n` +
                             `> All paths lead to understanding.\n\n` +
                             `Type *.menu* to enter the command center.\n\n` +
-                            `> _POWERED BY BALI GIL_`;
+                            `> _POWERED BY ITACHI-UCHIHA ©_`;
 
                         await this.sock.sendMessage(botNumber, { 
                             image: { url: settings.startimage },
@@ -1458,7 +1458,7 @@ function generateMenuText(userName, session) {
         '┗━━━━━━━━━━━━━━━━━━━━━━┛',
         '',
         '╭━━━━━━━━━━━━━━━━━━━━━━╮',
-        '┃  🔴 BALI GIL // AKATSUKI  ┃',
+        '┃  🔴 BALI GIL MD // AKATSUKI  ┃',
         '╰━━━━━━━━━━━━━━━━━━━━━━╯'
     ].join('\n');
 }
@@ -1532,7 +1532,7 @@ io.on('connection', (socket) => {
                 for (const jid of personalChats) {
                     try {
                         await bot.sock.sendMessage(jid, { 
-                            text: `\u{1F4E2} *BROADCAST MESSAGE* \u{1F4E2}\n\n${message}\n\n_From: BALI GIL Admin_`
+                            text: `\u{1F4E2} *BROADCAST MESSAGE* \u{1F4E2}\n\n${message}\n\n_From: BALI GIL MD Admin_`
                         });
                         totalSent++;
                     } catch (e) {}
@@ -1626,7 +1626,7 @@ io.on('connection', (socket) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
-    console.log(`\u{1F311} BALI GIL v${settings.version} — Shroud server running on port ${PORT}`);
+    console.log(`\u{1F311} BALI GIL MD v${settings.version} — Shroud server running on port ${PORT}`);
     console.log(`\u{1F4E1} Total commands loaded: 120+`);
     console.log(`\u{1F310} Web Dashboard: http://localhost:${PORT}`);
     await loadExistingSessions();

@@ -9,7 +9,7 @@ module.exports = async function(sock, chatId, msg, isOwner, q) {
         let sent = 0;
         for (const group of groups) {
             try {
-                await sock.sendMessage(group, { text: `*\u1F4E2 BROADCAST*\n\n${q}\n\n_From: BALI GIL BOT Owner_` });
+                await sock.sendMessage(group, { text: `*\u1F4E2 BROADCAST*\n\n${q}\n\n_From: BALI GIL MD Owner_` });
                 sent++;
             } catch (e) {}
         }

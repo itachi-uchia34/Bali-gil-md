@@ -24,7 +24,7 @@
 
 <div align="center">
 
-# 🩸 BALI GIL bot v4.0.1
+# 🩸 BALI GIL MD bot v4.0.1
 **"Even the strongest of opponents always has a weakness."**
 
 [![Status](https://img.shields.io/badge/status-Active-brightgreen?style=flat-square)](https://github.com/itachi-uchia34)
@@ -39,11 +39,11 @@
 <sub>Built with ❤️ and Genjutsu.</sub>
 </div>
 
-# 🩸 BALI GIL
+# 🩸 BALI GIL MD
 
 > *A Shroud-themed WhatsApp automation bot for group management, media, utilities, security, AI, games, and daily operations.*
 
-**BALI GIL** is a Node.js WhatsApp bot powered by [Baileys](https://github.com/WhiskeySockets/Baileys). It includes a web pairing/dashboard layer, optional Telegram integration, persistent bot settings, media conversion, group moderation, automated protections, and a large command library.
+**BALI GIL MD** is a Node.js WhatsApp bot powered by [Baileys](https://github.com/WhiskeySockets/Baileys). It includes a web pairing/dashboard layer, optional Telegram integration, persistent bot settings, media conversion, group moderation, automated protections, and a large command library.
 
 > ⚔️ *Wear your ring. Honor the cloak. Follow the dynamic.*
 
@@ -229,7 +229,7 @@ module.exports = {
 
 The example plugin at `plugins/akatsuki.js` adds `.akatsuki`, `.painquote`, and `.tobiquote`. The companion plugin at `plugins/deidara-sasori.js` adds `.deidaraquote`, `.sasoriquote`, and `.artquote`, featuring explosive-art and puppet-control themes. After creating or changing a plugin, restart the bot so the loader can validate and register it. Command names must contain only letters, numbers, underscores, or hyphens, and duplicate plugin command names are rejected at startup.
 
-All built-in and plugin commands receive a shared response layer from `lib/akatsuki-theme.js`. Plain text responses are given a BALI GIL bot header, while messages that already contain member-specific or Shroud-themed branding are preserved unchanged. Media payloads, reactions, mentions, group updates, and command APIs are not altered.
+All built-in and plugin commands receive a shared response layer from `lib/akatsuki-theme.js`. Plain text responses are given a BALI GIL MD bot header, while messages that already contain member-specific or Shroud-themed branding are preserved unchanged. Media payloads, reactions, mentions, group updates, and command APIs are not altered.
 
 ## Command catalog
 

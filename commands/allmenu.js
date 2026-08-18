@@ -3,7 +3,7 @@ const settings = require('../settings');
 async function allMenu(sock, from, msg, session, commands, pluginCommandNames = []) {
     // ===== HEAVY BOX HEADER =====
     let allMenuText = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-    allMenuText += `┃  💀  *BALI GIL COMPLETE ALL MENU*  💀               ┃\n`;
+    allMenuText += `┃  💀  *BALI GIL MD COMPLETE ALL MENU*  💀               ┃\n`;
     allMenuText += `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n`;
     allMenuText += `┃  📋 TOTAL COMMANDS: 300+                   ┃\n`;
     allMenuText += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
@@ -49,7 +49,7 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
     }
 
     // ===== FOOTER =====
-    allMenuText += `☠️  *POWERED BY : BALI GIL*  ☠️`;
+    allMenuText += `☠️  *POWERED BY ITACHI-UCHIHA ©*  ☠️`;
 
     // ===== SEND =====
     try {
