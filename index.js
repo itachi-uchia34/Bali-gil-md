@@ -10,7 +10,7 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLat
 const P = require('pino');
 const { OpenAI } = require('openai');
 const os = require('os');
-
+const { loadPlugins } = require('./lib/plugin-loader');
 // Import all commands
 const commands = {
     // Media & Download
@@ -211,8 +211,15 @@ const commands = {
     listonline: require('./commands/listonline'),
     mycmd: require('./commands/mycmd'),
     gali: require('./commands/gali'),
-    utils: require('./commands/utils')
+        utils: require('./commands/utils')
 };
+
+// Load modular Akatsuki plugins after the built-in commands.
+const pluginRegistry = loadPlugins(path.join(__dirname, 'plugins'), Object.keys(commands));
+Object.assign(commands, pluginRegistry.commands);
+if (pluginRegistry.plugins.length > 0) {
+    console.log(`Loaded ${pluginRegistry.plugins.length} plugin(s): ${pluginRegistry.plugins.map((plugin) => plugin.name).join(', ')}`);
+}
 
 const { handleAutoread } = require('./commands/autoread');
 const { handleStatusUpdate } = require('./commands/autostatus');
@@ -1014,7 +1021,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         }
                                         case 'allmenu': 
                                             const allMenuCmd = require('./commands/allmenu');
-                                            await allMenuCmd(this.sock, from, msg, this, commands); 
+                                            await allMenuCmd(this.sock, from, msg, this, commands, Object.keys(pluginRegistry.commands));
                                             break;
                                         case 'ownermenu': {
                                             const text = `*\u{1F451} OWNER MENU*\n\n\u{25FB} .public\n\u{25FB} .private\n\u{25FB} .block\n\u{25FB} .unblock\n\u{25FB} .restart\n\u{25FB} .shutdown\n\u{25FB} .bcall\n\u{25FB} .bcgc`;
@@ -1241,6 +1248,22 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'backup': await commands.backup(this.sock, from, msg, isOwner); break;
                                         case 'restore': await commands.restore(this.sock, from, msg, isOwner); break;
                                         case 'mycmd': case 'mycommands': await commands.mycmd(this.sock, from, msg); break;
+                                        default: {
+                                            const pluginCommand = commands[commandName];
+                                            if (typeof pluginCommand === 'function') {
+                                                await pluginCommand(this.sock, from, msg, {
+                                                    args,
+                                                    query: q,
+                                                    isAdmin,
+                                                    isOwner,
+                                                    session: this,
+                                                    botData,
+                                                    saveBotData,
+                                                    commands
+                                                });
+                                            }
+                                            break;
+                                        }
                                     }
                                 } catch (e) {
                                     this.sendLog(`Command error (${commandName}): ` + e.message, 'error');

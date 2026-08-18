@@ -17,6 +17,7 @@
 - [Telegram integration](#telegram-integration)
 - [Command usage](#command-usage)
 - [Command catalog](#command-catalog)
+- [Modular plugin system](#modular-plugin-system)
 - [Akatsuki group management](#akatsuki-group-management)
 - [Security and responsible use](#security-and-responsible-use)
 - [Deployment](#deployment)
@@ -152,6 +153,32 @@ Examples:
 .kick @member
 ```
 
+## Modular plugin system
+
+New Akatsuki member themes and commands can be added without expanding the large built-in command switch. Place a JavaScript plugin file in `plugins/`; the bot discovers it at startup and merges its commands into the runtime registry.
+
+A plugin exports a name, an optional `themes` object, and a `commands` object. Each command is an async function that receives the socket, chat ID, message, and a context object containing parsed arguments, permissions, session state, persistent bot data, and the command registry.
+
+```js
+module.exports = {
+  name: 'akatsuki-members',
+  themes: {
+    pain: {
+      name: 'Pain',
+      title: 'The Six Paths of Pain',
+      quote: 'Peace is forged by understanding the pain carried by every side.'
+    }
+  },
+  commands: {
+    painquote: async (sock, chatId, msg) => {
+      await sock.sendMessage(chatId, { text: 'Your themed response' }, { quoted: msg });
+    }
+  }
+};
+```
+
+The example plugin at `plugins/akatsuki.js` adds `.akatsuki`, `.painquote`, and `.tobiquote`. After creating or changing a plugin, restart the bot so the loader can validate and register it. Command names must contain only letters, numbers, underscores, or hyphens, and duplicate plugin command names are rejected at startup.
+
 ## Command catalog
 
 The following catalog reflects the command families registered by the bot. Some commands require a group, administrator permission, owner permission, a reply, an API key, or an external service.
@@ -165,6 +192,7 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.allmenu` | Full command index. |
 | `.owner`, `.creator` | Itachi Uchiha-themed owner and creator profile. |
 | `.quote` | Rotating Akatsuki quote featuring Pain, Tobi, Itachi, Konan, Kisame, Deidara, or Sasori. |
+| `.akatsuki`, `.painquote`, `.tobiquote` | Example plugin commands for member registry and themed quotes. |
 | `.ping`, `.runtime`, `.uptime` | Check response time and process uptime. |
 | `.serverinfo`, `.speedtest`, `.device` | Inspect server, network, and device information. |
 
@@ -330,7 +358,9 @@ This bot is a long-running Node process with WebSocket, pairing, and session req
 
 ```text
 .
-├── commands/            # Individual bot command handlers
+├── commands/            # Built-in bot command handlers
+├── plugins/             # Modular Akatsuki plugins discovered at startup
+├── lib/                 # Shared utilities and plugin loader
 ├── data/                # Runtime bot data; keep private in production
 ├── auth_info_baileys/   # WhatsApp session data; never commit
 ├── index.js             # Bot entrypoint, dispatcher, web server, and events

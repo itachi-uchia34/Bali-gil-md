@@ -31,6 +31,11 @@ ${prefix}video <query> — download video
 ${prefix}translate <text> <lang> — translate text
 ${prefix}ai <question> — ask the assistant
 
+*🩸 AKATSUKI MEMBERS*
+${prefix}akatsuki — view the member registry
+${prefix}painquote — hear Pain’s scroll
+${prefix}tobiquote — hear Tobi’s scroll
+
 *📜 OPERATIONS*
 ${prefix}menu — open the main menu
 ${prefix}allmenu — view the full command index

@@ -1,6 +1,6 @@
 const settings = require('../settings');
 
-async function allMenu(sock, from, msg, session, commands) {
+async function allMenu(sock, from, msg, session, commands, pluginCommandNames = []) {
     // ===== HEAVY BOX HEADER =====
     let allMenuText = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
     allMenuText += `┃  💀  *BALI GIL MINI ALL MENU*  💀               ┃\n`;
@@ -21,6 +21,10 @@ async function allMenu(sock, from, msg, session, commands) {
         '🏢 LOGO': ['neon', 'glitch', 'gold', '3dtext', 'fire', 'water', 'galaxy', 'marvel', 'avengers', 'transformer', 'blackpink', 'gradient', 'luxury', 'royal', 'metal', 'steel', 'chrome', 'glossy'],
         '✏️ TEXT MAKER': ['bali', 'cup', 'coffee', 'cloud', 'smoke', 'flower', 'leaf', 'wood', 'stone', 'blood', 'horror', 'scary', 'spooky', 'christmas', 'birthday', 'love', 'heart']
     };
+
+    if (pluginCommandNames.length > 0) {
+        categories['🩸 AKATSUKI PLUGINS'] = pluginCommandNames;
+    }
 
     // ===== BUILD LIST (Compact per category) =====
     for (const [category, cmds] of Object.entries(categories)) {
