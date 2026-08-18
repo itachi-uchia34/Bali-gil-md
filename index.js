@@ -1410,14 +1410,14 @@ function generateMenuText(userName, session) {
     const mode = session.isPublic ? 'PUBLIC' : 'PRIVATE';
     const prefix = settings.prefix || '.';
     const categories = {
-        'GROUP MANAGEMENT': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'revoke', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'tagadmin', 'tagme', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'welcome', 'goodbye', 'antilink', 'kickoffline'],
-        'OWNER & ADMIN': ['owner', 'creator', 'public', 'private', 'mode', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'backup', 'restore', 'clone', 'nuke', 'deleteall', 'ghostmode', 'status'],
-        'SECURITY & AUTOMATION': ['autoreacts', 'autoread', 'autostatus', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
-        'MEDIA & DOWNLOADS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
-        'TOOLS & LOOKUPS': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
-        'AI & KNOWLEDGE': ['ai', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
-        'FUN & GAMES': ['joke', 'meme', 'dare', 'truth', 'ascii', 'roast', 'compliment', 'ship', 'emojimix', 'character', 'coinflip', 'roll', 'riddle', 'wouldyourather', 'report'],
-        'AKATSUKI MEMBER SCROLLS': ['akatsuki', 'painquote', 'tobiquote', 'deidaraquote', 'sasoriquote', 'artquote']
+        '🩸 AKATSUKI GROUP CONTROL': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'revoke', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'tagadmin', 'tagme', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'welcome', 'goodbye', 'antilink', 'kickoffline'],
+        '🔴 SHADOW LEADERSHIP': ['owner', 'creator', 'public', 'private', 'mode', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'backup', 'restore', 'clone', 'nuke', 'deleteall', 'ghostmode', 'status'],
+        '🛡️ PAIN’S SECURITY BARRIERS': ['autoreacts', 'autoread', 'autostatus', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
+        '🎴 SHROUD MEDIA SCROLLS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
+        '⚔️ SIX PATHS TOOLKIT': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
+        '🧠 PAIN’S INTELLIGENCE NETWORK': ['ai', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
+        '🎭 TOBI’S CHAOS ZONE': ['joke', 'meme', 'dare', 'truth', 'ascii', 'roast', 'compliment', 'ship', 'emojimix', 'character', 'coinflip', 'roll', 'riddle', 'wouldyourather', 'report'],
+        '☁️ AKATSUKI MEMBER REGISTRY': ['akatsuki', 'painquote', 'tobiquote', 'deidaraquote', 'sasoriquote', 'artquote']
     };
 
     const registeredCommands = new Set(Object.keys(commands));
@@ -1436,20 +1436,21 @@ function generateMenuText(userName, session) {
         .filter(Boolean);
     const listedNames = new Set(Object.values(categories).flat());
     const additional = Object.keys(commands).filter((name) => !listedNames.has(name)).sort();
-    if (additional.length) sections.push(renderSection('ADDITIONAL COMMANDS', additional));
+    if (additional.length) sections.push(renderSection('📜 HIDDEN SHROUD SCROLLS', additional));
 
     return [
         '╭━━━━━━━━━━━━━━━━━━━━━━╮',
-        '┃      BALI GIL MENU    ┃',
+        '┃   🩸 AKATSUKI SHROUD MENU   ┃',
         '╰━━━━━━━━━━━━━━━━━━━━━━╯',
         `┃ USER   : ${userName}`,
         `┃ MODE   : ${mode}`,
         `┃ PREFIX : ${prefix}`,
-        '┃ STATUS : SHROUD ONLINE',
+        '┃ STATUS : AKATSUKI ONLINE',
+        '┃ RANK   : PAIN’S SIX PATHS',
         '╰━━━━━━━━━━━━━━━━━━━━━━╯',
         '',
         ...sections.flatMap((section) => [section, '']),
-        '┏━━━〔 QUICK ACCESS 〕━━━┓',
+        '┏━━━〔 ⚔️ QUICK SHROUD ACCESS 〕━━━┓',
         `┃ ◇ ${prefix}help`,
         `┃ ◇ ${prefix}h`,
         `┃ ◇ ${prefix}menu`,
@@ -1457,7 +1458,7 @@ function generateMenuText(userName, session) {
         '┗━━━━━━━━━━━━━━━━━━━━━━┛',
         '',
         '╭━━━━━━━━━━━━━━━━━━━━━━╮',
-        '┃  POWERED BY BALI GIL  ┃',
+        '┃  🔴 BALI GIL // AKATSUKI  ┃',
         '╰━━━━━━━━━━━━━━━━━━━━━━╯'
     ].join('\n');
 }
