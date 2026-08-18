@@ -74,13 +74,24 @@ const utils = {
         } catch (e) { await sock.sendMessage(from, { text: "❌ IP Error" }); }
     },
 
-    // 6. Quote
+    // 6. Akatsuki Quote
     quote: async (sock, from, msg) => {
-        try {
-            const res = await axios.get('https://api.quotable.io/random');
-            const d = res.data;
-            await sock.sendMessage(from, { text: `*\u{1F4AD} QUOTE*\n\n"${d.content}"\n\n— ${d.author}` }, { quoted: msg });
-        } catch (e) { await sock.sendMessage(from, { text: "❌ Quote Error" }); }
+        const quotes = [
+            ['Pain', 'Peace is not found by avoiding pain; it is forged by understanding it.'],
+            ['Tobi', 'The mask may hide a face, but it cannot hide the will behind it.'],
+            ['Itachi Uchiha', 'True strength is the courage to protect others without seeking applause.'],
+            ['Konan', 'Even paper can become a wing when hope gives it direction.'],
+            ['Kisame', 'A shinobi is measured by the resolve they carry beneath the surface.'],
+            ['Deidara', 'A fleeting moment can leave an impression that lasts forever.'],
+            ['Sasori', 'What endures is not always what is hard; sometimes it is what inspires.']
+        ];
+        const selected = quotes[Math.floor(Math.random() * quotes.length)];
+        const text = `🩸 *━───── 🔴 AKATSUKI QUOTE 🔴 ─────━* 🩸\n\n` +
+            `*☠️ WORDS FROM THE SHROUD ☠️*\n\n` +
+            `> _"${selected[1]}"_\n\n` +
+            `— *${selected[0]}*\n\n` +
+            `⚔️ Carry the lesson. Honor the cloak.`;
+        await sock.sendMessage(from, { text }, { quoted: msg });
     },
 
     // 7. Fact
