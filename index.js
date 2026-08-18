@@ -1014,22 +1014,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'menu': {
                                             const customName = botData.userNames[this.userId] || msg.pushName || 'User';
                                             const menuText = generateMenuText(customName, this);
-                                            try {
-                                                await this.sock.sendMessage(from, { image: { url: settings.startimage }, caption: menuText }, { quoted: msg });
-                                                // Send the song.mp3 file if it exists in the root directory
-                                                const songPath = path.join(__dirname, 'song.mp3');
-                                                if (fs.existsSync(songPath)) {
-                                                    const audioBuffer = fs.readFileSync(songPath);
-                                                    await this.sock.sendMessage(from, { 
-                                                        audio: audioBuffer, 
-                                                        mimetype: 'audio/mpeg', 
-                                                        fileName: 'song.mp3',
-                                                        ptt: false 
-                                                    }, { quoted: msg });
-                                                }
-                                            } catch (e) { 
-                                                await this.sock.sendMessage(from, { text: menuText }, { quoted: msg }); 
-                                            }
+                                            await this.sock.sendMessage(from, { text: menuText }, { quoted: msg });
                                             break;
                                         }
                                         case 'allmenu': 
@@ -1423,43 +1408,48 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 // =================== MENU GENERATOR ===================
 function generateMenuText(userName, session) {
     const mode = session.isPublic ? 'PUBLIC' : 'PRIVATE';
-    return `🩸 *━───── 🔴 AKATSUKI MD 🔴 ─────━* 🩸
+    const prefix = settings.prefix || '.';
+    const categories = {
+        '⚔️ GROUP MANAGEMENT': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'revoke', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'tagadmin', 'tagme', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'welcome', 'goodbye', 'antilink', 'kickoffline'],
+        '👑 OWNER & ADMIN': ['owner', 'creator', 'public', 'private', 'mode', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'backup', 'restore', 'clone', 'nuke', 'deleteall', 'ghostmode', 'status'],
+        '🛡️ SECURITY & AUTOMATION': ['autoreacts', 'autoread', 'autostatus', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
+        '🎴 MEDIA & DOWNLOADS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
+        '🛠️ TOOLS & LOOKUPS': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
+        '🤖 AI & KNOWLEDGE': ['ai', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
+        '🎭 FUN & GAMES': ['joke', 'meme', 'dare', 'truth', 'ascii', 'roast', 'compliment', 'ship', 'emojimix', 'character', 'coinflip', 'roll', 'riddle', 'wouldyourather', 'report'],
+        '🩸 AKATSUKI MEMBER SCROLLS': ['akatsuki', 'painquote', 'tobiquote', 'deidaraquote', 'sasoriquote', 'artquote']
+    };
 
-*☠️ SHROUD COMMAND CENTER ☠️*
+    const registeredCommands = new Set(Object.keys(commands));
+    const sections = Object.entries(categories).map(([title, names]) => {
+        const listed = names.filter((name) => registeredCommands.has(name));
+        return `*${title}*\n${listed.map((name) => `${prefix}${name}`).join('  ')}`;
+    }).join('\n\n');
 
-Welcome, ${userName}. The organization is watching.
+    const listedNames = new Set(Object.values(categories).flat());
+    const additional = Object.keys(commands).filter((name) => !listedNames.has(name)).sort();
+    const additionalSection = additional.length
+        ? `*📜 ADDITIONAL REGISTERED COMMANDS*\n${additional.map((name) => `${prefix}${name}`).join('  ')}`
+        : '';
 
-┌─ *INTEL* ───────────────┐
-│ ⚔️ Name: ${settings.ownerName || 'BALI'}
-│ 📦 Version: ${settings.version}
-│ ⚙️ Mode: ${mode}
-│ 🔑 Prefix: ${settings.prefix}
-└─────────────────────────┘
-
-*📜 AVAILABLE SCROLLS*
-
-*⚔️ RANKS & GROUPS*
-${settings.prefix}groupmenu  — group operations
-${settings.prefix}ownermenu  — owner operations
-${settings.prefix}help       — command guidance
-${settings.prefix}allmenu    — complete command index
-
-*🛡️ SECURITY BARRIERS*
-${settings.prefix}antilink on/kick/off
-${settings.prefix}autoreact on/off
-${settings.prefix}welcome on/off/status
-${settings.prefix}goodbye on/off/status
-
-*🎴 TOOLS & MISSIONS*
-${settings.prefix}sticker  — convert replied media
-${settings.prefix}tagall    — summon the ranks
-${settings.prefix}ai        — consult the assistant
-${settings.prefix}ping      — check system response
-
-> _"Those who do not understand true pain can never understand true peace."_
-
-⚔️ Wear your ring. Honor the cloak. Follow the dynamic.
-☠️ *POWERED BY ITACHI UCHIHA* ☠️`;
+    return `🩸 *━───── 🔴 AKATSUKI MD 🔴 ─────━* 🩸\n` +
+        `*☠️ THE LONG SHROUD COMMAND SCROLL ☠️*\n\n` +
+        `Welcome, ${userName}. Every path is open.\n\n` +
+        `┌─ *CONNECTION INTEL* ─────────────┐\n` +
+        `│ ⚔️ Name: ${settings.ownerName || 'BALI'}\n` +
+        `│ 📦 Version: ${settings.version}\n` +
+        `│ ⚙️ Mode: ${mode}\n` +
+        `│ 🔑 Prefix: ${prefix}\n` +
+        `└─────────────────────────────────┘\n\n` +
+        `${sections}\n\n` +
+        `${additionalSection}\n\n` +
+        `*📌 QUICK ALIASES*\n` +
+        `${prefix}help / ${prefix}h — concise command guidance\n` +
+        `${prefix}menu — this complete long scroll\n` +
+        `${prefix}allmenu — categorized command index\n\n` +
+        `> _"Those who do not understand true pain can never understand true peace."_\n` +
+        `⚔️ Wear your ring. Honor the cloak. Follow the dynamic.\n` +
+        `☠️ *POWERED BY ITACHI UCHIHA* ☠️`;
 }
 
 
