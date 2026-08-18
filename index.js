@@ -59,6 +59,7 @@ const commands = {
     private: require('./commands/private'),
     public: require('./commands/public'),
     owner: require('./commands/owner'),
+    creator: require('./commands/owner'),
     setname: require('./commands/setname'),
     block: require('./commands/block'),
     unblock: require('./commands/unblock'),
@@ -1098,7 +1099,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                             botData.statusSettings[this.userId].isPublic = true;
                                             saveBotData();
                                             break;
-                                        case 'owner': await commands.owner(this.sock, from, msg); break;
+                                        case 'owner':
+                                        case 'creator': await commands.owner(this.sock, from, msg); break;
                                         case 'setname': await commands.setname(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, q); break;
                                         case 'block': await commands.block(this.sock, from, msg, isOwner, q); break;
                                         case 'unblock': await commands.unblock(this.sock, from, msg, isOwner, q); break;
