@@ -19,6 +19,10 @@ module.exports = async function helpCommand(sock, chatId, msg, session) {
                 ]
             },
             {
+                title: '⚔️ KAGE VILLAGE RIVALRY',
+                commands: [command('kage'), command('kage', ' hokage'), command('kage', ' kazekage'), command('kage', ' raikage'), command('kage', ' mizukage'), command('kage', ' tsuchikage'), command('kage', ' rivalry')]
+            },
+            {
                 title: '🛡️ PAIN’S SECURITY BARRIERS',
                 commands: [
                     command('antilink', ' on'), command('antilink', ' kick'), command('antilink', ' off/status'),

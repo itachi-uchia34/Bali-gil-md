@@ -221,7 +221,8 @@ const commands = {
     listonline: require('./commands/listonline'),
     mycmd: require('./commands/mycmd'),
     gali: require('./commands/gali'),
-        utils: require('./commands/utils')
+    kage: require('./commands/kage'),
+    utils: require('./commands/utils')
 };
 
 // Load modular Akatsuki plugins after the built-in commands.
@@ -1198,8 +1199,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'autoreply': await commands.autoreply(this.sock, from, msg, isAdmin, this, args); break;
                                         case 'keyword': case 'keywords': await commands.keyword(this.sock, from, msg, isAdmin, this, args, botData, saveBotData, this.userId); break;
                                         case 'chatbot': await commands.chatbot(this.sock, from, msg, this, args); break;
-                                        case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
-
+                                                                                case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
+                                        case 'kage': case 'kagerivalry': await commands.kage(this.sock, from, msg, this, args); break;
                                         // ===== FUN =====
                                         case 'joke': await commands.joke(this.sock, from, msg); break;
                                         case 'meme': await commands.meme(this.sock, from, msg); break;
