@@ -1,8 +1,8 @@
 module.exports = {
     startimage: 'https://lh3.googleusercontent.com/d/18DX3oRbQ1E__z-64MUMOM-mRtmSfsLqr',
     startimageFallbacks: ['https://github.com/itachi-uchia34.png?size=512'],
-    startsong: 'https://cdn.jsdelivr.net/gh/itachi-uchia34/Bali-gil-md@main/song.mp3',
-    startsongFallbacks: ['https://raw.githubusercontent.com/itachi-uchia34/Bali-gil-md/main/song.mp3'],
+    startsong: 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663880710751/lvQmtEqreSiSbYgE.mp3',
+    startsongFallbacks: [],
     groupCloseSound: process.env.GROUP_CLOSE_SOUND_URL || '',
     groupCloseSoundFallbacks: (process.env.GROUP_CLOSE_SOUND_FALLBACKS || '').split(',').map((url) => url.trim()).filter(Boolean),
     groupOpenSound: process.env.GROUP_OPEN_SOUND_URL || '',
