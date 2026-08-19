@@ -22,29 +22,23 @@ module.exports = async function tagallCommand(sock, chatId, msg, isAdmin, query)
             mentionRows.push(mentionNames.slice(i, i + 4).join(' '));
         }
 
-        const text = `🩸 ───── 🔴 *BALI GIL MD* 🔴 ───── 🩸
-
-` +
-            `⚔️ *AKATSUKI ORGANIZATION SUMMONS* ⚔️
-
-` +
-            `The Shroud calls upon every shinobi in *${groupName}*.
-
-` +
-            `📜 *ANNOUNCEMENT:*
-${announcement}
-
-` +
-            `👥 *RANKS SUMMONED:* ${participants.length}
-
-` +
-            `${mentionRows.join('\n')}
-
-` +
-            `> _"Those who do not understand true pain can never understand true peace."_
-
-` +
-            `🩸 Wear the cloak. Honor the ring. Respond to the call.`;
+        const text = [
+            '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
+            '🔴 BALI GIL MD ┃ AKATSUKI SUMMONS 🔴',
+            '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
+            `🏯 GROUP: ${groupName} ┃ 👥 MEMBERS: ${participants.length}`,
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '📜 ANNOUNCEMENT',
+            announcement,
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '⚔️ SUMMONED SHINOBI',
+            mentionRows.join('\n'),
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '> _"Those who do not understand true pain can never understand true peace."_',
+            '🩸 Wear the cloak ┃ Honor the ring ┃ Respond to the call',
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            'POWERED BY ITACHI-UCHIHA ©'
+        ].join('\n');
 
         await sock.sendMessage(chatId, { text, mentions: participants }, { quoted: msg });
     } catch (error) {

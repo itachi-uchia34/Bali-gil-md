@@ -1489,10 +1489,14 @@ function generateMenuText(userName, session) {
     const renderSection = (title, names) => {
         const listed = names.filter((name) => registeredCommands.has(name));
         if (!listed.length) return '';
+        const rows = [];
+        for (let i = 0; i < listed.length; i += 5) {
+            rows.push(listed.slice(i, i + 5).map((name) => `${prefix}${name}`).join(' ┃ '));
+        }
         return [
-            `┏━━━〔 ${title} 〕━━━┓`,
-            ...listed.map((name) => `┃ ◇ ${prefix}${name}`),
-            '┗━━━━━━━━━━━━━━━━━━┛'
+            `━━━━━━━━━━ ${title} ━━━━━━━━━━`,
+            rows.join('\n'),
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
         ].join('\n');
     };
 
@@ -1504,27 +1508,18 @@ function generateMenuText(userName, session) {
     if (additional.length) sections.push(renderSection('📜 HIDDEN SHROUD SCROLLS', additional));
 
     return [
-        '╭━━━━━━━━━━━━━━━━━━━━━━╮',
-        '┃   🩸 BALI GIL MENU   ┃',
-        '╰━━━━━━━━━━━━━━━━━━━━━━╯',
-        `┃ USER   : ${userName}`,
-        `┃ MODE   : ${mode}`,
-        `┃ PREFIX : ${prefix}`,
-        '┃ STATUS : AKATSUKI ONLINE',
-        '┃ RANK   : PAIN’S SIX PATHS',
-        '╰━━━━━━━━━━━━━━━━━━━━━━╯',
-        '',
+        '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
+        '🔴 BALI GIL MD // AKATSUKI COMMAND NETWORK 🔴',
+        '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
+        `👤 USER: ${userName} ┃ MODE: ${mode} ┃ PREFIX: ${prefix}`,
+        '⚔️ STATUS: ONLINE ┃ RANK: PAIN’S SIX PATHS',
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
         ...sections.flatMap((section) => [section, '']),
-        '┏━━━〔 ⚔️ QUICK SHROUD ACCESS 〕━━━┓',
-        `┃ ◇ ${prefix}help`,
-        `┃ ◇ ${prefix}h`,
-        `┃ ◇ ${prefix}menu`,
-        `┃ ◇ ${prefix}allmenu`,
-        '┗━━━━━━━━━━━━━━━━━━━━━━┛',
-        '',
-        '╭━━━━━━━━━━━━━━━━━━━━━━╮',
-        '┃  🔴 ITACHI UCHIHA // AKATSUKI  ┃',
-        '╰━━━━━━━━━━━━━━━━━━━━━━╯'
+        '━━━━━━━━━━ ⚔️ QUICK ACCESS ━━━━━━━━━━',
+        `${prefix}help ┃ ${prefix}h ┃ ${prefix}menu ┃ ${prefix}allmenu`,
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+        '🔴 ITACHI UCHIHA // AKATSUKI',
+        'POWERED BY ITACHI-UCHIHA ©'
     ].join('\n');
 }
 
