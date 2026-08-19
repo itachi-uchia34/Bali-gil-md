@@ -1,3 +1,6 @@
+const settings = require('../settings');
+const { sendOptionalSound } = require('../lib/group-mode-response');
+
 const VERSION_ALIASES = {
     '1': 'pain',
     'pain': 'pain',
@@ -110,5 +113,7 @@ module.exports = async function(sock, from, msg, session, args = []) {
     await sock.sendMessage(from, { react: { text: selectedVersion === 'soft' ? '😅' : '🩸', key: msg.key } });
     const sendOptions = { text: response };
     if (mentioned) sendOptions.mentions = [mentioned];
-    return sock.sendMessage(from, sendOptions, { quoted: msg });
+    await sock.sendMessage(from, sendOptions, { quoted: msg });
+    await sendOptionalSound(sock, from, msg, settings.galiSound, 'bali-gil-md-gali.mp3', settings.galiSoundFallbacks);
+    return;
 };

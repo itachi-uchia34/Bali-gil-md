@@ -1,4 +1,5 @@
 const { sendGroupModeResponse } = require('../lib/group-mode-response');
+const settings = require('../settings');
 
 module.exports = async function unmuteCommand(sock, chatId, msg, isAdmin) {
     if (!chatId.endsWith('@g.us')) {
@@ -15,7 +16,10 @@ module.exports = async function unmuteCommand(sock, chatId, msg, isAdmin) {
     }
     try {
         await sock.groupSettingUpdate(chatId, 'not_announcement');
-        await sendGroupModeResponse(sock, chatId, msg, true);
+        await sendGroupModeResponse(sock, chatId, msg, true, {
+            soundUrl: settings.gconSound,
+            soundFallbacks: settings.gconSoundFallbacks
+        });
     } catch (error) {
         console.error('Pain shroud release error:', error);
         await sock.sendMessage(chatId, {
