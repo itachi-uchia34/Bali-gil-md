@@ -18,7 +18,7 @@
     0 0 36px #d896ff,
     0 0 48px #ab47bc;
   padding: 12px 0;
-"> Built on Baileys • Designed for Speed • Enhanced for Stability • Powered by BALI GIL
+"> Built on Baileys • Designed for Speed • Enhanced for Stability • Powered by ITACHI-UCHIHA 
 </div>
 </p>
 
