@@ -598,8 +598,9 @@ class BotSession {
         this.keywordRepliesEnabled = botData.statusSettings[userId]?.keywordRepliesEnabled !== false;
         this.autoReact = botData.statusSettings[userId]?.autoReact || false;
         this.autoReactIndex = 0;
-        this.welcomeEnabled = botData.statusSettings[userId]?.welcomeEnabled || false;
-        this.goodbyeEnabled = botData.statusSettings[userId]?.goodbyeEnabled || false;
+        // Join/leave announcements are enabled by default; `.welcome off` and `.goodbye off` persistently disable them.
+        this.welcomeEnabled = botData.statusSettings[userId]?.welcomeEnabled !== false;
+        this.goodbyeEnabled = botData.statusSettings[userId]?.goodbyeEnabled !== false;
         this.isPublic = botData.statusSettings[userId]?.isPublic !== undefined ? botData.statusSettings[userId].isPublic : true; 
         this.authPath = path.join(AUTH_DIR, userId);
         this.processedMessages = new Set();
@@ -753,7 +754,7 @@ class BotSession {
             this.sock.ev.on('creds.update', saveCreds);
 
             this.sock.ev.on('group-participants.update', async (update) => {
-                if (!this.welcomeEnabled || update.action !== 'add' || !Array.isArray(update.participants) || update.participants.length === 0) return;
+                if (!this.welcomeEnabled || !['add', 'invite'].includes(update.action) || !Array.isArray(update.participants) || update.participants.length === 0) return;
                 try {
                     const metadata = await this.sock.groupMetadata(update.id);
                     const groupName = metadata.subject || 'the group';
