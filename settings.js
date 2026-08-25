@@ -1,8 +1,11 @@
+const path = require('path');
+
 module.exports = {
     startimage: 'https://lh3.googleusercontent.com/d/18DX3oRbQ1E__z-64MUMOM-mRtmSfsLqr',
     startimageFallbacks: ['https://github.com/itachi-uchia34.png?size=512'],
-    startsong: 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663880710751/lvQmtEqreSiSbYgE.mp3',
-    startsongFallbacks: [],
+    // Use the checked-in asset first so startup/menu audio does not depend on a remote CDN.
+    startsong: process.env.START_SONG_URL || path.join(__dirname, 'song.mp3'),
+    startsongFallbacks: (process.env.START_SONG_FALLBACKS || 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663880710751/lvQmtEqreSiSbYgE.mp3').split(',').map((url) => url.trim()).filter(Boolean),
     groupCloseSound: process.env.GROUP_CLOSE_SOUND_URL || '',
     groupCloseSoundFallbacks: (process.env.GROUP_CLOSE_SOUND_FALLBACKS || '').split(',').map((url) => url.trim()).filter(Boolean),
     groupOpenSound: process.env.GROUP_OPEN_SOUND_URL || '',

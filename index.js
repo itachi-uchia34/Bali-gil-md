@@ -12,8 +12,43 @@ const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
 const { createThemedSocket } = require('./lib/akatsuki-theme');
-const { formatFramedMenu, sendFramedMenu, sendMenuWithSong } = require('./lib/menu-format');
+const { formatFramedMenu, sendFramedMenu, sendMenuWithSong, sendAudioWithFallback } = require('./lib/menu-format');
 // Import all commands
+function unwrapMessageContent(message) {
+    let content = message;
+    while (content?.ephemeralMessage?.message || content?.viewOnceMessage?.message || content?.viewOnceMessageV2?.message || content?.documentWithCaptionMessage?.message) {
+        content = content.ephemeralMessage?.message || content.viewOnceMessage?.message || content.viewOnceMessageV2?.message || content.documentWithCaptionMessage?.message;
+    }
+    return content || {};
+}
+
+function getMessageText(messageContent) {
+    const values = [
+        messageContent.conversation,
+        messageContent.extendedTextMessage?.text,
+        messageContent.imageMessage?.caption,
+        messageContent.videoMessage?.caption,
+        messageContent.documentMessage?.caption,
+        messageContent.documentWithCaptionMessage?.message?.documentMessage?.caption,
+        messageContent.buttonsResponseMessage?.selectedDisplayText,
+        messageContent.listResponseMessage?.title,
+        messageContent.templateButtonReplyMessage?.selectedDisplayText,
+        messageContent.interactiveResponseMessage?.body?.text
+    ];
+    return values.filter(value => typeof value === 'string').join(' ').replace(/[\\u200B-\\u200D\\uFEFF]/g, '').trim();
+}
+
+function containsLink(value) {
+    const text = String(value || '')
+        .normalize('NFKC')
+        .replace(/[。．｡]/g, '.')
+        .replace(/[：﹕]/g, ':')
+        .replace(/[／⁄]/g, '/')
+        .replace(/[\\u200B-\\u200D\\uFEFF]/g, '');
+
+    return /(?:https?|ftp):\/\/\S+|(?:^|[\s([<{])www\.\S+|(?:^|[\s([<{])(?:chat\.whatsapp\.com|wa\.me)\/\S+|(?:^|[\s([<{])(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?(?=$|[\s)\]}>},!?])/i.test(text);
+}
+
 const commands = {
     // Media & Download
     song: require('./commands/song'),
@@ -536,6 +571,13 @@ if (fs.existsSync(DATA_FILE)) {
     try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
 }
 
+// Keep persisted data backward-compatible when older deployments do not yet have
+// the anti-link or status containers.
+botData.antilinkGroups ||= {};
+botData.antiStatusGroups ||= {};
+botData.statusSettings ||= {};
+botData.antiCall ||= {};
+
 function saveBotData() {
     fs.writeJsonSync(DATA_FILE, botData);
 }
@@ -851,11 +893,11 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         const isGroup = from.endsWith('@g.us');
                         const isStatus = from === 'status@broadcast';
 
-                        const messageContent = msg.message?.ephemeralMessage?.message || msg.message?.viewOnceMessage?.message || msg.message?.viewOnceMessageV2?.message || msg.message;
-                        if (!messageContent) return;
+                        const messageContent = unwrapMessageContent(msg.message);
+                        if (!messageContent || Object.keys(messageContent).length === 0) return;
 
                         let type = Object.keys(messageContent)[0];
-                        const text = (messageContent.conversation || messageContent.extendedTextMessage?.text || messageContent.imageMessage?.caption || messageContent.videoMessage?.caption || '').trim();
+                        const text = getMessageText(messageContent);
 
                         // Handle snipe for deleted messages
                         if (!isMe && !isStatus) {
@@ -975,8 +1017,9 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         if (!isAdmin && isGroup) {
                             try {
                                 const groupMetadata = await this.sock.groupMetadata(from);
-                                const participant = groupMetadata.participants.find(p => p.id === sender);
-                                isAdmin = participant && (participant.admin === 'admin' || participant.admin === 'superadmin');
+                                const normalizedSender = jidNormalizedUser(sender);
+                                const participant = groupMetadata.participants.find(p => jidNormalizedUser(p.id) === normalizedSender);
+                                isAdmin = Boolean(participant && (participant.admin === 'admin' || participant.admin === 'superadmin'));
                             } catch (e) {
                                 isAdmin = false;
                             }
@@ -998,30 +1041,37 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             }
                         }
 
-                        // Antilink
-                        if (isGroup && botData.antilinkGroups[from] && !isAdmin) {
-                            const linkPatterns = [/chat.whatsapp.com\//i, /http:\/\//i, /https:\/\//i, /www\./i, /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/i];
-                            if (linkPatterns.some(pattern => pattern.test(text))) {
-                                try {
-                                    const mode = botData.antilinkGroups[from];
-                                    await this.sock.sendMessage(from, { delete: msg.key });
-                                    if (mode === 'kick') {
-                                        await this.sock.groupParticipantsUpdate(from, [sender], 'remove');
-                                        await this.sock.sendMessage(from, {
-                                            text: `🩸 *AKATSUKI BARRIER*\n\n@${sender.split('@')[0]} has been removed for breaking the link restriction.`,
-                                            mentions: [sender]
-                                        });
-                                    } else {
-                                        await this.sock.sendMessage(from, {
-                                            text: `🩸 *AKATSUKI BARRIER*\n\n@${sender.split('@')[0]}, external links are forbidden in this organization. Your message was removed.`,
-                                            mentions: [sender]
-                                        });
-                                    }
-                                } catch (e) {
-                                    this.sendLog(`Anti-link action failed: ${e.message}`, 'warning');
-                                }
+                        // Anti-link: delete every matching group message before any command or auto-reply can act on it.
+                        // This intentionally includes administrators so `.antilink on` means every link.
+                        if (isGroup && botData.antilinkGroups[from] && containsLink(text)) {
+                            const mode = botData.antilinkGroups[from];
+                            try {
+                                await this.sock.sendMessage(from, { delete: msg.key });
+                                this.sendLog(`Deleted link message ${msg.key.id} in ${from}.`, 'success');
+                            } catch (deleteError) {
+                                this.sendLog(`Anti-link could not delete ${msg.key.id}: ${deleteError.message}`, 'error');
                                 return;
                             }
+
+                            if (mode === 'kick') {
+                                try {
+                                    await this.sock.groupParticipantsUpdate(from, [sender], 'remove');
+                                } catch (kickError) {
+                                    this.sendLog(`Anti-link kick failed: ${kickError.message}`, 'warning');
+                                }
+                            }
+
+                            try {
+                                await this.sock.sendMessage(from, {
+                                    text: mode === 'kick'
+                                        ? `🩸 *AKATSUKI BARRIER*\n\n@${sender.split('@')[0]} has been removed for breaking the link restriction.`
+                                        : `🩸 *AKATSUKI BARRIER*\n\n@${sender.split('@')[0]}, external links are forbidden in this organization. Your message was removed.`,
+                                    mentions: [sender]
+                                });
+                            } catch (noticeError) {
+                                this.sendLog(`Anti-link notice failed: ${noticeError.message}`, 'warning');
+                            }
+                            return;
                         }
 
                         // Ghost mode - only restrict if enabled and NOT owner/session user
@@ -1437,10 +1487,22 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             `Type *.menu* to enter the command center.\n\n` +
                             `> _POWERED BY ITACHI-UCHIHA ©_`;
 
-                        await this.sock.sendMessage(botNumber, { 
+                        await this.sock.sendMessage(botNumber, {
                             image: { url: settings.startimage },
-                            caption: welcomeText 
+                            caption: welcomeText
                         });
+
+                        const startupSong = await sendAudioWithFallback(
+                            this.sock,
+                            botNumber,
+                            null,
+                            settings.startsong,
+                            settings.startsongFallbacks,
+                            'bali-gil-md-startup.mp3'
+                        );
+                        if (startupSong.song !== 'sent') {
+                            this.sendLog('Startup song could not be delivered from configured sources.', 'warning');
+                        }
 
                         try {
                             const channelLink = settings.whatsappChannel;
