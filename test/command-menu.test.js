@@ -5,6 +5,7 @@ const { generateMenuText, getCommandNames } = require('../lib/menu-text');
 const helpCommand = require('../commands/help');
 const allMenuCommand = require('../commands/allmenu');
 const animeCommand = require('../commands/anime');
+const { sendMenuWithSong } = require('../lib/menu-format');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -79,4 +80,23 @@ test('anime command handles missing query without making a network request', asy
     await animeCommand(sock, 'chat', {}, '');
 
     assert.match(sent[0], /\.anime <anime name>/);
+});
+
+test('menu delivery order is cover image, full menu text/footer, then song', async () => {
+    const sent = [];
+    const sock = {
+        async sendMessage(_chatId, payload) {
+            sent.push(payload);
+            return {};
+        }
+    };
+    const menuText = 'COMPLETE MENU\nOWNER: BALI GIL\nOWNER NUMBER: +123456789\nDEVELOPER: ITACHI UCHIHA';
+
+    await sendMenuWithSong(sock, 'chat', {}, menuText, 'https://example.test/cover.jpg', 'https://example.test/song.mp3');
+
+    assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'text', 'audio']);
+    assert.deepEqual(sent[0].image, { url: 'https://example.test/cover.jpg' });
+    assert.equal(sent[0].caption, undefined);
+    assert.equal(sent[1].text, menuText);
+    assert.deepEqual(sent[2].audio, { url: 'https://example.test/song.mp3' });
 });
