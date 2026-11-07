@@ -16,6 +16,7 @@ const { formatFramedMenu, sendFramedMenu, sendAudioWithFallback } = require('./l
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/command-parser');
 const { nextAutoReactEmoji } = require('./lib/auto-react');
 const { normalizeJidUserId } = require('./lib/whatsapp-id');
+const { runPreCommandHooks } = require('./lib/precommand-hooks');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -905,12 +906,17 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         let type = Object.keys(messageContent)[0];
                         const text = getMessageText(messageContent);
 
-                        // Handle snipe for deleted messages
-                        if (!isMe && !isStatus) {
-                            await handleAutoread(this.sock, msg);
-                            await storeMessage(msg);
-                            handleSnipe(msg);
-                        }
+                        // Nonessential read/storage/snipe hooks must not block command dispatch.
+                        await runPreCommandHooks({
+                            sock: this.sock,
+                            msg,
+                            isMe,
+                            isStatus,
+                            handleAutoread,
+                            storeMessage,
+                            handleSnipe,
+                            onError: (hook, error) => this.sendLog(`${hook} pre-command hook failed: ${error.message}`, 'warning')
+                        });
 
                         if (msg.message?.protocolMessage?.type === 0) {
                             await handleMessageRevocation(this.sock, msg);

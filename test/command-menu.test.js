@@ -11,6 +11,7 @@ const { AUTO_REACT_EMOJIS, getAutoReactEmojiList, nextAutoReactEmoji } = require
 const { normalizeJidUserId } = require('../lib/whatsapp-id');
 const menuCommand = require('../commands/menu');
 const settings = require('../settings');
+const { runPreCommandHooks } = require('../lib/precommand-hooks');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -24,6 +25,23 @@ test('command parser ignores messages without the configured prefix or an empty 
     assert.equal(parseCommand('.menu', '!'), null);
     assert.equal(parseCommand('!   ', '!'), null);
     assert.equal(parseCommand('', '!'), null);
+});
+
+test('pre-command hook failures cannot prevent subsequent command processing', async () => {
+    const called = [];
+    const errors = [];
+
+    await runPreCommandHooks({
+        sock: {},
+        msg: { key: { id: 'message-1' } },
+        handleAutoread: async () => { called.push('autoread'); throw new Error('read receipt failed'); },
+        storeMessage: async () => { called.push('store'); },
+        handleSnipe: () => { called.push('snipe'); },
+        onError: (hook) => errors.push(hook)
+    });
+
+    assert.deepEqual(called, ['autoread', 'store', 'snipe']);
+    assert.deepEqual(errors, ['autoread']);
 });
 
 test('menu is allowed for ordinary users in private mode without opening other commands', () => {
