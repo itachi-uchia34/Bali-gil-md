@@ -9,6 +9,8 @@ const { sendMenuWithSong } = require('../lib/menu-format');
 const autoreactsCommand = require('../commands/autoreacts');
 const { AUTO_REACT_EMOJIS, getAutoReactEmojiList, nextAutoReactEmoji } = require('../lib/auto-react');
 const { normalizeJidUserId } = require('../lib/whatsapp-id');
+const menuCommand = require('../commands/menu');
+const settings = require('../settings');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -109,6 +111,88 @@ test('menu includes callable commands with the configured prefix and excludes in
     assert.match(output, /OWNER NUMBER: \+?\d+/);
     assert.match(output, /DEVELOPER: ITACHI UCHIHA/);
     assert.doesNotMatch(output, /!utils|!missing/);
+});
+
+test('dedicated menu command sends cover, complete menu/footer, then song', async () => {
+    const original = {
+        startimage: settings.startimage,
+        startimageFallbacks: settings.startimageFallbacks,
+        startsong: settings.startsong,
+        startsongFallbacks: settings.startsongFallbacks
+    };
+    settings.startimage = 'test-cover-url';
+    settings.startimageFallbacks = [];
+    settings.startsong = 'test-song-url';
+    settings.startsongFallbacks = [];
+
+    const sent = [];
+    const sock = {
+        async sendMessage(_chatId, payload) {
+            sent.push(payload);
+            return {};
+        }
+    };
+    const commands = { menu: async () => {}, ping: async () => {} };
+
+    try {
+        const result = await menuCommand(
+            sock,
+            'test-chat',
+            { pushName: 'Tester' },
+            { userId: 'test-bot', isPublic: false },
+            commands,
+            { userNames: { 'test-bot': 'Saved Tester' } },
+            '!'
+        );
+
+        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'text', 'audio']);
+        assert.deepEqual(sent[0].image, { url: 'test-cover-url' });
+        assert.ok(sent[1].text.includes('USER: Saved Tester'));
+        assert.ok(sent[1].text.includes('PREFIX: !'));
+        assert.ok(sent[1].text.includes('OWNER NUMBER:'));
+        assert.ok(sent[1].text.includes('DEVELOPER:'));
+        assert.deepEqual(sent[2].audio, { url: 'test-song-url' });
+        assert.deepEqual(result, { mode: 'image', imageUrl: 'test-cover-url', menu: 'sent', song: 'sent', songUrl: 'test-song-url', delivery: 'url' });
+    } finally {
+        Object.assign(settings, original);
+    }
+});
+
+test('dedicated menu command still sends text and song and reports a missing cover', async () => {
+    const original = {
+        startimage: settings.startimage,
+        startimageFallbacks: settings.startimageFallbacks,
+        startsong: settings.startsong,
+        startsongFallbacks: settings.startsongFallbacks
+    };
+    const originalFetch = global.fetch;
+    settings.startimage = 'https://invalid.test/cover.png';
+    settings.startimageFallbacks = [];
+    settings.startsong = 'test-song-url';
+    settings.startsongFallbacks = [];
+    global.fetch = async () => new Response('not found', { status: 404 });
+
+    const sent = [];
+    const sock = {
+        async sendMessage(_chatId, payload) {
+            sent.push(payload);
+            if (payload.image) throw new Error('cover send failed');
+            return {};
+        }
+    };
+
+    try {
+        const result = await menuCommand(sock, 'test-chat', {}, { userId: 'test-bot' }, { menu: async () => {} }, {}, '.');
+
+        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'text', 'audio', 'text']);
+        assert.ok(sent[3].text.includes('Could not deliver cover image'));
+        assert.equal(result.mode, 'text-only');
+        assert.equal(result.menu, 'sent');
+        assert.equal(result.song, 'sent');
+    } finally {
+        Object.assign(settings, original);
+        global.fetch = originalFetch;
+    }
 });
 
 test('help and allmenu render only usable commands', async () => {

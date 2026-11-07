@@ -12,9 +12,8 @@ const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
 const { createThemedSocket } = require('./lib/akatsuki-theme');
-const { formatFramedMenu, sendFramedMenu, sendMenuWithSong, sendAudioWithFallback } = require('./lib/menu-format');
+const { formatFramedMenu, sendFramedMenu, sendAudioWithFallback } = require('./lib/menu-format');
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/command-parser');
-const { generateMenuText: renderMenuText } = require('./lib/menu-text');
 const { nextAutoReactEmoji } = require('./lib/auto-react');
 const { normalizeJidUserId } = require('./lib/whatsapp-id');
 // Import all commands
@@ -241,6 +240,7 @@ const commands = {
     movie: require('./commands/movie'),
     allmenu: require('./commands/allmenu'),
     help: require('./commands/help'),
+    menu: require('./commands/menu'),
     anime: require('./commands/anime'),
     manga: require('./commands/manga'),
     lyrics: require('./commands/lyrics'),
@@ -1107,21 +1107,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         // ===== MENU =====
                                         case 'help':
                                         case 'h': await commands.help(this.sock, from, msg, this, commands); break;
-                                        case 'menu': {
-                                            const customName = botData.userNames?.[this.userId] || msg.pushName || 'User';
-                                            const menuText = renderMenuText(customName, this, commands, commandPrefix);
-                                            const delivery = await sendMenuWithSong(this.sock, from, msg, menuText, settings.startimage, settings.startsong, settings.startimageFallbacks, settings.startsongFallbacks);
-                                            const failures = [];
-                                            if (delivery.mode === 'text-only') failures.push('cover image');
-                                            if (delivery.menu === 'failed') failures.push('menu text');
-                                            if (delivery.song !== 'sent') failures.push('menu song');
-                                            if (failures.length) {
-                                                await this.sock.sendMessage(from, {
-                                                    text: `⚠️ Could not deliver ${failures.join(', ')}. The remaining menu parts were still attempted; please try ${commandPrefix}menu again.`
-                                                }, { quoted: msg });
-                                            }
-                                            break;
-                                        }
+                                        case 'menu': await commands.menu(this.sock, from, msg, this, commands, botData, commandPrefix); break;
                                         case 'allmenu': 
                                             const allMenuCmd = require('./commands/allmenu');
                                             await allMenuCmd(this.sock, from, msg, this, commands, Object.keys(pluginRegistry.commands), commandPrefix);
