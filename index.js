@@ -13,7 +13,7 @@ const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
 const { createThemedSocket } = require('./lib/akatsuki-theme');
 const { formatFramedMenu, sendFramedMenu, sendMenuWithSong, sendAudioWithFallback } = require('./lib/menu-format');
-const { parseCommand } = require('./lib/command-parser');
+const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/command-parser');
 const { generateMenuText: renderMenuText } = require('./lib/menu-text');
 // Import all commands
 function unwrapMessageContent(message) {
@@ -1077,8 +1077,12 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             return;
                         }
 
-                        // Ghost mode - only restrict if enabled and NOT owner/session user
-                        if (this.ghostMode && !isOwner && !isSessionUser) {
+                        const commandPrefix = typeof settings.prefix === 'string' && settings.prefix.length ? settings.prefix : '.';
+                        const parsedCommand = parseCommand(text, commandPrefix);
+                        const isPublicMenuRequest = isPublicInfoCommand(parsedCommand?.commandName);
+
+                        // Keep informational menu access available even when the bot is private or hidden.
+                        if (this.ghostMode && !isOwner && !isSessionUser && !isPublicMenuRequest) {
                             return;
                         }
 
@@ -1090,12 +1094,10 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // Process commands
-                        const commandPrefix = typeof settings.prefix === 'string' && settings.prefix.length ? settings.prefix : '.';
-                        const parsedCommand = parseCommand(text, commandPrefix);
                         if (parsedCommand) {
-                            // Re-check authorization for commands
-                            if (!this.isPublic && !isAuthorized) return;
                             const { args, query: q, commandName } = parsedCommand;
+                            // Re-check authorization for commands
+                            if (!isCommandAllowed(commandName, { isPublic: this.isPublic, isAuthorized })) return;
 
                             (async () => {
                                 try {
@@ -1105,9 +1107,18 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'help':
                                         case 'h': await commands.help(this.sock, from, msg, this, commands); break;
                                         case 'menu': {
-                                            const customName = botData.userNames[this.userId] || msg.pushName || 'User';
+                                            const customName = botData.userNames?.[this.userId] || msg.pushName || 'User';
                                             const menuText = renderMenuText(customName, this, commands, commandPrefix);
-                                            await sendMenuWithSong(this.sock, from, msg, menuText, settings.startimage, settings.startsong, settings.startimageFallbacks, settings.startsongFallbacks);
+                                            const delivery = await sendMenuWithSong(this.sock, from, msg, menuText, settings.startimage, settings.startsong, settings.startimageFallbacks, settings.startsongFallbacks);
+                                            const failures = [];
+                                            if (delivery.mode === 'text-only') failures.push('cover image');
+                                            if (delivery.menu === 'failed') failures.push('menu text');
+                                            if (delivery.song !== 'sent') failures.push('menu song');
+                                            if (failures.length) {
+                                                await this.sock.sendMessage(from, {
+                                                    text: `⚠️ Could not deliver ${failures.join(', ')}. The remaining menu parts were still attempted; please try ${commandPrefix}menu again.`
+                                                }, { quoted: msg });
+                                            }
                                             break;
                                         }
                                         case 'allmenu': 
