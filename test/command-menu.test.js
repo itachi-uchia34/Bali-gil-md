@@ -4,6 +4,7 @@ const { parseCommand } = require('../lib/command-parser');
 const { generateMenuText, getCommandNames } = require('../lib/menu-text');
 const helpCommand = require('../commands/help');
 const allMenuCommand = require('../commands/allmenu');
+const animeCommand = require('../commands/anime');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -69,4 +70,13 @@ test('help and allmenu render only usable commands', async () => {
         assert.match(menu, /DEVELOPER: ITACHI UCHIHA/);
     }
     assert.doesNotMatch(sent[1], /!utils/);
+});
+
+test('anime command handles missing query without making a network request', async () => {
+    const sent = [];
+    const sock = { async sendMessage(_chatId, payload) { sent.push(payload.text); } };
+
+    await animeCommand(sock, 'chat', {}, '');
+
+    assert.match(sent[0], /\.anime <anime name>/);
 });

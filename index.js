@@ -238,6 +238,7 @@ const commands = {
     movie: require('./commands/movie'),
     allmenu: require('./commands/allmenu'),
     help: require('./commands/help'),
+    anime: require('./commands/anime'),
     manga: require('./commands/manga'),
     lyrics: require('./commands/lyrics'),
     chatbot: require('./commands/chatbot'),
