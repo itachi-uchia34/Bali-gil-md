@@ -13,6 +13,8 @@ const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
 const { createThemedSocket } = require('./lib/akatsuki-theme');
 const { formatFramedMenu, sendFramedMenu, sendMenuWithSong, sendAudioWithFallback } = require('./lib/menu-format');
+const { parseCommand } = require('./lib/command-parser');
+const { generateMenuText: renderMenuText } = require('./lib/menu-text');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -1087,13 +1089,12 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // Process commands
-                        if (text.toLowerCase().startsWith('.')) {
+                        const commandPrefix = typeof settings.prefix === 'string' && settings.prefix.length ? settings.prefix : '.';
+                        const parsedCommand = parseCommand(text, commandPrefix);
+                        if (parsedCommand) {
                             // Re-check authorization for commands
                             if (!this.isPublic && !isAuthorized) return;
-                            const cmd = text.toLowerCase();
-                            const args = text.split(' ').slice(1);
-                            const q = args.join(' ');
-                            const commandName = cmd.slice(1).split(' ')[0];
+                            const { args, query: q, commandName } = parsedCommand;
 
                             (async () => {
                                 try {
@@ -1101,16 +1102,16 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                     switch (commandName) {
                                         // ===== MENU =====
                                         case 'help':
-                                        case 'h': await commands.help(this.sock, from, msg, this); break;
+                                        case 'h': await commands.help(this.sock, from, msg, this, commands); break;
                                         case 'menu': {
                                             const customName = botData.userNames[this.userId] || msg.pushName || 'User';
-                                            const menuText = generateMenuText(customName, this);
+                                            const menuText = renderMenuText(customName, this, commands, commandPrefix);
                                             await sendMenuWithSong(this.sock, from, msg, menuText, settings.startimage, settings.startsong, settings.startimageFallbacks, settings.startsongFallbacks);
                                             break;
                                         }
                                         case 'allmenu': 
                                             const allMenuCmd = require('./commands/allmenu');
-                                            await allMenuCmd(this.sock, from, msg, this, commands, Object.keys(pluginRegistry.commands));
+                                            await allMenuCmd(this.sock, from, msg, this, commands, Object.keys(pluginRegistry.commands), commandPrefix);
                                             break;
                                         case 'ownermenu': {
                                             const text = formatFramedMenu({
@@ -1274,7 +1275,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'wyr': case 'wouldyourather': await commands.wouldyourather(this.sock, from, msg); break;
 
                                         // ===== TOOLS =====
-                                        case 'ping': await commands.utils.ping(this.sock, from, msg); break;
+                                        case 'ping': await commands.ping(this.sock, from, msg); break;
                                         case 'dp':
                                         case 'dpz': await commands.dp(this.sock, from, msg); break;
                                         case 'vv': await commands.vv(this.sock, from, msg); break;
@@ -1337,7 +1338,6 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'speedtest': case 'speed': await commands.speedtest(this.sock, from, msg); break;
                                         case 'device': case 'dev': await commands.device(this.sock, from, msg); break;
                                         case 'runtime': case 'rt': await commands.runtime(this.sock, from, msg); break;
-                                        case 'ping': await commands.ping(this.sock, from, msg); break;
 
                                         // ===== UTILITIES =====
                                         case 'timer': await commands.timer(this.sock, from, msg, q); break;
@@ -1530,60 +1530,6 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
             setTimeout(() => this.initialize(), 10000);
         }
     }
-}
-
-
-// =================== MENU GENERATOR ===================
-function generateMenuText(userName, session) {
-    const mode = session.isPublic ? 'PUBLIC' : 'PRIVATE';
-    const prefix = settings.prefix || '.';
-    const categories = {
-        '🩸 AKATSUKI GROUP CONTROL': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'revoke', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'tagadmin', 'tagme', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'welcome', 'goodbye', 'antilink', 'kickoffline'],
-        '🔴 SHADOW LEADERSHIP': ['owner', 'creator', 'public', 'private', 'mode', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'backup', 'restore', 'clone', 'nuke', 'deleteall', 'ghostmode', 'status'],
-        '🛡️ PAIN’S SECURITY BARRIERS': ['autoreacts', 'autoread', 'autostatus', 'autochat', 'anticall', 'antidelete', 'antistatus', 'antibug', 'mention', 'everyonemsg', 'listonline'],
-        '🎴 SHROUD MEDIA SCROLLS': ['sticker', 'toimg', 'tomp3', 'tts', 'song', 'video', 'youtube', 'yts', 'tiktok', 'insta', 'facebook', 'pinterest', 'twitter', 'reddit', 'spotify', 'mediafire', 'mf', 'gdrive', 'apk'],
-        '⚔️ SIX PATHS TOOLKIT': ['ping', 'runtime', 'uptime', 'serverinfo', 'speedtest', 'device', 'dp', 'dpz', 'vv', 'translate', 'base64', 'qr', 'shorturl', 'calc', 'weather', 'github', 'npm', 'ipinfo', 'whois', 'dnslookup', 'portscan', 'screenshot', 'define', 'google', 'wiki', 'playstore', 'tempmail', 'fakeinfo', 'binlookup'],
-        '🧠 PAIN’S INTELLIGENCE NETWORK': ['ai', 'autochat', 'autoreply', 'keyword', 'keywords', 'chatbot', 'quote', 'fact', 'trivia', 'news', 'crypto', 'movie', 'lyrics', 'manga', 'quran', 'hadith', 'prayer', 'qibla', 'asmaulhusna'],
-        '🎭 TOBI’S CHAOS ZONE': ['joke', 'meme', 'dare', 'truth', 'ascii', 'roast', 'compliment', 'ship', 'emojimix', 'character', 'coinflip', 'roll', 'riddle', 'wouldyourather', 'report'],
-        '☁️ AKATSUKI MEMBER REGISTRY': ['akatsuki', 'painquote', 'tobiquote', 'deidaraquote', 'sasoriquote', 'artquote']
-    };
-
-    const registeredCommands = new Set(Object.keys(commands));
-    const renderSection = (title, names) => {
-        const listed = names.filter((name) => registeredCommands.has(name));
-        if (!listed.length) return '';
-        const rows = [];
-        for (let i = 0; i < listed.length; i += 5) {
-            rows.push(listed.slice(i, i + 5).map((name) => `${prefix}${name}`).join(' ┃ '));
-        }
-        return [
-            `━━━━━━━━━━ ${title} ━━━━━━━━━━`,
-            rows.join('\n'),
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-        ].join('\n');
-    };
-
-    const sections = Object.entries(categories)
-        .map(([title, names]) => renderSection(title, names))
-        .filter(Boolean);
-    const listedNames = new Set(Object.values(categories).flat());
-    const additional = Object.keys(commands).filter((name) => !listedNames.has(name)).sort();
-    if (additional.length) sections.push(renderSection('📜 HIDDEN SHROUD SCROLLS', additional));
-
-    return [
-        '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
-        '🔴 BALI GIL MD // AKATSUKI COMMAND NETWORK 🔴',
-        '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
-        `👤 USER: ${userName} ┃ MODE: ${mode} ┃ PREFIX: ${prefix}`,
-        '⚔️ STATUS: ONLINE ┃ RANK: PAIN’S SIX PATHS',
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-        ...sections.flatMap((section) => [section, '']),
-        '━━━━━━━━━━ ⚔️ QUICK ACCESS ━━━━━━━━━━',
-        `${prefix}help ┃ ${prefix}h ┃ ${prefix}menu ┃ ${prefix}allmenu`,
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-        '🔴 ITACHI UCHIHA // AKATSUKI',
-        'POWERED BY ITACHI-UCHIHA ©'
-    ].join('\n');
 }
 
 

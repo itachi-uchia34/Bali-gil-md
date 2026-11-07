@@ -1,7 +1,8 @@
 const { formatFramedMenu, sendFramedMenu } = require('../lib/menu-format');
+const { getCommandNames } = require('../lib/menu-text');
 const settings = require('../settings');
 
-async function allMenu(sock, from, msg, session, commands, pluginCommandNames = []) {
+async function allMenu(sock, from, msg, session, commands, pluginCommandNames = [], commandPrefix = settings.prefix) {
     const categories = {
         '👑 SHADOW LEADERSHIP': ['public', 'private', 'mode', 'owner', 'setname', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'nuke', 'clear', 'backup', 'restore', 'clone', 'addsudo', 'delsudo', 'listsudo', 'setprefix', 'broadcast', 'self', 'autostatus', 'autoseen', 'autolike', 'autobio'],
         '🩸 AKATSUKI GROUP CONTROL': ['kick', 'ban', 'tobiban', 'add', 'promote', 'madarapromote', 'demote', 'mute', 'gcoff', 'unmute', 'gcon', 'tagall', 'hidetag', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'getbio', 'getdp', 'accept', 'poll', 'everyonemsg', 'listonline', 'tagme', 'mention', 'kickoffline', 'snipe', 'editmsg', 'react', 'send', 'forward', 'save', 'welcome', 'goodbye', 'setwelcome', 'setgoodbye', 'antilink', 'antidelete', 'antiviewonce', 'antifake', 'antispam', 'antibug', 'anticall', 'antistatus'],
@@ -17,16 +18,18 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
     };
     if (pluginCommandNames.length > 0) categories['🩸 AKATSUKI PLUGINS'] = pluginCommandNames;
 
-    const registered = new Set(Object.keys(commands));
-    const pluginNames = new Set(pluginCommandNames);
+    const registeredNames = getCommandNames(commands);
+    const registered = new Set(registeredNames);
+    const pluginNames = new Set(pluginCommandNames.filter((name) => registered.has(name)));
+    const prefix = typeof commandPrefix === 'string' && commandPrefix.length ? commandPrefix : '.';
     const sections = Object.entries(categories).map(([title, names]) => ({
         title,
-        commands: names.filter((name) => registered.has(name) || pluginNames.has(name)).map((name) => `.${name}`)
+        commands: [...new Set(names)].filter((name) => registered.has(name) || pluginNames.has(name)).map((name) => `${prefix}${name}`)
     })).filter((section) => section.commands.length);
 
     const listed = new Set(Object.values(categories).flat());
-    const additional = Object.keys(commands).filter((name) => !listed.has(name)).sort();
-    if (additional.length) sections.push({ title: '📜 HIDDEN SHROUD SCROLLS', commands: additional.map((name) => `.${name}`) });
+    const additional = registeredNames.filter((name) => !listed.has(name)).sort();
+    if (additional.length) sections.push({ title: '📜 HIDDEN SHROUD SCROLLS', commands: additional.map((name) => `${prefix}${name}`) });
 
     const allMenuText = formatFramedMenu({
         title: 'BALI GIL MD ALL MENU',
