@@ -15,6 +15,8 @@ const { createThemedSocket } = require('./lib/akatsuki-theme');
 const { formatFramedMenu, sendFramedMenu, sendMenuWithSong, sendAudioWithFallback } = require('./lib/menu-format');
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/command-parser');
 const { generateMenuText: renderMenuText } = require('./lib/menu-text');
+const { nextAutoReactEmoji } = require('./lib/auto-react');
+const { normalizeJidUserId } = require('./lib/whatsapp-id');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -121,6 +123,7 @@ const commands = {
     // Status/Auto Features
     status: require('./commands/status'),
     autostatus: require('./commands/status'),
+    autoreact: require('./commands/autoreacts'),
     autoreacts: require('./commands/autoreacts'),
     autoread: require('./commands/autoread').autoreadCommand,
 
@@ -939,9 +942,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                         // Auto-react with a deterministic rotation so every configured emoji is used.
                         if (this.autoReact && !isMe && !isStatus) {
-                            const emojis = ['\u{2764}\u{FE0F}', '\u{1F44D}', '\u{1F525}', '\u{1F44F}', '\u{1F62E}', '\u{1F602}', '\u{1F64C}', '\u{2728}', '\u{2B50}', '\u{2705}', '\u{1F916}', '\u{26A1}', '\u{1F31F}', '\u{1F4AF}', '\u{1F308}', '\u{1F48E}', '\u{1F451}', '\u{1F389}', '\u{1F9FF}', '\u{1F340}'];
-                            const emoji = emojis[this.autoReactIndex % emojis.length];
-                            this.autoReactIndex = (this.autoReactIndex + 1) % emojis.length;
+                            const emoji = nextAutoReactEmoji(this);
                             try {
                                 await this.sock.sendMessage(from, { react: { text: emoji, key: msg.key } });
                             } catch (e) {
@@ -1005,7 +1006,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         const botNumberClean = botNumber.split('@')[0];
 
                         const sender = msg.key.participant || from;
-                        const senderClean = sender.split('@')[0];
+                        const senderClean = normalizeJidUserId(sender);
 
                         const ownerNumbers = String(settings.ownerNumber).split(',').map(n => n.replace(/\D/g, ''));
                         const isOwner = isMe || ownerNumbers.some(on => senderClean === on) || senderClean === botNumberClean;

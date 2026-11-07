@@ -16,6 +16,7 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
         '🏢 SHROUD LOGO FORGE': ['neon', 'glitch', 'gold', '3dtext', 'fire', 'water', 'galaxy', 'marvel', 'avengers', 'transformer', 'blackpink', 'gradient', 'luxury', 'royal', 'metal', 'steel', 'chrome', 'glossy'],
         '✏️ AKATSUKI TEXT MAKER': ['bali', 'cup', 'coffee', 'cloud', 'smoke', 'flower', 'leaf', 'wood', 'stone', 'blood', 'horror', 'scary', 'spooky', 'christmas', 'birthday', 'love', 'heart']
     };
+    categories['🛡️ AKATSUKI AUTOMATION'] = ['autoreact', 'autoreacts', 'autoread', 'autostatus', 'autochat', 'autoreply', 'keyword', 'keywords'];
     if (pluginCommandNames.length > 0) categories['🩸 AKATSUKI PLUGINS'] = pluginCommandNames;
 
     const registeredNames = getCommandNames(commands);

@@ -6,6 +6,9 @@ const helpCommand = require('../commands/help');
 const allMenuCommand = require('../commands/allmenu');
 const animeCommand = require('../commands/anime');
 const { sendMenuWithSong } = require('../lib/menu-format');
+const autoreactsCommand = require('../commands/autoreacts');
+const { AUTO_REACT_EMOJIS, getAutoReactEmojiList, nextAutoReactEmoji } = require('../lib/auto-react');
+const { normalizeJidUserId } = require('../lib/whatsapp-id');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -30,20 +33,78 @@ test('menu is allowed for ordinary users in private mode without opening other c
     assert.equal(isCommandAllowed('ping', { isPublic: true, isAuthorized: false }), true);
 });
 
+test('autoreact rotates through every emoji and then starts over', () => {
+    const session = { autoReactIndex: 0 };
+    const firstCycle = AUTO_REACT_EMOJIS.map(() => nextAutoReactEmoji(session));
+
+    assert.deepEqual(firstCycle, AUTO_REACT_EMOJIS);
+    assert.equal(session.autoReactIndex, 0);
+    assert.equal(nextAutoReactEmoji(session), AUTO_REACT_EMOJIS[0]);
+});
+
+test('autoreact command enables, persists, disables, and displays all available emojis', async () => {
+    const sent = [];
+    const sock = { async sendMessage(_chatId, payload) { sent.push(payload); } };
+    const session = { userId: 'bot-123', autoReact: false };
+    const botData = {};
+    let saveCount = 0;
+
+    await autoreactsCommand(sock, 'chat', {}, true, session, ['on'], botData, () => { saveCount += 1; });
+    assert.equal(session.autoReact, true);
+    assert.equal(botData.statusSettings['bot-123'].autoReact, true);
+    assert.equal(saveCount, 1);
+    assert.match(sent[0].text, /Auto-React enabled/);
+    assert.ok(sent[0].text.includes(`Available reaction emojis (${AUTO_REACT_EMOJIS.length})`));
+    for (const emoji of AUTO_REACT_EMOJIS) assert.ok(sent[0].text.includes(emoji));
+
+    await autoreactsCommand(sock, 'chat', {}, true, session, ['status'], botData, () => { saveCount += 1; });
+    assert.match(sent[1].text, /Auto-React is ON/);
+    assert.equal(sent[1].text.includes(getAutoReactEmojiList()), true);
+
+    await autoreactsCommand(sock, 'chat', {}, true, session, ['off'], botData, () => { saveCount += 1; });
+    assert.equal(session.autoReact, false);
+    assert.equal(botData.statusSettings['bot-123'].autoReact, false);
+    assert.equal(saveCount, 2);
+    assert.match(sent[2].text, /Auto-React disabled/);
+    assert.equal(sent[2].text.includes(getAutoReactEmojiList()), true);
+});
+
+test('autoreact rejects unauthorized users without changing its state', async () => {
+    const sent = [];
+    const session = { userId: 'bot-123', autoReact: false };
+    const sock = { async sendMessage(_chatId, payload) { sent.push(payload); } };
+
+    await autoreactsCommand(sock, 'chat', {}, false, session, ['on'], {}, () => {});
+
+    assert.equal(session.autoReact, false);
+    assert.match(sent[0].text, /Only the bot owner or a group admin/);
+});
+
+test('WhatsApp device-suffixed JIDs normalize to the configured owner number', () => {
+    assert.equal(normalizeJidUserId('923001234567:17@s.whatsapp.net'), '923001234567');
+    assert.equal(normalizeJidUserId('923001234567@s.whatsapp.net'), '923001234567');
+    assert.equal(normalizeJidUserId('12345@lid'), '12345');
+    assert.equal(normalizeJidUserId(undefined), '');
+});
+
 test('menu includes callable commands with the configured prefix and excludes internal objects', () => {
     const commands = {
         menu: () => {},
         allmenu: () => {},
+        autoreact: () => {},
+        autoreacts: () => {},
         ping: () => {},
         utils: { ping: () => {} },
         missing: null
     };
     const output = generateMenuText('Tester', { isPublic: true }, commands, '!');
 
-    assert.deepEqual(getCommandNames(commands), ['menu', 'allmenu', 'ping']);
+    assert.deepEqual(getCommandNames(commands), ['menu', 'allmenu', 'autoreact', 'autoreacts', 'ping']);
     assert.match(output, /PREFIX: !/);
     assert.match(output, /!ping/);
     assert.match(output, /!menu/);
+    assert.match(output, /!autoreact/);
+    assert.match(output, /!autoreacts/);
     assert.match(output, /OWNER: BALI GIL/);
     assert.match(output, /OWNER NUMBER: \+?\d+/);
     assert.match(output, /DEVELOPER: ITACHI UCHIHA/);
@@ -55,6 +116,8 @@ test('help and allmenu render only usable commands', async () => {
         help: async () => {},
         menu: async () => {},
         allmenu: async () => {},
+        autoreact: async () => {},
+        autoreacts: async () => {},
         ping: async () => {},
         kage: async () => {},
         utils: { ping: async () => {} }
@@ -71,9 +134,13 @@ test('help and allmenu render only usable commands', async () => {
     await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, [], '!');
 
     assert.match(sent[0], /\.ping/);
+    assert.match(sent[0], /\.autoreact/);
+    assert.match(sent[0], /\.autoreacts/);
     assert.doesNotMatch(sent[0], /\.utils|\.akatsuki|\.painquote/);
     assert.match(sent[1], /!ping/);
     assert.match(sent[1], /!menu/);
+    assert.match(sent[1], /!autoreact/);
+    assert.match(sent[1], /!autoreacts/);
     for (const menu of sent) {
         assert.match(menu, /OWNER: BALI GIL/);
         assert.match(menu, /OWNER NUMBER: \+?\d+/);

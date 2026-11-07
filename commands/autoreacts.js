@@ -1,16 +1,31 @@
-async function autoreactsCommand(sock, from, msg, isAdmin, session, args, botData, saveBotData) {
-    if (!isAdmin) return await sock.sendMessage(from, { text: "❌ Only owner can use this command." }, { quoted: msg });
+const { AUTO_REACT_EMOJIS, getAutoReactEmojiList } = require('../lib/auto-react');
 
-    const action = String(args[0] || '').trim().toLowerCase();
-    if (action !== 'on' && action !== 'off') {
-        await sock.sendMessage(from, { text: "❌ Usage: .autoreacts [on/off]" }, { quoted: msg });
-        return;
+async function autoreactsCommand(sock, from, msg, isAdmin, session, args = [], botData, saveBotData) {
+    if (!isAdmin) {
+        return sock.sendMessage(from, { text: '❌ Only the bot owner or a group admin can use this command.' }, { quoted: msg });
+    }
+
+    const action = String(args?.[0] || 'status').trim().toLowerCase();
+    if (!['on', 'off', 'status'].includes(action)) {
+        return sock.sendMessage(from, {
+            text: `❌ Usage: .autoreact on/off/status\n\nAvailable reaction emojis (${AUTO_REACT_EMOJIS.length}):\n${getAutoReactEmojiList()}`
+        }, { quoted: msg });
+    }
+
+    if (action === 'status') {
+        const state = session?.autoReact ? 'ON' : 'OFF';
+        return sock.sendMessage(from, {
+            text: `🤖 Auto-React is ${state}.\nIt rotates one emoji per incoming message.\n\nAvailable reaction emojis (${AUTO_REACT_EMOJIS.length}):\n${getAutoReactEmojiList()}`
+        }, { quoted: msg });
+    }
+
+    if (!session) {
+        return sock.sendMessage(from, { text: '❌ Auto-React could not access this bot session. Please try again.' }, { quoted: msg });
     }
 
     const enabled = action === 'on';
     session.autoReact = enabled;
 
-    // Persist the setting so it survives a restart or a reconnect.
     const userId = session.userId;
     if (botData && userId) {
         botData.statusSettings ||= {};
@@ -19,11 +34,9 @@ async function autoreactsCommand(sock, from, msg, isAdmin, session, args, botDat
         if (typeof saveBotData === 'function') saveBotData();
     }
 
-    await sock.sendMessage(
-        from,
-        { text: enabled ? "✅ Auto-React Enabled! All configured emojis will rotate." : "❌ Auto-React Disabled!" },
-        { quoted: msg }
-    );
+    return sock.sendMessage(from, {
+        text: `${enabled ? '✅ Auto-React enabled' : '❌ Auto-React disabled'}. ${enabled ? 'One emoji will rotate on each incoming message.' : ''}\n\nAvailable reaction emojis (${AUTO_REACT_EMOJIS.length}):\n${getAutoReactEmojiList()}`
+    }, { quoted: msg });
 }
 
 module.exports = autoreactsCommand;
