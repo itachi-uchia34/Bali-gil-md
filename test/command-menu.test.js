@@ -131,7 +131,7 @@ test('menu includes callable commands with the configured prefix and excludes in
     assert.doesNotMatch(output, /!utils|!missing/);
 });
 
-test('dedicated menu command sends cover, complete menu/footer, then song', async () => {
+test('dedicated menu command sends complete menu text before optional cover and song', async () => {
     const original = {
         startimage: settings.startimage,
         startimageFallbacks: settings.startimageFallbacks,
@@ -163,12 +163,12 @@ test('dedicated menu command sends cover, complete menu/footer, then song', asyn
             '!'
         );
 
-        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'text', 'audio']);
-        assert.deepEqual(sent[0].image, { url: 'test-cover-url' });
-        assert.ok(sent[1].text.includes('USER: Saved Tester'));
-        assert.ok(sent[1].text.includes('PREFIX: !'));
-        assert.ok(sent[1].text.includes('OWNER NUMBER:'));
-        assert.ok(sent[1].text.includes('DEVELOPER:'));
+        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['text', 'image', 'audio']);
+        assert.ok(sent[0].text.includes('USER: Saved Tester'));
+        assert.ok(sent[0].text.includes('PREFIX: !'));
+        assert.ok(sent[0].text.includes('OWNER NUMBER:'));
+        assert.ok(sent[0].text.includes('DEVELOPER:'));
+        assert.deepEqual(sent[1].image, { url: 'test-cover-url' });
         assert.deepEqual(sent[2].audio, { url: 'test-song-url' });
         assert.deepEqual(result, { mode: 'image', imageUrl: 'test-cover-url', menu: 'sent', song: 'sent', songUrl: 'test-song-url', delivery: 'url' });
     } finally {
@@ -202,7 +202,8 @@ test('dedicated menu command still sends text and song and reports a missing cov
     try {
         const result = await menuCommand(sock, 'test-chat', {}, { userId: 'test-bot' }, { menu: async () => {} }, {}, '.');
 
-        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'text', 'audio', 'text']);
+        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['text', 'image', 'audio', 'text']);
+        assert.ok(sent[0].text.includes('BALI GIL MD // AKATSUKI COMMAND NETWORK'));
         assert.ok(sent[3].text.includes('Could not deliver cover image'));
         assert.equal(result.mode, 'text-only');
         assert.equal(result.menu, 'sent');
@@ -260,7 +261,7 @@ test('anime command handles missing query without making a network request', asy
     assert.match(sent[0], /\.anime <anime name>/);
 });
 
-test('menu delivery order is cover image, full menu text/footer, then song', async () => {
+test('menu delivery order is full menu text, cover image, then song', async () => {
     const sent = [];
     const sock = {
         async sendMessage(_chatId, payload) {
@@ -272,10 +273,10 @@ test('menu delivery order is cover image, full menu text/footer, then song', asy
 
     await sendMenuWithSong(sock, 'chat', {}, menuText, 'https://example.test/cover.jpg', 'https://example.test/song.mp3');
 
-    assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'text', 'audio']);
-    assert.deepEqual(sent[0].image, { url: 'https://example.test/cover.jpg' });
-    assert.equal(sent[0].caption, undefined);
-    assert.equal(sent[1].text, menuText);
+    assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['text', 'image', 'audio']);
+    assert.equal(sent[0].text, menuText);
+    assert.deepEqual(sent[1].image, { url: 'https://example.test/cover.jpg' });
+    assert.equal(sent[1].caption, undefined);
     assert.deepEqual(sent[2].audio, { url: 'https://example.test/song.mp3' });
 });
 
@@ -291,8 +292,8 @@ test('menu tries the image fallback and continues in order', async () => {
 
     const result = await sendMenuWithSong(sock, 'chat', {}, 'MENU BODY', 'bad-image', 'song-url', ['good-image']);
 
-    assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'image', 'text', 'audio']);
-    assert.equal(sent[1].image.url, 'good-image');
+    assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['text', 'image', 'image', 'audio']);
+    assert.equal(sent[2].image.url, 'good-image');
     assert.equal(result.mode, 'image');
     assert.equal(result.menu, 'sent');
     assert.equal(result.song, 'sent');
@@ -315,9 +316,9 @@ test('menu downloads the cover image to a buffer when direct image URLs fail', a
     try {
         const result = await sendMenuWithSong(sock, 'chat', {}, 'MENU BODY', 'https://example.test/cover.png', 'song-url');
         assert.equal(result.mode, 'image-buffer');
-        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['image', 'image', 'text', 'audio']);
-        assert.ok(Buffer.isBuffer(sent[1].image));
-        assert.equal(sent[1].mimetype, 'image/png');
+        assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['text', 'image', 'image', 'audio']);
+        assert.ok(Buffer.isBuffer(sent[2].image));
+        assert.equal(sent[2].mimetype, 'image/png');
     } finally {
         global.fetch = originalFetch;
     }
@@ -335,7 +336,7 @@ test('menu still sends text and song if every cover image candidate fails', asyn
 
     const result = await sendMenuWithSong(sock, 'chat', {}, 'MENU BODY', 'bad-primary', 'song-url', ['bad-fallback']);
 
-    assert.deepEqual(sent, ['image', 'image', 'text', 'audio']);
+    assert.deepEqual(sent, ['text', 'image', 'image', 'audio']);
     assert.equal(result.mode, 'text-only');
     assert.equal(result.menu, 'sent');
     assert.equal(result.song, 'sent');
@@ -354,7 +355,7 @@ test('song is still attempted and failure is reported when menu text send fails'
 
     const result = await sendMenuWithSong(sock, 'chat', {}, 'MENU BODY', 'cover-url', 'song-url');
 
-    assert.deepEqual(sent, ['image', 'text', 'audio']);
+    assert.deepEqual(sent, ['text', 'image', 'audio']);
     assert.equal(result.menu, 'failed');
     assert.equal(result.song, 'sent');
 });

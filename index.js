@@ -655,6 +655,8 @@ class BotSession {
         this.processedMessages = new Set();
         this.activeInterval = null;
         this.isInitializing = false;
+        this.stopRequested = false;
+        this.reconnectTimer = null;
         this.userChats = {}; 
         this.lastConnectMessageTime = null;
         this.phoneNumber = null;
@@ -718,7 +720,43 @@ class BotSession {
         }, 60 * 60 * 1000);
     }
 
+    scheduleReconnect(delayMs) {
+        if (this.stopRequested) return;
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            if (!this.stopRequested) this.initialize();
+        }, delayMs);
+    }
+
+    async stop() {
+        this.stopRequested = true;
+        this.isConnected = false;
+        this.isInitializing = false;
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+        if (this.activeInterval) {
+            clearInterval(this.activeInterval);
+            this.activeInterval = null;
+        }
+        const sock = this.sock;
+        this.sock = null;
+        if (sock?.ws && sock.ws.readyState !== sock.ws.CLOSED) {
+            await new Promise((resolve) => {
+                const timeout = setTimeout(resolve, 1500);
+                sock.ws.once('close', () => { clearTimeout(timeout); resolve(); });
+                try { sock.ws.close(); } catch (_) { clearTimeout(timeout); resolve(); }
+            });
+        }
+        this.sendConnectionStatus();
+    }
+
     async initialize(pairingNumber = null) {
+        // A new pairing request is an explicit request to start a stopped session.
+        if (pairingNumber) this.stopRequested = false;
+        if (this.stopRequested) return;
         if (this.isInitializing) {
             this.sendLog("Initialization already in progress...", "info");
             return;
@@ -726,7 +764,15 @@ class BotSession {
         this.isInitializing = true;
         try {
             const { version } = await fetchLatestBaileysVersion();
+            if (this.stopRequested) {
+                this.isInitializing = false;
+                return;
+            }
             const { state, saveCreds } = await useMultiFileAuthState(this.authPath);
+            if (this.stopRequested) {
+                this.isInitializing = false;
+                return;
+            }
 
             this.sock = makeWASocket({
                 version,
@@ -1325,8 +1371,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'crash': await commands.crash(this.sock, from, msg, isOwner, q); break;
                                         case 'freeze': await commands.freeze(this.sock, from, msg, isOwner, q); break;
                                         case 'bug': case 'bugs': await commands.bug(this.sock, from, msg, isOwner, q); break;
-                                        case 'xrestart': await commands.xrestart(this.sock, from, msg, isOwner); break;
-                                        case 'xshutdown': await commands.xshutdown(this.sock, from, msg, isOwner); break;
+                                        case 'xrestart': await commands.xrestart(this.sock, from, msg, isOwner, sessions); break;
+                                        case 'xshutdown': await commands.xshutdown(this.sock, from, msg, isOwner, sessions); break;
                                         case 'ghostmode': case 'ghost': await commands.ghostmode(this.sock, from, msg, isOwner, this, args); break;
                                         case 'nuke': await commands.nuke(this.sock, from, msg, isOwner); break;
 
@@ -1409,6 +1455,11 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                     const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
                     this.isConnected = false;
                     this.isInitializing = false;
+                    if (this.stopRequested) {
+                        this.sendLog('Bot session stopped; automatic reconnect is disabled.', 'info');
+                        this.sendConnectionStatus();
+                        return;
+                    }
                     this.sendLog(`🩸 Akatsuki link closed. Reconnect protocol: ${shouldReconnect ? 'active' : 'stopped'}.`, 'warning');
                     this.sendConnectionStatus();
                     const statusCode = (lastDisconnect.error)?.output?.statusCode;
@@ -1428,13 +1479,13 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         this.sendConnectionStatus();
                     } else if (statusCode === DisconnectReason.restartRequired || statusCode === DisconnectReason.connectionLost || statusCode === 428) {
                         this.sendLog(`🌀 *SIX PATHS RECOVERY* — connection issue (${statusCode}); restarting in 3s...`, 'warning');
-                        setTimeout(() => this.initialize(), 3000);
+                        this.scheduleReconnect(3000);
                     } else if (statusCode === 515) {
                         this.sendLog('🩸 *PAIN’S RECOVERY PATH* — stream error; reconnecting immediately...', 'warning');
                         this.initialize();
                     } else {
                         this.sendLog(`🩸 Akatsuki link closed (${statusCode}); reopening the gate in 5s...`, 'info');
-                        setTimeout(() => this.initialize(), 5000);
+                        this.scheduleReconnect(5000);
                     }
                 } else if (connection === 'open') {
                     this.isConnected = true;
@@ -1531,8 +1582,9 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
         } catch (err) {
             this.isInitializing = false;
+            if (this.stopRequested) return;
             this.sendLog(`Initialization failed: ${err.message}. Retrying in 10s...`, 'error');
-            setTimeout(() => this.initialize(), 10000);
+            this.scheduleReconnect(10000);
         }
     }
 }
@@ -1633,16 +1685,16 @@ io.on('connection', (socket) => {
     // STOP BOT - Disconnect a specific bot
     socket.on('stop-bot', async ({ sessionId }) => {
         if (!socket.authenticated) return;
-        
-        if (sessions[sessionId] && sessions[sessionId].sock) {
-            try {
-                await sessions[sessionId].sock.logout();
-                sessions[sessionId].isConnected = false;
-                delete sessions[sessionId];
-                socket.emit('bot-stopped', { sessionId, success: true });
-            } catch (e) {
-                socket.emit('bot-stopped', { sessionId, success: false, error: e.message });
-            }
+        const session = sessions[sessionId];
+        if (!session) {
+            socket.emit('bot-stopped', { sessionId, success: false, error: 'Bot session not found.' });
+            return;
+        }
+        try {
+            await session.stop();
+            socket.emit('bot-stopped', { sessionId, success: true });
+        } catch (e) {
+            socket.emit('bot-stopped', { sessionId, success: false, error: e.message });
         }
     });
 
@@ -1653,12 +1705,13 @@ io.on('connection', (socket) => {
         let stopped = 0;
         for (const [sessionId, session] of Object.entries(sessions)) {
             try {
-                if (session.sock) {
-                    await session.sock.logout();
-                    session.isConnected = false;
+                if (session.sock || session.isInitializing || !session.stopRequested) {
+                    await session.stop();
                     stopped++;
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error(`Failed to stop bot session ${sessionId}:`, e.message);
+            }
         }
         socket.emit('all-bots-stopped', { stopped });
     });
