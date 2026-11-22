@@ -11,7 +11,7 @@ const P = require('pino');
 const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
-const { createThemedSocket } = require('./lib/akatsuki-theme');
+const { installThemedSocket } = require('./lib/akatsuki-theme');
 const { formatFramedMenu, sendFramedMenu, sendAudioWithFallback } = require('./lib/menu-format');
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/command-parser');
 const { nextAutoReactEmoji } = require('./lib/auto-react');
@@ -820,7 +820,7 @@ class BotSession {
                 generateHighQualityLinkPreview: true,
             });
             // Apply the same visual treatment to direct event replies and commands.
-            this.sock = createThemedSocket(this.sock);
+            installThemedSocket(this.sock);
 
             if (pairingNumber && !state.creds.registered) {
                 if (!this.sock.authState.creds.registered) {

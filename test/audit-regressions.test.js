@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { wrapCommandHandler } = require('../lib/command-wrapper');
-const { createThemedSocket, decorateText, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
+const { createThemedSocket, installThemedSocket, decorateText, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
 const chatbot = require('../commands/chatbot');
 const forward = require('../commands/forward');
 const clear = require('../commands/clear');
@@ -44,6 +44,25 @@ test('themed socket styles text and captions once without altering other payload
     assert.ok(sent[0].message.caption.startsWith(THEME_HEADER));
     assert.ok(sent[0].message.caption.endsWith(THEME_FOOTER));
     assert.equal((sent[0].message.text.match(/𝗔𝗞𝗔𝗧𝗦𝗨𝗞𝗜/g) || []).length, 1);
+});
+
+test('global style installation preserves the original socket object and method receiver', async () => {
+    const sent = [];
+    const sock = {
+        async sendMessage(chatId, message, options) {
+            assert.equal(this, sock);
+            sent.push({ chatId, message, options });
+        }
+    };
+
+    assert.equal(installThemedSocket(sock), sock);
+    assert.equal(installThemedSocket(sock), sock);
+    await sock.sendMessage('chat', { text: 'The menu is ready' }, { quoted: 'original-message' });
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].chatId, 'chat');
+    assert.equal(sent[0].options.quoted, 'original-message');
+    assert.ok(sent[0].message.text.includes('The menu is ready'));
+    assert.ok(sent[0].message.text.startsWith(THEME_HEADER));
 });
 
 test('already themed menu and font layouts are not decorated a second time', () => {

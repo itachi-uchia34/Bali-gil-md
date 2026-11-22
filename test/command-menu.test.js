@@ -13,6 +13,8 @@ const menuCommand = require('../commands/menu');
 const settings = require('../settings');
 const { runPreCommandHooks } = require('../lib/precommand-hooks');
 const { buildMenuFailureMessage, reportMenuFailure } = require('../lib/menu-failure');
+const { installThemedSocket } = require('../lib/akatsuki-theme');
+const { wrapCommandHandler } = require('../lib/command-wrapper');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -253,6 +255,38 @@ test('dedicated menu command retries text after a transient initial send failure
         const result = await menuCommand(sock, 'test-chat', {}, { userId: 'test-bot' }, { menu: async () => {} }, {}, '.');
         assert.equal(textAttempts, 2);
         assert.match(sent[1].text, /PREFIX: \./);
+        assert.equal(result.menu, 'sent');
+    } finally {
+        Object.assign(settings, original);
+    }
+});
+
+test('.menu sends its command list through the global style hook and command wrapper', async () => {
+    const original = {
+        startimage: settings.startimage,
+        startimageFallbacks: settings.startimageFallbacks,
+        startsong: settings.startsong,
+        startsongFallbacks: settings.startsongFallbacks
+    };
+    settings.startimage = '';
+    settings.startimageFallbacks = [];
+    settings.startsong = '';
+    settings.startsongFallbacks = [];
+    const sent = [];
+    const sock = {
+        async sendMessage(_chatId, payload) {
+            sent.push(payload);
+            return {};
+        }
+    };
+    installThemedSocket(sock);
+
+    try {
+        const wrappedMenu = wrapCommandHandler(menuCommand);
+        const result = await wrappedMenu(sock, 'chat', {}, { userId: 'menu-user', isPublic: true }, { menu: async () => {}, ping: async () => {} }, {}, '.');
+        assert.equal(sent[0].text.startsWith('╔'), true);
+        assert.match(sent[0].text, /\.menu/);
+        assert.match(sent[0].text, /\.ping/);
         assert.equal(result.menu, 'sent');
     } finally {
         Object.assign(settings, original);
