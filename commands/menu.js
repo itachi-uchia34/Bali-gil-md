@@ -6,16 +6,32 @@ async function menuCommand(sock, chatId, msg, session, commands = {}, botData = 
     const prefix = typeof commandPrefix === 'string' && commandPrefix.length ? commandPrefix : '.';
     const userName = botData?.userNames?.[session?.userId] || msg?.pushName || 'User';
     const menuText = generateMenuText(userName, session, commands, prefix);
-    const delivery = await sendMenuWithSong(
-        sock,
-        chatId,
-        msg,
-        menuText,
-        settings.startimage,
-        settings.startsong,
-        settings.startimageFallbacks,
-        settings.startsongFallbacks
-    );
+    let delivery;
+    try {
+        delivery = await sendMenuWithSong(
+            sock,
+            chatId,
+            msg,
+            menuText,
+            settings.startimage,
+            settings.startsong,
+            settings.startimageFallbacks,
+            settings.startsongFallbacks
+        );
+    } catch (error) {
+        console.warn(`Menu delivery failed before completion:`, error.message || error);
+        delivery = { mode: 'text-only', menu: 'failed', song: 'failed' };
+    }
+
+    // A transient WhatsApp send failure must not leave the user with only optional media.
+    if (delivery.menu !== 'sent') {
+        try {
+            await sock.sendMessage(chatId, { text: menuText }, { quoted: msg });
+            delivery.menu = 'sent';
+        } catch (error) {
+            console.warn(`Menu text retry failed:`, error.message || error);
+        }
+    }
 
     const failures = [];
     if (delivery.mode === 'text-only') failures.push('cover image');

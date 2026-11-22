@@ -214,6 +214,37 @@ test('dedicated menu command still sends text and song and reports a missing cov
     }
 });
 
+test('dedicated menu command retries text after a transient initial send failure', async () => {
+    const original = {
+        startimage: settings.startimage,
+        startimageFallbacks: settings.startimageFallbacks,
+        startsong: settings.startsong,
+        startsongFallbacks: settings.startsongFallbacks
+    };
+    settings.startimage = '';
+    settings.startimageFallbacks = [];
+    settings.startsong = '';
+    settings.startsongFallbacks = [];
+    const sent = [];
+    let textAttempts = 0;
+    const sock = {
+        async sendMessage(_chatId, payload) {
+            sent.push(payload);
+            if (payload.text?.includes('AKATSUKI COMMAND NETWORK') && ++textAttempts === 1) throw new Error('temporary transport failure');
+            return {};
+        }
+    };
+
+    try {
+        const result = await menuCommand(sock, 'test-chat', {}, { userId: 'test-bot' }, { menu: async () => {} }, {}, '.');
+        assert.equal(textAttempts, 2);
+        assert.match(sent[1].text, /BALI GIL MD \/\/ AKATSUKI COMMAND NETWORK/);
+        assert.equal(result.menu, 'sent');
+    } finally {
+        Object.assign(settings, original);
+    }
+});
+
 test('help and allmenu render only usable commands', async () => {
     const commands = {
         help: async () => {},
