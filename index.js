@@ -18,6 +18,7 @@ const { nextAutoReactEmoji } = require('./lib/auto-react');
 const { normalizeJidUserId } = require('./lib/whatsapp-id');
 const { runPreCommandHooks } = require('./lib/precommand-hooks');
 const { wrapCommandHandler } = require('./lib/command-wrapper');
+const { reportMenuFailure } = require('./lib/menu-failure');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -1440,6 +1441,9 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                     }
                                 } catch (e) {
                                     this.sendLog(`Command error (${commandName}): ` + e.message, 'error');
+                                    if (commandName === 'menu' || commandName === 'allmenu') {
+                                        await reportMenuFailure(this.sock, from, msg, commandName, commandPrefix, e);
+                                    }
                                 }
                             })();
                         }

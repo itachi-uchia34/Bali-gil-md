@@ -12,6 +12,7 @@ const { normalizeJidUserId } = require('../lib/whatsapp-id');
 const menuCommand = require('../commands/menu');
 const settings = require('../settings');
 const { runPreCommandHooks } = require('../lib/precommand-hooks');
+const { buildMenuFailureMessage, reportMenuFailure } = require('../lib/menu-failure');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -25,6 +26,17 @@ test('command parser ignores messages without the configured prefix or an empty 
     assert.equal(parseCommand('.menu', '!'), null);
     assert.equal(parseCommand('!   ', '!'), null);
     assert.equal(parseCommand('', '!'), null);
+});
+
+test('menu handler failures produce a useful in-chat diagnostic', async () => {
+    const sent = [];
+    const sock = { async sendMessage(chatId, payload, options) { sent.push({ chatId, payload, options }); } };
+    const msg = { key: { id: 'self-chat-menu' } };
+    assert.match(buildMenuFailureMessage('menu', '.', new Error('render failed')), /\.menu could not be displayed\. render failed/);
+    assert.equal(await reportMenuFailure(sock, 'self-chat', msg, 'menu', '.', new Error('render failed')), true);
+    assert.equal(sent[0].chatId, 'self-chat');
+    assert.equal(sent[0].options.quoted, msg);
+    assert.match(sent[0].payload.text, /\.help/);
 });
 
 test('pre-command hook failures cannot prevent subsequent command processing', async () => {
@@ -386,7 +398,7 @@ test('song is still attempted and failure is reported when menu text send fails'
 
     const result = await sendMenuWithSong(sock, 'chat', {}, 'MENU BODY', 'cover-url', 'song-url');
 
-    assert.deepEqual(sent, ['text', 'image', 'audio']);
+    assert.deepEqual(sent, ['text', 'text', 'image', 'audio']);
     assert.equal(result.menu, 'failed');
     assert.equal(result.song, 'sent');
 });
