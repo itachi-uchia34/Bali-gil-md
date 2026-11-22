@@ -819,6 +819,8 @@ class BotSession {
                 },
                 generateHighQualityLinkPreview: true,
             });
+            // Apply the same visual treatment to direct event replies and commands.
+            this.sock = createThemedSocket(this.sock);
 
             if (pairingNumber && !state.creds.registered) {
                 if (!this.sock.authState.creds.registered) {

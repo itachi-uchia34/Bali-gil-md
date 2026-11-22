@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { wrapCommandHandler } = require('../lib/command-wrapper');
+const { createThemedSocket, decorateText, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
 const chatbot = require('../commands/chatbot');
 const forward = require('../commands/forward');
 const clear = require('../commands/clear');
@@ -16,6 +17,43 @@ function mockSocket() {
         async sendMessage(chatId, payload, options) { sent.push({ chatId, payload, options }); }
     };
 }
+
+test('Akatsuki response styling frames plain text while preserving command spelling', () => {
+    const decorated = decorateText('Use .ping with prefix !ping');
+    assert.ok(decorated.startsWith(THEME_HEADER));
+    assert.ok(decorated.endsWith(THEME_FOOTER));
+    assert.ok(decorated.includes('Use .ping with prefix !ping'));
+});
+
+test('themed socket styles text and captions once without altering other payload fields', async () => {
+    const sent = [];
+    const sock = { async sendMessage(chatId, message, options) { sent.push({ chatId, message, options, receiver: this }); } };
+    const themed = createThemedSocket(createThemedSocket(sock));
+    const image = Buffer.from('image');
+    const options = { quoted: { key: 'message' } };
+
+    await themed.sendMessage('chat', { image, text: 'Bot reply', caption: 'Image reply' }, options);
+
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].receiver, sock);
+    assert.equal(sent[0].chatId, 'chat');
+    assert.equal(sent[0].options, options);
+    assert.equal(sent[0].message.image, image);
+    assert.ok(sent[0].message.text.startsWith(THEME_HEADER));
+    assert.ok(sent[0].message.text.endsWith(THEME_FOOTER));
+    assert.ok(sent[0].message.caption.startsWith(THEME_HEADER));
+    assert.ok(sent[0].message.caption.endsWith(THEME_FOOTER));
+    assert.equal((sent[0].message.text.match(/𝗔𝗞𝗔𝗧𝗦𝗨𝗞𝗜/g) || []).length, 1);
+});
+
+test('already themed menu and font layouts are not decorated a second time', () => {
+    const existingLayouts = [
+        '╔══════════════════════════════════╗\n.menu',
+        '╭━━━━━━━━━━━━━━━━━━━━━━╮\n.allmenu',
+        '*🩸 AKATSUKI • 50 FONT STYLES 🩸*\n01. Bold'
+    ];
+    for (const text of existingLayouts) assert.equal(decorateText(text), text);
+});
 
 test('command wrapper retains enumerable helper properties', () => {
     const handler = () => {};
