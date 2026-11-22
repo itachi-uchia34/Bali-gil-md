@@ -24,8 +24,8 @@ test('.font returns all 50 styles in one message and supports quoted text', asyn
     const outputLines = sent[0].payload.text.split('\n');
     assert.equal(sent[0].chatId, 'chat');
     assert.equal(outputLines.length, 51);
-    assert.equal(outputLines[0], '*50 FONT STYLES*');
-    assert.match(outputLines[1], /Bold: 𝐐𝐮𝐨𝐭𝐞𝐝 𝐰𝐨𝐫𝐝𝐬/);
+    assert.equal(outputLines[0], '*🩸 AKATSUKI • 50 FONT STYLES 🩸*');
+    assert.match(outputLines[1], /🔻 01\. Bold: 𝐐𝐮𝐨𝐭𝐞𝐝 𝐰𝐨𝐫𝐝𝐬/);
     assert.equal(sent[0].options.quoted, msg);
 });
 

@@ -9,7 +9,7 @@ module.exports = async function helpCommand(sock, chatId, msg, session, commands
     const command = (name, usage = '') => registered.has(name) ? `${prefix}${name}${usage}` : null;
     const text = formatFramedMenu({
         title: 'BALI GIL MD HELP',
-        subtitle: `AKATSUKI GUIDANCE // MODE: ${mode} // PREFIX: ${prefix}`,
+        subtitle: `📜 AKATSUKI GUIDANCE • MODE: ${mode} • PREFIX: ${prefix}`,
         sections: [
             {
                 title: '🩸 AKATSUKI GROUP CONTROL',

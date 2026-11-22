@@ -1,16 +1,6 @@
 const { formatFramedMenu, sendFramedMenu } = require('../lib/menu-format');
-const { getCommandNames } = require('../lib/menu-text');
+const { getCommandNames, toSansBold } = require('../lib/menu-text');
 const settings = require('../settings');
-
-function toSansBold(value) {
-    return Array.from(String(value), (char) => {
-        const code = char.codePointAt(0);
-        if (char >= 'A' && char <= 'Z') return String.fromCodePoint(0x1D5D4 + code - 65);
-        if (char >= 'a' && char <= 'z') return String.fromCodePoint(0x1D5EE + code - 97);
-        if (char >= '0' && char <= '9') return String.fromCodePoint(0x1D7EC + code - 48);
-        return char;
-    }).join('');
-}
 
 async function allMenu(sock, from, msg, session, commands, pluginCommandNames = [], commandPrefix = settings.prefix) {
     const categories = {

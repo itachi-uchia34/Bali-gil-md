@@ -115,12 +115,12 @@ function makeFontStyles(text) {
 async function fontCommand(sock, chatId, msg, query = '') {
     const text = String(query || getQuotedText(msg) || '').trim();
     if (!text) {
-        return sock.sendMessage(chatId, { text: 'Usage: `.font <text>` or reply to a text message with `.font`.' }, { quoted: msg });
+        return sock.sendMessage(chatId, { text: '🩸 Usage: `.font <text>` or reply to a text message with `.font`.' }, { quoted: msg });
     }
     if (Array.from(text).length > MAX_INPUT_LENGTH) {
-        return sock.sendMessage(chatId, { text: `Please keep the text to ${MAX_INPUT_LENGTH} characters or fewer so all 50 styles fit in one WhatsApp message.` }, { quoted: msg });
+        return sock.sendMessage(chatId, { text: `⚠️ Keep the text to ${MAX_INPUT_LENGTH} characters or fewer so all 50 styles fit in one WhatsApp message.` }, { quoted: msg });
     }
-    const output = [`*50 FONT STYLES*`, ...makeFontStyles(text)].join('\n');
+    const output = ['*🩸 AKATSUKI • 50 FONT STYLES 🩸*', ...makeFontStyles(text).map((line) => `🔻 ${line}`)].join('\n');
     return sock.sendMessage(chatId, { text: output }, { quoted: msg });
 }
 

@@ -281,6 +281,8 @@ test('help and allmenu render only usable commands', async () => {
     await helpCommand(sock, 'chat', {}, { isPublic: true }, commands);
     await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, [], '!');
 
+    assert.match(sent[0], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗛𝗘𝗟𝗣/);
+    assert.match(sent[0], /📜 AKATSUKI GUIDANCE/);
     assert.match(sent[0], /\.ping/);
     assert.match(sent[0], /\.autoreact/);
     assert.match(sent[0], /\.autoreacts/);
