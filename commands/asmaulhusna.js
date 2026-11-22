@@ -1,3 +1,5 @@
+const axios = require('axios');
+
 const asma = [
     { no: 1, name: "Ar-Rahman", meaning: "The Beneficent" },
     { no: 2, name: "Ar-Rahim", meaning: "The Merciful" },
@@ -17,7 +19,7 @@ module.exports = async function(sock, chatId, msg, q) {
             const num = parseInt(q);
             if (num >= 1 && num <= 99) {
                 const response = await axios.get(`https://api.aladhan.com/v1/asmaAlHusna/${num}`, { timeout: 10000 }).catch(() => null);
-                if (response && response.data.data.length) {
+                if (Array.isArray(response?.data?.data) && response.data.data.length) {
                     const a = response.data.data[0];
                     return await sock.sendMessage(chatId, { 
                         text: `*\u2728 Asmaul Husna #${a.number}*\n\n` +

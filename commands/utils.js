@@ -161,7 +161,10 @@ const utils = {
     calc: async (sock, from, msg, q) => {
         if (!q) return sock.sendMessage(from, { text: "❌ Provide an expression." });
         try {
-            const result = eval(q.replace(/[^-()\d/*+.]/g, ''));
+            const expression = String(q).replace(/\s+/g, '');
+            if (!expression || !/^[0-9+\-*/().%^]+$/.test(expression)) throw new Error('Invalid expression');
+            const result = Function(`"use strict"; return (${expression.replace(/\^/g, '**')});`)();
+            if (!Number.isFinite(result)) throw new Error('Result is not finite');
             await sock.sendMessage(from, { text: `*\u{1F4CA} CALCULATOR*\n\n*Expression:* ${q}\n*Result:* ${result}` }, { quoted: msg });
         } catch (e) { await sock.sendMessage(from, { text: "❌ Math Error" }); }
     },

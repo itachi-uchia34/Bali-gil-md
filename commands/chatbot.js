@@ -1,4 +1,7 @@
-module.exports = async function(sock, chatId, msg, session, args) {
+module.exports = async function(sock, chatId, msg, session, args = [], isAdmin = false) {
+    if (!isAdmin) {
+        return sock.sendMessage(chatId, { text: '❌ Only the owner or an authorized group admin can control chatbot mode.' }, { quoted: msg });
+    }
     const action = args[0]?.toLowerCase();
     
     if (action === 'on') {

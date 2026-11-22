@@ -66,7 +66,7 @@ async function getOkatsuDownloadByUrl(youtubeUrl) {
     throw new Error('Okatsu returned no download');
 }
 
-async function songCommand(sock, chatId, message) {
+async function songCommand(sock, chatId, message, queryText) {
     try {
         // Loading reactions
         const loadEmojis = ['📥', '⏳', '🎵'];
@@ -76,7 +76,7 @@ async function songCommand(sock, chatId, message) {
 
         const messageContent = message.message?.ephemeralMessage?.message || message.message?.viewOnceMessage?.message || message.message?.viewOnceMessageV2?.message || message.message;
         const text = (messageContent.conversation || messageContent.extendedTextMessage?.text || messageContent.imageMessage?.caption || messageContent.videoMessage?.caption || '').trim();
-        const query = text.replace(/^\.song\s+/i, '').trim();
+        const query = typeof queryText === 'string' ? queryText.trim() : text.replace(/^\.song\s+/i, '').trim();
 
         if (!query || query.toLowerCase() === '.song') {
             await sock.sendMessage(chatId, { text: 'Usage: .song <song name or YouTube link>' }, { quoted: message });

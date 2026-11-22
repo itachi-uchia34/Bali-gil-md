@@ -17,6 +17,7 @@ const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/c
 const { nextAutoReactEmoji } = require('./lib/auto-react');
 const { normalizeJidUserId } = require('./lib/whatsapp-id');
 const { runPreCommandHooks } = require('./lib/precommand-hooks');
+const { wrapCommandHandler } = require('./lib/command-wrapper');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -274,7 +275,7 @@ Object.assign(commands, pluginRegistry.commands);
 // Give every command the shared Akatsuki response layer without changing command APIs.
 for (const [commandName, commandHandler] of Object.entries(commands)) {
     if (typeof commandHandler !== 'function') continue;
-    commands[commandName] = (sock, ...args) => commandHandler(createThemedSocket(sock), ...args);
+    commands[commandName] = wrapCommandHandler(commandHandler);
 }
 if (pluginRegistry.plugins.length > 0) {
     console.log(`Loaded ${pluginRegistry.plugins.length} plugin(s): ${pluginRegistry.plugins.map((plugin) => plugin.name).join(', ')}`);
@@ -1003,7 +1004,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // AI auto-reply
-                        if (this.aiEnabled && !isMe && !isGroup && text && !text.startsWith('.')) {
+                        if (this.aiEnabled && !isMe && !isGroup && text && !text.startsWith(settings.prefix || '.')) {
                             try {
                                 const aiResponse = await this.getAIResponse(from, text);
                                 await this.sock.sendMessage(from, { text: aiResponse }, { quoted: msg });
@@ -1211,11 +1212,11 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         }
 
                                         // ===== MEDIA & DOWNLOAD =====
-                                        case 'song': await commands.song(this.sock, from, msg); break;
-                                        case 'video': await commands.video(this.sock, from, msg); break;
+                                        case 'song': await commands.song(this.sock, from, msg, q); break;
+                                        case 'video': await commands.video(this.sock, from, msg, q); break;
                                         case 'insta': case 'ig': await commands.insta(this.sock, from, msg, q); break;
                                         case 'tiktok': case 'tt': await commands.tiktok(this.sock, from, msg, q); break;
-                                        case 'facebook': case 'fb': await commands.facebook(this.sock, from, msg); break;
+                                        case 'facebook': case 'fb': await commands.facebook(this.sock, from, msg, q); break;
                                         case 'youtube': case 'yt': await commands.youtube(this.sock, from, msg, q); break;
                                         case 'pinterest': case 'pin': await commands.pinterest(this.sock, from, msg, q); break;
                                         case 'twitter': case 'x': case 'twit': await commands.twitter(this.sock, from, msg, q); break;
@@ -1260,16 +1261,20 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                                         // ===== ADMIN / OWNER =====
                                         case 'private': 
-                                            await commands.private(this.sock, from, msg, isAdmin, this); 
-                                            if (!botData.statusSettings[this.userId]) botData.statusSettings[this.userId] = {};
-                                            botData.statusSettings[this.userId].isPublic = false;
-                                            saveBotData();
+                                            await commands.private(this.sock, from, msg, isOwner, this);
+                                            if (isOwner) {
+                                                if (!botData.statusSettings[this.userId]) botData.statusSettings[this.userId] = {};
+                                                botData.statusSettings[this.userId].isPublic = false;
+                                                saveBotData();
+                                            }
                                             break;
                                         case 'public': 
-                                            await commands.public(this.sock, from, msg, isAdmin, this); 
-                                            if (!botData.statusSettings[this.userId]) botData.statusSettings[this.userId] = {};
-                                            botData.statusSettings[this.userId].isPublic = true;
-                                            saveBotData();
+                                            await commands.public(this.sock, from, msg, isOwner, this);
+                                            if (isOwner) {
+                                                if (!botData.statusSettings[this.userId]) botData.statusSettings[this.userId] = {};
+                                                botData.statusSettings[this.userId].isPublic = true;
+                                                saveBotData();
+                                            }
                                             break;
                                         case 'owner':
                                         case 'creator': await commands.owner(this.sock, from, msg); break;
@@ -1303,7 +1308,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'autochat': await commands.autochat(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
                                         case 'autoreply': await commands.autoreply(this.sock, from, msg, isAdmin, this, args); break;
                                         case 'keyword': case 'keywords': await commands.keyword(this.sock, from, msg, isAdmin, this, args, botData, saveBotData, this.userId); break;
-                                        case 'chatbot': await commands.chatbot(this.sock, from, msg, this, args); break;
+                                        case 'chatbot': await commands.chatbot(this.sock, from, msg, this, args, isAdmin); break;
                                                                                 case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
                                         case 'kage': case 'kagerivalry': await commands.kage(this.sock, from, msg, this, args); break;
                                         // ===== FUN =====
@@ -1330,7 +1335,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'dp':
                                         case 'dpz': await commands.dp(this.sock, from, msg); break;
                                         case 'vv': await commands.vv(this.sock, from, msg); break;
-                                        case 'translate': case 'trt': await commands.utils.trt(this.sock, from, msg, q); break;
+                                        case 'translate': case 'trt': await commands.translate(this.sock, from, msg, q); break;
                                         case 'base64': await commands.base64(this.sock, from, msg, q); break;
                                         case 'qr': await commands.qr(this.sock, from, msg, q); break;
                                         case 'shorturl': case 'tinyurl': await commands.utils.short(this.sock, from, msg, q); break;

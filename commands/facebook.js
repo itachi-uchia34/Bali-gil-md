@@ -2,20 +2,22 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-async function facebookCommand(sock, chatId, message) {
+async function facebookCommand(sock, chatId, message, queryText) {
     try {
-        const text = message.message?.conversation || message.message?.extendedTextMessage?.text;
-        const url = text.split(' ').slice(1).join(' ').trim();
-        
+        const rawText = message.message?.conversation || message.message?.extendedTextMessage?.text || '';
+        const url = typeof queryText === 'string'
+            ? queryText.trim()
+            : rawText.split(/\s+/).slice(1).join(' ').trim();
+
         if (!url) {
-            return await sock.sendMessage(chatId, { 
+            return await sock.sendMessage(chatId, {
                 text: "Please provide a Facebook video URL.\nExample: .fb https://www.facebook.com/..."
             }, { quoted: message });
         }
 
         // Validate Facebook URL
         if (!url.includes('facebook.com')) {
-            return await sock.sendMessage(chatId, { 
+            return await sock.sendMessage(chatId, {
                 text: "That is not a Facebook link."
             }, { quoted: message });
         }
@@ -40,7 +42,7 @@ async function facebookCommand(sock, chatId, message) {
         // Use only Siputzx API
         async function fetchFromApi(u) {
             const apiUrl = `https://api.siputzx.my.id/api/d/facebook?url=${encodeURIComponent(u)}`;
-            
+
             try {
                 const response = await axios.get(apiUrl, {
                     timeout: 20000,
@@ -51,7 +53,7 @@ async function facebookCommand(sock, chatId, message) {
                     maxRedirects: 5,
                     validateStatus: s => s >= 200 && s < 500
                 });
-                
+
                 if (response.data) {
                     return { response, apiName: 'Siputzx API' };
                 }
@@ -81,13 +83,13 @@ async function facebookCommand(sock, chatId, message) {
             // Find HD quality first, then SD
             const hdVideo = data.data.data.find(item => item.resolution === 'HD' && item.format === 'mp4');
             const sdVideo = data.data.data.find(item => item.resolution === 'SD' && item.format === 'mp4');
-            
+
             fbvid = hdVideo?.url || sdVideo?.url;
             title = data.data.title || "Facebook Video";
         }
 
         if (!fbvid) {
-            return await sock.sendMessage(chatId, { 
+            return await sock.sendMessage(chatId, {
                 text: '❌ Failed to get video URL from Facebook.\n\nPossible reasons:\n• Video is private or deleted\n• Link is invalid\n• Video is not available for download\n\nPlease try a different Facebook video link.'
             }, { quoted: message });
         }
@@ -95,17 +97,17 @@ async function facebookCommand(sock, chatId, message) {
         // Try URL method first (more reliable)
         try {
             const caption = title ? `> *DOWNLOAD BY SHADOW MD BOT*\n\n📝 Title: ${title}` : "> *DOWNLOAD BY SHADOW MD BOT*";
-            
+
             await sock.sendMessage(chatId, {
                 video: { url: fbvid },
                 mimetype: "video/mp4",
                 caption: caption
             }, { quoted: message });
-            
+
             return;
         } catch (urlError) {
             console.error(`URL method failed: ${urlError.message}`);
-            
+
             // Fallback to buffer method
             try {
                 // Create temp directory if it doesn't exist
@@ -146,7 +148,7 @@ async function facebookCommand(sock, chatId, message) {
 
                 // Send the video
                 const caption = title ? `> DOWNLOAD BY SHADOW MD BOT\n\n📝 Title: ${title}` : "> DOWNLOAD BY SHADOW MD BOT";
-                
+
                 await sock.sendMessage(chatId, {
                     video: { url: tempFile },
                     mimetype: "video/mp4",
@@ -168,10 +170,10 @@ async function facebookCommand(sock, chatId, message) {
 
     } catch (error) {
         console.error('Error in Facebook command:', error);
-        await sock.sendMessage(chatId, { 
+        await sock.sendMessage(chatId, {
             text: "An error occurred. API might be down. Error: " + error.message
         }, { quoted: message });
     }
 }
 
-module.exports = facebookCommand; 
+module.exports = facebookCommand;

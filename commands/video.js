@@ -51,7 +51,7 @@ async function getOkatsuVideoByUrl(youtubeUrl) {
     throw new Error('Okatsu failed');
 }
 
-async function videoCommand(sock, chatId, message) {
+async function videoCommand(sock, chatId, message, queryText) {
     try {
         // Loading reactions
         const loadEmojis = ['📥', '⏳', '🎥'];
@@ -60,7 +60,7 @@ async function videoCommand(sock, chatId, message) {
         }
         const messageContent = message.message?.ephemeralMessage?.message || message.message?.viewOnceMessage?.message || message.message?.viewOnceMessageV2?.message || message.message;
         const text = (messageContent.conversation || messageContent.extendedTextMessage?.text || messageContent.imageMessage?.caption || messageContent.videoMessage?.caption || '').trim();
-        const query = text.replace(/^\.video\s+/i, '').trim();
+        const query = typeof queryText === 'string' ? queryText.trim() : text.replace(/^\.video\s+/i, '').trim();
         
         if (!query || query.toLowerCase() === '.video') {
             await sock.sendMessage(chatId, { text: 'Usage: .video <name or link>' }, { quoted: message });
