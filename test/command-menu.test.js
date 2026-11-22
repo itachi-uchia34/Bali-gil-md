@@ -215,7 +215,9 @@ test('dedicated menu command still sends text and song and reports a missing cov
         const result = await menuCommand(sock, 'test-chat', {}, { userId: 'test-bot' }, { menu: async () => {} }, {}, '.');
 
         assert.deepEqual(sent.map((payload) => Object.keys(payload)[0]), ['text', 'image', 'audio', 'text']);
-        assert.ok(sent[0].text.includes('BALI GIL MD // AKATSUKI COMMAND NETWORK'));
+        assert.ok(sent[0].text.includes('PREFIX: .'));
+        assert.ok(sent[0].text.includes('𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗'));
+        assert.ok(sent[0].text.includes('.menu'));
         assert.ok(sent[3].text.includes('Could not deliver cover image'));
         assert.equal(result.mode, 'text-only');
         assert.equal(result.menu, 'sent');
@@ -242,7 +244,7 @@ test('dedicated menu command retries text after a transient initial send failure
     const sock = {
         async sendMessage(_chatId, payload) {
             sent.push(payload);
-            if (payload.text?.includes('AKATSUKI COMMAND NETWORK') && ++textAttempts === 1) throw new Error('temporary transport failure');
+            if (payload.text?.includes('PREFIX: .') && ++textAttempts === 1) throw new Error('temporary transport failure');
             return {};
         }
     };
@@ -250,7 +252,7 @@ test('dedicated menu command retries text after a transient initial send failure
     try {
         const result = await menuCommand(sock, 'test-chat', {}, { userId: 'test-bot' }, { menu: async () => {} }, {}, '.');
         assert.equal(textAttempts, 2);
-        assert.match(sent[1].text, /BALI GIL MD \/\/ AKATSUKI COMMAND NETWORK/);
+        assert.match(sent[1].text, /PREFIX: \./);
         assert.equal(result.menu, 'sent');
     } finally {
         Object.assign(settings, original);
