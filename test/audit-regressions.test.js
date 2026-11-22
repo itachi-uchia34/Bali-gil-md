@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { wrapCommandHandler } = require('../lib/command-wrapper');
-const { createThemedSocket, installThemedSocket, decorateText, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
+const { createThemedSocket, installThemedSocket, decorateText, stylizeBotText, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
 const chatbot = require('../commands/chatbot');
 const forward = require('../commands/forward');
 const clear = require('../commands/clear');
@@ -22,7 +22,14 @@ test('Akatsuki response styling frames plain text while preserving command spell
     const decorated = decorateText('Use .ping with prefix !ping');
     assert.ok(decorated.startsWith(THEME_HEADER));
     assert.ok(decorated.endsWith(THEME_FOOTER));
-    assert.ok(decorated.includes('Use .ping with prefix !ping'));
+    assert.ok(decorated.includes('𝗨𝘀𝗲 .ping 𝘄𝗶𝘁𝗵 𝗽𝗿𝗲𝗳𝗶𝘅 !ping'));
+});
+
+test('bot font styling preserves command tokens, links, inline code, and numbers', () => {
+    assert.equal(
+        stylizeBotText('Reply with .menu or !ping, visit https://example.com, code `runTask`, hash 0123456789abcdef0123 and 123.'),
+        '𝗥𝗲𝗽𝗹𝘆 𝘄𝗶𝘁𝗵 .menu 𝗼𝗿 !ping, 𝘃𝗶𝘀𝗶𝘁 https://example.com, 𝗰𝗼𝗱𝗲 `runTask`, 𝗵𝗮𝘀𝗵 0123456789abcdef0123 𝗮𝗻𝗱 123.'
+    );
 });
 
 test('themed socket styles text and captions once without altering other payload fields', async () => {
@@ -43,7 +50,7 @@ test('themed socket styles text and captions once without altering other payload
     assert.ok(sent[0].message.text.endsWith(THEME_FOOTER));
     assert.ok(sent[0].message.caption.startsWith(THEME_HEADER));
     assert.ok(sent[0].message.caption.endsWith(THEME_FOOTER));
-    assert.equal((sent[0].message.text.match(/𝗔𝗞𝗔𝗧𝗦𝗨𝗞𝗜/g) || []).length, 1);
+    assert.equal(sent[0].message.text.split(THEME_HEADER).length - 1, 1);
 });
 
 test('global style installation preserves the original socket object and method receiver', async () => {
@@ -61,7 +68,7 @@ test('global style installation preserves the original socket object and method 
     assert.equal(sent.length, 1);
     assert.equal(sent[0].chatId, 'chat');
     assert.equal(sent[0].options.quoted, 'original-message');
-    assert.ok(sent[0].message.text.includes('The menu is ready'));
+    assert.ok(sent[0].message.text.includes('𝗧𝗵𝗲 𝗺𝗲𝗻𝘂 𝗶𝘀 𝗿𝗲𝗮𝗱𝘆'));
     assert.ok(sent[0].message.text.startsWith(THEME_HEADER));
 });
 
@@ -71,7 +78,12 @@ test('already themed menu and font layouts are not decorated a second time', () 
         '╭━━━━━━━━━━━━━━━━━━━━━━╮\n.allmenu',
         '*🩸 AKATSUKI • 50 FONT STYLES 🩸*\n01. Bold'
     ];
-    for (const text of existingLayouts) assert.equal(decorateText(text), text);
+    for (const text of existingLayouts) {
+        const styled = decorateText(text);
+        assert.ok(!styled.startsWith(THEME_HEADER));
+    }
+    assert.ok(decorateText(existingLayouts[0]).includes('.menu'));
+    assert.ok(decorateText(existingLayouts[1]).includes('.allmenu'));
 });
 
 test('command wrapper retains enumerable helper properties', () => {
