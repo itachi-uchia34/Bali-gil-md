@@ -180,6 +180,7 @@ const commands = {
     yts: require('./commands/yts'),
     playstore: require('./commands/playstore'),
     npm: require('./commands/npm'),
+    font: require('./commands/font'),
     sticker: require('./commands/sticker'),
     toimg: require('./commands/toimg'),
     tomp3: require('./commands/tomp3'),
@@ -1357,6 +1358,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'yts': case 'ytsearch': await commands.yts(this.sock, from, msg, q); break;
                                         case 'playstore': case 'ps': await commands.playstore(this.sock, from, msg, q); break;
                                         case 'npm': await commands.npm(this.sock, from, msg, q); break;
+                                        case 'font': await commands.font(this.sock, from, msg, q); break;
                                         case 'sticker': case 's': await commands.sticker(this.sock, from, msg); break;
                                         case 'toimg': case 'img': await commands.toimg(this.sock, from, msg); break;
                                         case 'tomp3': case 'mp3': await commands.tomp3(this.sock, from, msg); break;
