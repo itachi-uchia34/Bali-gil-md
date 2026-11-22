@@ -2,6 +2,16 @@ const { formatFramedMenu, sendFramedMenu } = require('../lib/menu-format');
 const { getCommandNames } = require('../lib/menu-text');
 const settings = require('../settings');
 
+function toSansBold(value) {
+    return Array.from(String(value), (char) => {
+        const code = char.codePointAt(0);
+        if (char >= 'A' && char <= 'Z') return String.fromCodePoint(0x1D5D4 + code - 65);
+        if (char >= 'a' && char <= 'z') return String.fromCodePoint(0x1D5EE + code - 97);
+        if (char >= '0' && char <= '9') return String.fromCodePoint(0x1D7EC + code - 48);
+        return char;
+    }).join('');
+}
+
 async function allMenu(sock, from, msg, session, commands, pluginCommandNames = [], commandPrefix = settings.prefix) {
     const categories = {
         '👑 SHADOW LEADERSHIP': ['public', 'private', 'mode', 'owner', 'setname', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'nuke', 'clear', 'backup', 'restore', 'clone', 'addsudo', 'delsudo', 'listsudo', 'setprefix', 'broadcast', 'self', 'autostatus', 'autoseen', 'autolike', 'autobio'],
@@ -17,14 +27,17 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
         '✏️ AKATSUKI TEXT MAKER': ['bali', 'cup', 'coffee', 'cloud', 'smoke', 'flower', 'leaf', 'wood', 'stone', 'blood', 'horror', 'scary', 'spooky', 'christmas', 'birthday', 'love', 'heart']
     };
     categories['🛡️ AKATSUKI AUTOMATION'] = ['autoreact', 'autoreacts', 'autoread', 'autostatus', 'autochat', 'autoreply', 'keyword', 'keywords'];
-    if (pluginCommandNames.length > 0) categories['🩸 AKATSUKI PLUGINS'] = pluginCommandNames;
+    const pluginNamesList = Array.isArray(pluginCommandNames)
+        ? [...new Set(pluginCommandNames.filter((name) => typeof name === 'string' && name.trim()))]
+        : [];
+    if (pluginNamesList.length > 0) categories['🩸 AKATSUKI PLUGINS'] = pluginNamesList;
 
     const registeredNames = getCommandNames(commands);
     const registered = new Set(registeredNames);
-    const pluginNames = new Set(pluginCommandNames.filter((name) => registered.has(name)));
+    const pluginNames = new Set(pluginNamesList.filter((name) => registered.has(name)));
     const prefix = typeof commandPrefix === 'string' && commandPrefix.length ? commandPrefix : '.';
     const sections = Object.entries(categories).map(([title, names]) => ({
-        title,
+        title: toSansBold(title),
         commands: [...new Set(names)].filter((name) => registered.has(name) || pluginNames.has(name)).map((name) => `${prefix}${name}`)
     })).filter((section) => section.commands.length);
 
@@ -33,8 +46,8 @@ async function allMenu(sock, from, msg, session, commands, pluginCommandNames = 
     if (additional.length) sections.push({ title: '📜 HIDDEN SHROUD SCROLLS', commands: additional.map((name) => `${prefix}${name}`) });
 
     const allMenuText = formatFramedMenu({
-        title: 'BALI GIL MD ALL MENU',
-        subtitle: `COMPLETE AKATSUKI COMMAND INDEX // ${registered.size} REGISTERED`,
+        title: toSansBold('BALI GIL MD ALL MENU'),
+        subtitle: `${toSansBold('COMPLETE AKATSUKI COMMAND INDEX')} • ${toSansBold(`${registered.size} REGISTERED COMMANDS`)}`,
         sections
     });
     await sendFramedMenu(sock, from, msg, allMenuText, settings.startimage, settings.startimageFallbacks);

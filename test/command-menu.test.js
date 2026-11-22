@@ -289,12 +289,37 @@ test('help and allmenu render only usable commands', async () => {
     assert.match(sent[1], /!menu/);
     assert.match(sent[1], /!autoreact/);
     assert.match(sent[1], /!autoreacts/);
+    assert.match(sent[1], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗔𝗟𝗟 𝗠𝗘𝗡𝗨/);
+    assert.match(sent[1], /𝗦𝗜𝗫 𝗣𝗔𝗧𝗛𝗦 𝗧𝗢𝗢𝗟𝗞𝗜𝗧/);
+    assert.doesNotMatch(sent[1], /!𝗽𝗶𝗻𝗴/);
     for (const menu of sent) {
         assert.match(menu, /OWNER: BALI GIL/);
         assert.match(menu, /OWNER NUMBER: \+?\d+/);
         assert.match(menu, /DEVELOPER: ITACHI UCHIHA/);
     }
     assert.doesNotMatch(sent[1], /!utils/);
+});
+
+test('allmenu deduplicates valid plugin names and tolerates malformed plugin input', async () => {
+    const sent = [];
+    const sock = {
+        async sendMessage(_chatId, payload) {
+            if (payload.image) throw new Error('Use the text fallback in this test');
+            sent.push(payload.text);
+        }
+    };
+    const commands = { allmenu: async () => {}, 'custom-plugin': async () => {}, ping: async () => {} };
+
+    await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, ['custom-plugin', 'custom-plugin', '', 42], '!');
+    assert.equal((sent[0].match(/!custom-plugin/g) || []).length, 1);
+    assert.match(sent[0], /𝗔𝗞𝗔𝗧𝗦𝗨𝗞𝗜 𝗣𝗟𝗨𝗚𝗜𝗡𝗦/);
+    assert.match(sent[0], /!ping/);
+
+    sent.length = 0;
+    await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, null, '!');
+    assert.match(sent[0], /!custom-plugin/);
+    assert.doesNotMatch(sent[0], /𝗔𝗞𝗔𝗧𝗦𝗨𝗞𝗜 𝗣𝗟𝗨𝗚𝗜𝗡𝗦/);
+    assert.match(sent[0], /!ping/);
 });
 
 test('anime command handles missing query without making a network request', async () => {
