@@ -5,7 +5,7 @@ const { generateMenuText, getCommandNames } = require('../lib/menu-text');
 const helpCommand = require('../commands/help');
 const allMenuCommand = require('../commands/allmenu');
 const animeCommand = require('../commands/anime');
-const { sendMenuWithSong } = require('../lib/menu-format');
+const { sendMenuWithSong, splitTextByUtf8Bytes } = require('../lib/menu-format');
 const autoreactsCommand = require('../commands/autoreacts');
 const { AUTO_REACT_EMOJIS, getAutoReactEmojiList, nextAutoReactEmoji } = require('../lib/auto-react');
 const { normalizeJidUserId } = require('../lib/whatsapp-id');
@@ -468,4 +468,24 @@ test('song is still attempted and failure is reported when menu text send fails'
     assert.deepEqual(sent, ['text', 'text', 'image', 'audio']);
     assert.equal(result.menu, 'failed');
     assert.equal(result.song, 'sent');
+});
+
+test('long Unicode menus are split into safe UTF-8 chunks without losing characters', async () => {
+    const text = `🩸 ${'Akatsuki command '.repeat(260)}⚔️`;
+    const chunks = splitTextByUtf8Bytes(text);
+    assert.ok(chunks.length > 1);
+    assert.equal(chunks.join(''), text);
+    for (const chunk of chunks) assert.ok(Buffer.byteLength(chunk, 'utf8') <= 3500);
+
+    const sent = [];
+    const sock = {
+        async sendMessage(chatId, payload, options) { sent.push({ chatId, payload, options }); }
+    };
+    const msg = { key: { id: 'long-menu' } };
+    const result = await sendMenuWithSong(sock, 'chat', msg, text, '', '');
+
+    assert.equal(result.menu, 'sent');
+    assert.deepEqual(sent.map(item => item.payload.text).join(''), text);
+    assert.ok(sent.every(item => Buffer.byteLength(item.payload.text, 'utf8') <= 3500));
+    assert.ok(sent.every(item => item.options.quoted === msg));
 });

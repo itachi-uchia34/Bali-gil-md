@@ -1,6 +1,6 @@
 const settings = require('../settings');
 const { generateMenuText } = require('../lib/menu-text');
-const { sendMenuWithSong } = require('../lib/menu-format');
+const { sendMenuWithSong, sendMenuText } = require('../lib/menu-format');
 
 async function menuCommand(sock, chatId, msg, session, commands = {}, botData = {}, commandPrefix = settings.prefix) {
     const prefix = typeof commandPrefix === 'string' && commandPrefix.length ? commandPrefix : '.';
@@ -26,8 +26,8 @@ async function menuCommand(sock, chatId, msg, session, commands = {}, botData = 
     // A transient WhatsApp send failure must not leave the user with only optional media.
     if (delivery.menu !== 'sent') {
         try {
-            await sock.sendMessage(chatId, { text: menuText }, { quoted: msg });
-            delivery.menu = 'sent';
+            const retry = await sendMenuText(sock, chatId, msg, menuText);
+            delivery.menu = retry.menu;
         } catch (error) {
             console.warn(`Menu text retry failed:`, error.message || error);
         }
