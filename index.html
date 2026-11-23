@@ -229,6 +229,8 @@
   .pairing-session h3{color:var(--green);font-size:.95rem;margin:0 0 8px;}
   .pairing-session .session-status{font-size:.78rem;color:var(--muted);margin-bottom:12px;}
   .pairing-session .code-box{width:100%;}
+  .pairing-qr{display:block;width:min(280px,100%);height:auto;margin:14px auto 4px;padding:10px;border-radius:10px;background:#fff;}
+  .pairing-actions{display:grid;gap:10px;}
   .pairing-session.is-connected{border-color:var(--green);}
   .pairing-note{color:var(--muted);font-size:.8rem;line-height:1.5;margin:-12px 0 20px;}
   @keyframes riseIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
@@ -344,7 +346,7 @@
       <ol>
         <li>Enter your WhatsApp number with country code (no "+", no spaces, no brackets)</li>
         <li>Click "Summon Pairing Code" to open a separate Akatsuki gate for that account</li>
-        <li>Copy the 8-digit code</li>
+        <li>Copy the pairing code, or choose QR linking and scan the QR from WhatsApp Linked Devices</li>
         <li>Open WhatsApp → Settings → Linked Devices → Link a Device</li>
         <li>Paste the code when prompted. Repeat with another number to pair another account.</li>
       </ol>
@@ -357,6 +359,7 @@
         <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" aria-label="WhatsApp phone number with country code" placeholder="e.g. 923300000000 (with country code)">
       </div>
       <button class="btn" id="requestPairing"><i class="fas fa-key"></i> Summon Pairing Code</button>
+      <button class="btn btn-outline" id="requestQr"><i class="fas fa-qrcode"></i> Link with QR</button>
     </div>
 
     <div id="status"></div>
@@ -463,9 +466,11 @@ function setStatus(msg, type){
 const socket = io();
 const phoneInput = document.getElementById('phone');
 const requestBtn = document.getElementById('requestPairing');
+const requestQrBtn = document.getElementById('requestQr');
 const pairingSessionsElement = document.getElementById('pairingSessions');
 const pairingStorageKey = 'bali_pairing_sessions_v1';
 const pairingSessions = new Map();
+const pairingTimers = new Map();
 let pendingSessionId = null;
 let requestAckTimer = null;
 
@@ -504,7 +509,7 @@ function renderPairingSessions(){
     const card = document.createElement('article');
     card.className = 'pairing-session' + (session.connected ? ' is-connected' : '');
     const title = document.createElement('h3');
-    title.textContent = `WhatsApp account •••• ${session.last4}`;
+    title.textContent = session.last4 === 'QR' ? 'WhatsApp account • QR linking' : `WhatsApp account •••• ${session.last4}`;
     const status = document.createElement('div');
     status.className = 'session-status';
     status.textContent = session.status;
@@ -520,6 +525,13 @@ function renderPairingSessions(){
       hint.className = 'copy-hint';
       hint.textContent = 'Tap the code to copy';
       card.append(codeButton, hint);
+    }
+    if (session.qrDataUrl){
+      const qrImage = document.createElement('img');
+      qrImage.className = 'pairing-qr';
+      qrImage.src = session.qrDataUrl;
+      qrImage.alt = `WhatsApp linking QR for account ending ${session.last4}`;
+      card.appendChild(qrImage);
     }
     pairingSessionsElement.appendChild(card);
   }
@@ -561,10 +573,31 @@ function updatePairingSession(sessionId, changes){
 }
 function resetRequestButton(){
   requestBtn.disabled = false;
+  requestQrBtn.disabled = false;
   requestBtn.innerHTML = '<i class="fas fa-key"></i> Summon Pairing Code';
   if (requestAckTimer) clearTimeout(requestAckTimer);
   requestAckTimer = null;
   pendingSessionId = null;
+}
+function startPairingExpiry(sessionId, seconds = 60){
+  if(pairingTimers.has(sessionId)) clearInterval(pairingTimers.get(sessionId));
+  let remaining = seconds;
+  const timer = setInterval(()=>{
+    remaining--;
+    const session = pairingSessions.get(sessionId);
+    if(!session){ clearInterval(timer); pairingTimers.delete(sessionId); return; }
+    if(remaining <= 0){
+      clearInterval(timer);
+      pairingTimers.delete(sessionId);
+      updatePairingSession(sessionId, { code: '', qrDataUrl: '', status: 'Pairing code expired. Start a new request to continue.' });
+      return;
+    }
+    if(session.code || session.qrDataUrl){
+      const method = session.qrDataUrl ? 'QR' : 'code';
+      updatePairingSession(sessionId, { status: `${method} ready. Link this account within ${remaining} seconds.` });
+    }
+  }, 1000);
+  pairingTimers.set(sessionId, timer);
 }
 
 restorePairingSessions();
@@ -573,9 +606,9 @@ socket.on('connect', () => {
   for (const sessionId of pairingSessions.keys()) socket.emit('set-user', sessionId);
 });
 
-requestBtn.addEventListener('click', ()=>{
+function requestPairing(method){
   const number = phoneInput.value.replace(/\D/g,'');
-  if(number.length < 10 || number.length > 15){
+  if(method === 'code' && (number.length < 10 || number.length > 15)){
     setStatus('Enter a valid WhatsApp number with country code (10–15 digits).', 'error');
     phoneInput.focus();
     return;
@@ -587,9 +620,11 @@ requestBtn.addEventListener('click', ()=>{
   const sessionId = createSessionId();
   pendingSessionId = sessionId;
   requestBtn.disabled = true;
-  requestBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Summoning...';
-  updatePairingSession(sessionId, { last4: number.slice(-4), status: 'Requesting an isolated pairing session…', code: '', connected: false });
-  setStatus(`Opening a separate pairing gate for account ending ${number.slice(-4)}…`, 'warning');
+  requestQrBtn.disabled = true;
+  requestBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ${method === 'qr' ? 'Preparing QR…' : 'Summoning...'}`;
+  const last4 = method === 'code' ? number.slice(-4) : 'QR';
+  updatePairingSession(sessionId, { last4, status: method === 'qr' ? 'Opening a secure QR linking session…' : 'Opening an isolated pairing session…', code: '', qrDataUrl: '', connected: false });
+  setStatus(method === 'qr' ? 'Preparing an account-specific WhatsApp linking QR…' : `Opening a separate pairing gate for account ending ${last4}…`, 'warning');
   requestAckTimer = setTimeout(() => {
     if (pendingSessionId === sessionId){
       resetRequestButton();
@@ -597,27 +632,46 @@ requestBtn.addEventListener('click', ()=>{
       setStatus('The pairing gateway did not acknowledge the request. Please try again.', 'error');
     }
   }, 10000);
-  socket.emit('pair-request', { sessionId, number });
-});
+  socket.emit('set-user', sessionId);
+  socket.emit(method === 'qr' ? 'qr-request' : 'pair-request', method === 'qr' ? { sessionId } : { sessionId, number });
+}
+requestBtn.addEventListener('click', ()=>requestPairing('code'));
+requestQrBtn.addEventListener('click', ()=>requestPairing('qr'));
 
 socket.on('pairing-started', ({ sessionId } = {})=>{
   if (sessionId === pendingSessionId) resetRequestButton();
-  updatePairingSession(sessionId, { status: 'Session created. Preparing the pairing code…' });
+  const session = pairingSessions.get(sessionId);
+  updatePairingSession(sessionId, { status: session?.last4 === 'QR' ? 'Session created. Waiting for the QR linking signal…' : 'Session created. Waiting for the WhatsApp pairing handshake…' });
 });
 
 socket.on('pairing-code', (payload)=>{
   const sessionId = typeof payload === 'string' ? pendingSessionId : payload?.sessionId;
   const code = typeof payload === 'string' ? payload : payload?.code;
   if (!sessionId || !code) return;
-  updatePairingSession(sessionId, { code, status: 'Code ready. Link this account in WhatsApp within 60 seconds.' });
+  const formattedCode = String(code).replace(/[^A-Za-z0-9]/g, '').toUpperCase().match(/.{1,4}/g)?.join('-') || String(code);
+  updatePairingSession(sessionId, { code: formattedCode, qrDataUrl: '', status: 'Code ready. Link this account in WhatsApp within 60 seconds.' });
+  startPairingExpiry(sessionId, 60);
   setStatus(`Pairing code ready for account ending ${pairingSessions.get(sessionId)?.last4 || '----'}. You can request another account now.`, 'success');
+});
+
+socket.on('pairing-qr', (payload)=>{
+  if(!payload?.sessionId || !payload?.dataUrl) return;
+  updatePairingSession(payload.sessionId, { code: '', qrDataUrl: payload.dataUrl, status: 'Scan this QR from WhatsApp → Linked Devices within 60 seconds.' });
+  startPairingExpiry(payload.sessionId, payload.expiresIn || 60);
+  setStatus('QR ready. Scan it from WhatsApp → Linked Devices to link this account.', 'success');
+});
+
+socket.on('pairing-expired', ({ sessionId } = {})=>{
+  if(!sessionId) return;
+  if(pairingTimers.has(sessionId)){ clearInterval(pairingTimers.get(sessionId)); pairingTimers.delete(sessionId); }
+  updatePairingSession(sessionId, { code: '', qrDataUrl: '', status: 'Pairing expired. Request a fresh code or QR to continue.' });
 });
 
 socket.on('pair-error', (payload)=>{
   const sessionId = typeof payload === 'string' ? pendingSessionId : payload?.sessionId;
   const message = typeof payload === 'string' ? payload : payload?.message;
   if (sessionId){
-    updatePairingSession(sessionId, { status: `Pairing failed: ${message || 'Please try again.'}`, code: '', connected: false });
+    updatePairingSession(sessionId, { status: `Pairing failed: ${message || 'Please try again.'}`, code: '', qrDataUrl: '', connected: false });
   }
   if (!sessionId || sessionId === pendingSessionId){
     resetRequestButton();
@@ -628,7 +682,8 @@ socket.on('pair-error', (payload)=>{
 socket.on('connection-status', (status)=>{
   if(!status?.sessionId || !pairingSessions.has(status.sessionId)) return;
   if(status.connected){
-    updatePairingSession(status.sessionId, { connected: true, code: '', status: 'Linked successfully. This account is online.' });
+    if(pairingTimers.has(status.sessionId)){ clearInterval(pairingTimers.get(status.sessionId)); pairingTimers.delete(status.sessionId); }
+    updatePairingSession(status.sessionId, { connected: true, code: '', qrDataUrl: '', status: 'Linked successfully. This account is online.' });
     setStatus(`Account ending ${pairingSessions.get(status.sessionId)?.last4 || '----'} is linked. You can continue pairing more accounts.`, 'success');
     showToast('AKATSUKI ACCOUNT LINKED!');
   } else if(status.connecting){

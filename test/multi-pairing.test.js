@@ -56,7 +56,7 @@ test('dashboard keeps pairing codes and connection statuses isolated per account
     }
 
     const nodes = {
-        phone: element(), requestPairing: element(), pairingSessions: element()
+        phone: element(), requestPairing: element(), requestQr: element(), pairingSessions: element()
     };
     const status = element();
     const emitted = [];
@@ -75,6 +75,7 @@ test('dashboard keeps pairing codes and connection statuses isolated per account
         io: () => socket,
         setStatus() {}, showToast() {},
         setTimeout: () => 1, clearTimeout() {},
+        setInterval: () => 1, clearInterval() {},
         console
     };
     vm.runInNewContext(scriptMatch[1], context);
@@ -96,13 +97,20 @@ test('dashboard keeps pairing codes and connection statuses isolated per account
     handlers['pairing-code']({ sessionId: firstRequest.sessionId, code: '1111 2222' });
     handlers['pairing-code']({ sessionId: secondRequest.sessionId, code: '3333 4444' });
     handlers['connection-status']({ sessionId: firstRequest.sessionId, connected: true, connecting: false });
+    nodes.requestQr.events.click();
+    const qrRequest = emitted.find(item => item.name === 'qr-request').payload;
+    assert.ok(emitted.some(item => item.name === 'set-user' && item.payload === qrRequest.sessionId));
+    handlers['pairing-started']({ sessionId: qrRequest.sessionId, method: 'qr' });
+    handlers['pairing-qr']({ sessionId: qrRequest.sessionId, dataUrl: 'data:image/png;base64,AAAA', expiresIn: 60 });
 
     const sessions = vm.runInNewContext('[...pairingSessions.values()]', context);
-    assert.equal(sessions.length, 2);
+    assert.equal(sessions.length, 3);
     assert.equal(sessions[0].code, '');
     assert.equal(sessions[0].connected, true);
     assert.equal(sessions[0].last4, '0101');
-    assert.equal(sessions[1].code, '3333 4444');
+    assert.equal(sessions[1].code, '3333-4444');
     assert.equal(sessions[1].connected, false);
     assert.equal(sessions[1].last4, '0958');
+    assert.equal(sessions[2].qrDataUrl, 'data:image/png;base64,AAAA');
+    assert.equal(sessions[2].last4, 'QR');
 });

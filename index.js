@@ -8,6 +8,7 @@ const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, downloadContentFromMessage, jidNormalizedUser, Browsers, delay } = require('@whiskeysockets/baileys');
 const P = require('pino');
+const QRCode = require('qrcode');
 const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
@@ -20,6 +21,7 @@ const { runPreCommandHooks } = require('./lib/precommand-hooks');
 const { wrapCommandHandler } = require('./lib/command-wrapper');
 const { reportMenuFailure } = require('./lib/menu-failure');
 const { isValidWebSessionId, parsePairingRequest } = require('./lib/pairing');
+const { waitForPairingReady } = require('./lib/pairing-readiness');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -649,6 +651,7 @@ class BotSession {
         this.keywordRepliesEnabled = botData.statusSettings[userId]?.keywordRepliesEnabled !== false;
         this.autoReact = botData.statusSettings[userId]?.autoReact || false;
         this.autoReactIndex = 0;
+        this.pairingCodeTimer = null;
         // Join/leave announcements are enabled by default; `.welcome off` and `.goodbye off` persistently disable them.
         this.welcomeEnabled = botData.statusSettings[userId]?.welcomeEnabled !== false;
         this.goodbyeEnabled = botData.statusSettings[userId]?.goodbyeEnabled !== false;
@@ -747,6 +750,10 @@ class BotSession {
         this.stopRequested = true;
         this.isConnected = false;
         this.isInitializing = false;
+        if (this.pairingCodeTimer) {
+            clearTimeout(this.pairingCodeTimer);
+            this.pairingCodeTimer = null;
+        }
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
@@ -835,10 +842,16 @@ class BotSession {
 
             if (pairingNumber && !state.creds.registered) {
                 if (!this.sock.authState.creds.registered) {
-                    await delay(3000);
                     try {
+                        await waitForPairingReady(this.sock, {
+                            timeoutMs: Number(process.env.PAIRING_CONNECTION_TIMEOUT_MS || 20000),
+                            fallbackDelayMs: Number(process.env.PAIRING_READY_DELAY_MS || 750),
+                            delay
+                        });
                         let code = await this.sock.requestPairingCode(pairingNumber);
-                        code = code?.match(/.{1,4}/g)?.join("-") || code;
+                        code = String(code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                        if (code.length !== 8) throw new Error('WhatsApp returned an invalid pairing code. Please retry.');
+                        code = code.match(/.{1,4}/g).join('-');
                         this.sendLog(`🩸 Akatsuki pairing code prepared: ${code}`, 'success');
 
                         if (this.tgChatId && tgBot) {
@@ -853,6 +866,14 @@ class BotSession {
 
                         const socketId = userSockets[this.userId];
                         if (socketId) io.to(socketId).emit('pairing-code', { sessionId: this.userId, code });
+                        if (this.pairingCodeTimer) clearTimeout(this.pairingCodeTimer);
+                        this.pairingCodeTimer = setTimeout(() => {
+                            this.pairingCodeTimer = null;
+                            if (!this.isConnected) {
+                                if (socketId) io.to(socketId).emit('pairing-expired', { sessionId: this.userId });
+                                this.sendLog('Pairing code expired. Request a fresh code to continue.', 'warning');
+                            }
+                        }, 60000);
                     } catch (err) {
                         this.sendLog(`❌ Akatsuki pairing gate failed: ${err.message}`, 'error');
                         this.emitPairingError(err.message);
@@ -1480,7 +1501,20 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                 const { connection, lastDisconnect, qr } = update;
                 if (qr) {
                     const socketId = userSockets[this.userId];
-                    if (socketId) io.to(socketId).emit('qr', qr);
+                    if (socketId) {
+                        try {
+                            const dataUrl = await QRCode.toDataURL(qr, { errorCorrectionLevel: 'M', margin: 2, width: 320 });
+                            io.to(socketId).emit('pairing-qr', { sessionId: this.userId, dataUrl, expiresIn: 60 });
+                            if (this.pairingCodeTimer) clearTimeout(this.pairingCodeTimer);
+                            this.pairingCodeTimer = setTimeout(() => {
+                                this.pairingCodeTimer = null;
+                                if (!this.isConnected) io.to(socketId).emit('pairing-expired', { sessionId: this.userId });
+                            }, 60000);
+                        } catch (error) {
+                            io.to(socketId).emit('pair-error', { sessionId: this.userId, message: 'Could not render the QR code. Use phone-number pairing instead.' });
+                            this.sendLog(`Could not render pairing QR: ${error.message}`, 'error');
+                        }
+                    }
                 }
 
                 if (connection === 'close') {
@@ -1520,6 +1554,10 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         this.scheduleReconnect(5000);
                     }
                 } else if (connection === 'open') {
+                    if (this.pairingCodeTimer) {
+                        clearTimeout(this.pairingCodeTimer);
+                        this.pairingCodeTimer = null;
+                    }
                     this.isConnected = true;
                     this.isInitializing = false;
                     this.sendLog('🩸 *AKATSUKI LINK ESTABLISHED* — Itachi’s Shroud is online. ✅', 'success');
@@ -1642,6 +1680,37 @@ io.on('connection', (socket) => {
         const session = sessions[sessionId];
         if (session) session.sendConnectionStatus();
         else socket.emit('connection-status', { sessionId, connected: false, connecting: false });
+    });
+
+    socket.on('qr-request', async (payload = {}) => {
+        const sessionId = typeof payload.sessionId === 'string' ? payload.sessionId : payload.userId;
+        if (!isValidWebSessionId(sessionId) || userSockets[sessionId] !== socket.id) {
+            socket.emit('pair-error', { sessionId: null, message: 'Invalid pairing session. Refresh the page and try again.' });
+            return;
+        }
+        const current = sessions[sessionId];
+        if (current?.isInitializing || current?.isConnected) {
+            socket.emit('pair-error', { sessionId, message: current.isConnected ? 'This account is already linked.' : 'A pairing request is already in progress for this account.' });
+            return;
+        }
+        botData.statusSettings ||= {};
+        botData.statusSettings[sessionId] ||= {
+            autoStatus: false,
+            autoSeen: false,
+            autoLike: false,
+            autoDownload: false,
+            isPublic: true
+        };
+        try {
+            saveBotData();
+            const session = current || new BotSession(sessionId);
+            session.tgChatId = null;
+            sessions[sessionId] = session;
+            socket.emit('pairing-started', { sessionId, method: 'qr' });
+            await session.initialize();
+        } catch (error) {
+            socket.emit('pair-error', { sessionId, message: error.message || 'Could not start QR linking.' });
+        }
     });
 
     // Each browser pairing request owns a separate, path-safe session and event stream.
