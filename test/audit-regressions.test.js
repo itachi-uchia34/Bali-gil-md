@@ -4,6 +4,7 @@ const { wrapCommandHandler } = require('../lib/command-wrapper');
 const { createThemedSocket, installThemedSocket, decorateText, stylizeBotText, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
 const chatbot = require('../commands/chatbot');
 const forward = require('../commands/forward');
+const kick = require('../commands/kick');
 const clear = require('../commands/clear');
 const roll = require('../commands/roll');
 const timer = require('../commands/timer');
@@ -115,6 +116,20 @@ test('forward sends the quoted message content and refuses an absent quote', asy
     const noQuoteSocket = mockSocket();
     await forward(noQuoteSocket, 'chat', { message: {} }, true, '12345');
     assert.match(noQuoteSocket.sent[0].payload.text, /Reply to a message/);
+});
+
+test('kick removes the requested group member when invoked by an admin', async () => {
+    const sock = mockSocket();
+    const removed = [];
+    sock.groupParticipantsUpdate = async (...args) => removed.push(args);
+    const target = 'member@s.whatsapp.net';
+    const msg = { message: { extendedTextMessage: { contextInfo: { mentionedJid: [target] } } } };
+
+    await kick(sock, 'group@g.us', msg, true);
+
+    assert.deepEqual(removed, [['group@g.us', [target], 'remove']]);
+    assert.match(sock.sent[0].payload.text, /has been repelled/);
+    assert.deepEqual(sock.sent[0].payload.mentions, [target]);
 });
 
 test('clear accurately states that no messages were deleted', async () => {

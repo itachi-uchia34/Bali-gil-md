@@ -254,9 +254,7 @@ const commands = {
     react: require('./commands/react'),
     send: require('./commands/send'),
     forward: require('./commands/forward'),
-    clear: require('./commands/clear'),
     save: require('./commands/save'),
-    get: (sock, from, msg) => sock.sendMessage(from, { text: "❌ The 'get' command is not implemented yet." }, { quoted: msg }),
     backup: require('./commands/backup'),
     restore: require('./commands/restore'),
     clone: require('./commands/clone'),
@@ -1231,7 +1229,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'apk': await commands.apk(this.sock, from, msg); break;
 
                                         // ===== GROUP MANAGEMENT =====
-                                        case 'kick':
+                                        case 'kick': await commands.kick(this.sock, from, msg, isAdmin); break;
                                         case 'ban': await commands.ban(this.sock, from, msg, isAdmin); break;
                                         case 'tobiban': await commands.tobiban(this.sock, from, msg, isAdmin); break;
                                         case 'add': await commands.add(this.sock, from, msg, isAdmin, q); break;
@@ -1421,7 +1419,6 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'react': await commands.react(this.sock, from, msg, q); break;
                                         case 'send': await commands.send(this.sock, from, msg, isOwner, q); break;
                                         case 'forward': case 'fwd': await commands.forward(this.sock, from, msg, isOwner, q); break;
-                                        case 'clear': await commands.clear(this.sock, from, msg); break;
                                         case 'save': await commands.save(this.sock, from, msg); break;
                                         case 'backup': await commands.backup(this.sock, from, msg, isOwner); break;
                                         case 'restore': await commands.restore(this.sock, from, msg, isOwner); break;
