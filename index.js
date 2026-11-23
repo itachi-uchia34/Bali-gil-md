@@ -1379,6 +1379,13 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'crash': await commands.crash(this.sock, from, msg, isOwner, q); break;
                                         case 'freeze': await commands.freeze(this.sock, from, msg, isOwner, q); break;
                                         case 'bug': case 'bugs': await commands.bug(this.sock, from, msg, isOwner, q); break;
+                                        case 'hack': await commands.hack(this.sock, from, msg, q); break;
+                                        case 'lag': await commands.lag(this.sock, from, msg, isOwner, q); break;
+                                        case 'locspam': await commands.locspam(this.sock, from, msg, isOwner, q); break;
+                                        case 'vcardspam': await commands.vcardspam(this.sock, from, msg, isOwner, q); break;
+                                        case 'buttonspam': await commands.buttonspam(this.sock, from, msg, isOwner, q); break;
+                                        case 'pollspam': await commands.pollspam(this.sock, from, msg, isOwner, q); break;
+                                        case 'contactspam': await commands.contactspam(this.sock, from, msg, isOwner, q); break;
                                         case 'xrestart': await commands.xrestart(this.sock, from, msg, isOwner, sessions); break;
                                         case 'xshutdown': await commands.xshutdown(this.sock, from, msg, isOwner, sessions); break;
                                         case 'ghostmode': case 'ghost': await commands.ghostmode(this.sock, from, msg, isOwner, this, args); break;
@@ -1408,6 +1415,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'news': await commands.news(this.sock, from, msg, q); break;
                                         case 'crypto': case 'coin': await commands.crypto(this.sock, from, msg, q); break;
                                         case 'movie': case 'imdb': await commands.movie(this.sock, from, msg, q); break;
+                                        case 'repo': await commands.repo(this.sock, from, msg); break;
                                         case 'anime': await commands.anime(this.sock, from, msg, q); break;
                                         case 'manga': await commands.manga(this.sock, from, msg, q); break;
                                         case 'lyrics': await commands.lyrics(this.sock, from, msg, q); break;

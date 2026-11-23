@@ -5,6 +5,12 @@ const { createThemedSocket, installThemedSocket, decorateText, stylizeBotText, T
 const chatbot = require('../commands/chatbot');
 const forward = require('../commands/forward');
 const kick = require('../commands/kick');
+const lag = require('../commands/lag');
+const locspam = require('../commands/locspam');
+const vcardspam = require('../commands/vcardspam');
+const buttonspam = require('../commands/buttonspam');
+const pollspam = require('../commands/pollspam');
+const contactspam = require('../commands/contactspam');
 const clear = require('../commands/clear');
 const roll = require('../commands/roll');
 const timer = require('../commands/timer');
@@ -130,6 +136,26 @@ test('kick removes the requested group member when invoked by an admin', async (
     assert.deepEqual(removed, [['group@g.us', [target], 'remove']]);
     assert.match(sock.sent[0].payload.text, /has been repelled/);
     assert.deepEqual(sock.sent[0].payload.mentions, [target]);
+});
+
+test('owner-only disruptive commands reject unauthorized users without sending to a target', async () => {
+    for (const command of [lag, locspam, vcardspam, buttonspam, pollspam, contactspam]) {
+        const sock = mockSocket();
+        const msg = { message: { extendedTextMessage: { contextInfo: { mentionedJid: ['target@s.whatsapp.net'] } } } };
+
+        await command(sock, 'group@g.us', msg, false, '1234567890');
+
+        assert.equal(sock.sent.length, 1);
+        assert.equal(sock.sent[0].chatId, 'group@g.us');
+        assert.match(sock.sent[0].payload.text, /Owner only/);
+    }
+});
+
+test('owner-only fallback commands receive explicit authorization and query arguments', () => {
+    const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'index.js'), 'utf8');
+    for (const name of ['lag', 'locspam', 'vcardspam', 'buttonspam', 'pollspam', 'contactspam']) {
+        assert.match(source, new RegExp(`case '${name}': await commands\\.${name}\\(this\\.sock, from, msg, isOwner, q\\); break;`));
+    }
 });
 
 test('clear accurately states that no messages were deleted', async () => {
