@@ -15,7 +15,7 @@ async function autoreactsCommand(sock, from, msg, isAdmin, session, args = [], b
     if (action === 'status') {
         const state = session?.autoReact ? 'ON' : 'OFF';
         return sock.sendMessage(from, {
-            text: `🤖 Auto-React is ${state}.\nIt rotates one emoji per incoming message.\n\nAvailable reaction emojis (${AUTO_REACT_EMOJIS.length}):\n${getAutoReactEmojiList()}`
+            text: `🤖 Auto-React is ${state}.\nIt shuffles reactions and avoids repeats until the full emoji set has been used.\n\nAvailable reaction emojis (${AUTO_REACT_EMOJIS.length}):\n${getAutoReactEmojiList()}`
         }, { quoted: msg });
     }
 
@@ -35,7 +35,7 @@ async function autoreactsCommand(sock, from, msg, isAdmin, session, args = [], b
     }
 
     return sock.sendMessage(from, {
-        text: `${enabled ? '✅ Auto-React enabled' : '❌ Auto-React disabled'}. ${enabled ? 'One emoji will rotate on each incoming message.' : ''}\n\nAvailable reaction emojis (${AUTO_REACT_EMOJIS.length}):\n${getAutoReactEmojiList()}`
+        text: `${enabled ? '✅ Auto-React enabled' : '❌ Auto-React disabled'}. ${enabled ? 'A different shuffled emoji will react to each incoming message until the full set cycles.' : ''}\n\nAvailable reaction emojis (${AUTO_REACT_EMOJIS.length}):\n${getAutoReactEmojiList()}`
     }, { quoted: msg });
 }
 

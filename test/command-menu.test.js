@@ -67,13 +67,17 @@ test('menu is allowed for ordinary users in private mode without opening other c
     assert.equal(isCommandAllowed('ping', { isPublic: true, isAuthorized: false }), true);
 });
 
-test('autoreact rotates through every emoji and then starts over', () => {
+test('autoreact shuffles every emoji without repeating within a cycle or at the cycle boundary', () => {
+    assert.ok(AUTO_REACT_EMOJIS.length >= 100);
+    assert.equal(new Set(AUTO_REACT_EMOJIS).size, AUTO_REACT_EMOJIS.length);
     const session = { autoReactIndex: 0 };
-    const firstCycle = AUTO_REACT_EMOJIS.map(() => nextAutoReactEmoji(session));
+    const reactions = Array.from({ length: AUTO_REACT_EMOJIS.length + 1 }, () => nextAutoReactEmoji(session));
+    const firstCycle = reactions.slice(0, AUTO_REACT_EMOJIS.length);
 
-    assert.deepEqual(firstCycle, AUTO_REACT_EMOJIS);
-    assert.equal(session.autoReactIndex, 0);
-    assert.equal(nextAutoReactEmoji(session), AUTO_REACT_EMOJIS[0]);
+    assert.equal(new Set(firstCycle).size, AUTO_REACT_EMOJIS.length);
+    assert.deepEqual(new Set(firstCycle), new Set(AUTO_REACT_EMOJIS));
+    assert.notEqual(reactions[AUTO_REACT_EMOJIS.length], reactions[AUTO_REACT_EMOJIS.length - 1]);
+    assert.equal(session.autoReactIndex, 1);
 });
 
 test('autoreact command enables, persists, disables, and displays all available emojis', async () => {
