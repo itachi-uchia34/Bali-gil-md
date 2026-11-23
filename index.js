@@ -19,6 +19,7 @@ const { normalizeJidUserId } = require('./lib/whatsapp-id');
 const { runPreCommandHooks } = require('./lib/precommand-hooks');
 const { wrapCommandHandler } = require('./lib/command-wrapper');
 const { reportMenuFailure } = require('./lib/menu-failure');
+const { isValidWebSessionId, parsePairingRequest } = require('./lib/pairing');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -676,10 +677,22 @@ class BotSession {
         if (socketId) {
             io.to(socketId).emit('connection-status', {
                 connected: this.isConnected,
-                user: this.userId
+                connecting: this.isInitializing,
+                user: this.userId,
+                sessionId: this.userId
             });
         }
         io.emit('total-active', Object.values(sessions).filter(s => s.isConnected).length);
+    }
+
+    emitPairingError(message) {
+        const socketId = userSockets[this.userId];
+        if (socketId) {
+            io.to(socketId).emit('pair-error', {
+                sessionId: this.userId,
+                message: String(message || 'Pairing could not be started. Please try again.')
+            });
+        }
     }
 
     async getAIResponse(userJid, userMessage, systemPrompt = "Helpful assistant.") {
@@ -839,9 +852,10 @@ class BotSession {
                         }
 
                         const socketId = userSockets[this.userId];
-                        if (socketId) io.to(socketId).emit('pairing-code', code);
+                        if (socketId) io.to(socketId).emit('pairing-code', { sessionId: this.userId, code });
                     } catch (err) {
                         this.sendLog(`❌ Akatsuki pairing gate failed: ${err.message}`, 'error');
+                        this.emitPairingError(err.message);
                         if (this.tgChatId && tgBot) {
                             await tgBot.sendMessage(this.tgChatId, `❌ *AKATSUKI PAIRING FAILED*\n\n${err.message}\n\n_Pain could not open the connection gate. Try again._`, { parse_mode: 'Markdown' });
                         }
@@ -1600,6 +1614,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
         } catch (err) {
             this.isInitializing = false;
+            if (pairingNumber) this.emitPairingError(err.message);
             if (this.stopRequested) return;
             this.sendLog(`Initialization failed: ${err.message}. Retrying in 10s...`, 'error');
             this.scheduleReconnect(10000);
@@ -1621,41 +1636,50 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('set-user', (userId) => {
-        userSockets[userId] = socket.id;
-        if (!sessions[userId]) sessions[userId] = new BotSession(userId);
-        sessions[userId].sendConnectionStatus();
+    socket.on('set-user', (sessionId) => {
+        if (!isValidWebSessionId(sessionId)) return;
+        userSockets[sessionId] = socket.id;
+        const session = sessions[sessionId];
+        if (session) session.sendConnectionStatus();
+        else socket.emit('connection-status', { sessionId, connected: false, connecting: false });
     });
 
-    // Pair request - still available via web for web users
-    socket.on('pair-request', async ({ userId, number }) => {
-        if (sessions[userId]) {
-            if (!botData.statusSettings[userId]) {
-                botData.statusSettings[userId] = { 
-                    autoStatus: false,
-                    autoSeen: false,
-                    autoLike: false,
-                    autoDownload: false,
-                    isPublic: true
-                };
-                saveBotData();
-            }
-            sessions[userId].tgChatId = null;
-            await sessions[userId].initialize(number);
-        } else {
-            sessions[userId] = new BotSession(userId);
-            if (!botData.statusSettings[userId]) {
-                botData.statusSettings[userId] = { 
-                    autoStatus: false,
-                    autoSeen: false,
-                    autoLike: false,
-                    autoDownload: false,
-                    isPublic: true
-                };
-                saveBotData();
-            }
-            sessions[userId].tgChatId = null;
-            await sessions[userId].initialize(number);
+    // Each browser pairing request owns a separate, path-safe session and event stream.
+    socket.on('pair-request', async (payload) => {
+        const request = parsePairingRequest(payload);
+        if (request.error) {
+            socket.emit('pair-error', { sessionId: request.sessionId || null, message: request.error });
+            return;
+        }
+
+        const { sessionId, number } = request;
+        if (sessions[sessionId]) {
+            socket.emit('pair-error', {
+                sessionId,
+                message: 'This pairing session already exists. Start a new pairing request for another account.'
+            });
+            return;
+        }
+
+        userSockets[sessionId] = socket.id;
+        botData.statusSettings ||= {};
+        botData.statusSettings[sessionId] = {
+            autoStatus: false,
+            autoSeen: false,
+            autoLike: false,
+            autoDownload: false,
+            isPublic: true
+        };
+
+        try {
+            saveBotData();
+            const session = new BotSession(sessionId);
+            session.tgChatId = null;
+            sessions[sessionId] = session;
+            socket.emit('pairing-started', { sessionId });
+            await session.initialize(number);
+        } catch (error) {
+            socket.emit('pair-error', { sessionId, message: error.message || 'Could not initialize this pairing session.' });
         }
     });
 
@@ -1762,7 +1786,6 @@ io.on('connection', (socket) => {
         for (const [userId, socketId] of Object.entries(userSockets)) {
             if (socketId === socket.id) {
                 delete userSockets[userId];
-                break;
             }
         }
     });

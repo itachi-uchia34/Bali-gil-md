@@ -224,7 +224,13 @@
   #status.error{border-left-color:var(--danger);background:rgba(255,77,77,.08);color:#ff9a9a;}
   #status.warning{border-left-color:var(--amber);background:rgba(255,210,63,.08);color:var(--amber);}
 
-  .code-wrap{display:none;margin-top:26px;animation:riseIn .5s ease;}
+  .pairing-sessions{display:grid;gap:16px;margin-top:26px;}
+  .pairing-session{padding:18px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.32);animation:riseIn .35s ease;}
+  .pairing-session h3{color:var(--green);font-size:.95rem;margin:0 0 8px;}
+  .pairing-session .session-status{font-size:.78rem;color:var(--muted);margin-bottom:12px;}
+  .pairing-session .code-box{width:100%;}
+  .pairing-session.is-connected{border-color:var(--green);}
+  .pairing-note{color:var(--muted);font-size:.8rem;line-height:1.5;margin:-12px 0 20px;}
   @keyframes riseIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
   .code-box{
     font-family:'Share Tech Mono',monospace;font-size:2rem;letter-spacing:8px;
@@ -337,28 +343,25 @@
       <h3>How to awaken the Shroud</h3>
       <ol>
         <li>Enter your WhatsApp number with country code (no "+", no spaces, no brackets)</li>
-        <li>Click "Summon Pairing Code" to open the Akatsuki gate</li>
+        <li>Click "Summon Pairing Code" to open a separate Akatsuki gate for that account</li>
         <li>Copy the 8-digit code</li>
         <li>Open WhatsApp → Settings → Linked Devices → Link a Device</li>
-        <li>Paste the code when prompted</li>
+        <li>Paste the code when prompted. Repeat with another number to pair another account.</li>
       </ol>
     </div>
+    <p class="pairing-note">Each pairing request gets its own account card and status. You can start another request as soon as the gateway accepts the first one; pairing codes are kept only in this page session.</p>
 
     <div class="input-box">
       <div class="input-group">
         <i class="fas fa-phone"></i>
-        <input type="tel" id="phone" placeholder="e.g. 923300000000 (with country code)">
+        <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" aria-label="WhatsApp phone number with country code" placeholder="e.g. 923300000000 (with country code)">
       </div>
       <button class="btn" id="requestPairing"><i class="fas fa-key"></i> Summon Pairing Code</button>
     </div>
 
     <div id="status"></div>
 
-    <div class="code-wrap" id="codeWrap">
-      <div class="code-box" id="pairingCode" onclick="copyCode()">0000 0000</div>
-      <div class="copy-hint">Tap the code to copy</div>
-      <div class="waiting"><span class="dot"></span> Waiting for the Shroud to link...</div>
-    </div>
+    <div id="pairingSessions" class="pairing-sessions" aria-live="polite"></div>
   </section>
 
   <section id="links" class="panel" data-label="./links">
@@ -460,53 +463,178 @@ function setStatus(msg, type){
 const socket = io();
 const phoneInput = document.getElementById('phone');
 const requestBtn = document.getElementById('requestPairing');
-const codeWrap = document.getElementById('codeWrap');
-const pairingCode = document.getElementById('pairingCode');
+const pairingSessionsElement = document.getElementById('pairingSessions');
+const pairingStorageKey = 'bali_pairing_sessions_v1';
+const pairingSessions = new Map();
+let pendingSessionId = null;
+let requestAckTimer = null;
 
-function copyCode(){
-  const code = pairingCode.innerText;
-  if(code === '0000 0000') return;
-  navigator.clipboard.writeText(code.replace(/\s/g,'')).then(()=>showToast('CODE COPIED TO CLIPBOARD!'));
+function validSessionId(value){
+  return typeof value === 'string' && /^(?:web_(?:[a-f0-9]{32}|[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})|user_[a-z0-9]{9})$/i.test(value);
 }
+function createSessionId(){
+  let token;
+  if(window.crypto?.randomUUID) token = window.crypto.randomUUID();
+  else if(window.crypto?.getRandomValues) token = Array.from(window.crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+  else token = Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  return 'web_' + token;
+}
+function savePairingSessions(){
+  const records = [...pairingSessions.values()].map(({ sessionId, last4, status }) => ({ sessionId, last4, status }));
+  try { localStorage.setItem(pairingStorageKey, JSON.stringify(records)); } catch (_) {}
+}
+function restorePairingSessions(){
+  try {
+    const records = JSON.parse(localStorage.getItem(pairingStorageKey) || '[]');
+    if (!Array.isArray(records)) return;
+    for (const record of records) {
+      if (!validSessionId(record?.sessionId)) continue;
+      pairingSessions.set(record.sessionId, {
+        sessionId: record.sessionId,
+        last4: String(record.last4 || '----').slice(-4),
+        status: 'Checking connection…',
+        code: ''
+      });
+    }
+  } catch (_) {}
+}
+function renderPairingSessions(){
+  pairingSessionsElement.replaceChildren();
+  for (const session of pairingSessions.values()){
+    const card = document.createElement('article');
+    card.className = 'pairing-session' + (session.connected ? ' is-connected' : '');
+    const title = document.createElement('h3');
+    title.textContent = `WhatsApp account •••• ${session.last4}`;
+    const status = document.createElement('div');
+    status.className = 'session-status';
+    status.textContent = session.status;
+    card.append(title, status);
+    if (session.code){
+      const codeButton = document.createElement('button');
+      codeButton.type = 'button';
+      codeButton.className = 'code-box';
+      codeButton.textContent = session.code;
+      codeButton.setAttribute('aria-label', `Copy pairing code for account ending ${session.last4}`);
+      codeButton.addEventListener('click', () => copyCode(session.code));
+      const hint = document.createElement('div');
+      hint.className = 'copy-hint';
+      hint.textContent = 'Tap the code to copy';
+      card.append(codeButton, hint);
+    }
+    pairingSessionsElement.appendChild(card);
+  }
+  savePairingSessions();
+}
+function copyCode(code){
+  if (!code) return;
+  const text = String(code).replace(/\s/g, '');
+  if (navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('CODE COPIED TO CLIPBOARD!'))
+      .catch(() => showToast('COPY FAILED — PRESS AND HOLD THE CODE TO COPY'));
+    return;
+  }
+  const temporaryInput = document.createElement('textarea');
+  temporaryInput.value = text;
+  temporaryInput.setAttribute('readonly', '');
+  temporaryInput.style.position = 'fixed';
+  temporaryInput.style.opacity = '0';
+  let copied = false;
+  try {
+    document.body.appendChild(temporaryInput);
+    temporaryInput.select();
+    copied = document.execCommand('copy');
+  } catch (_) {
+    copied = false;
+  } finally {
+    if (temporaryInput.parentNode) temporaryInput.parentNode.removeChild(temporaryInput);
+  }
+  showToast(copied ? 'CODE COPIED TO CLIPBOARD!' : 'COPY FAILED — PRESS AND HOLD THE CODE TO COPY');
+}
+function updatePairingSession(sessionId, changes){
+  if (!validSessionId(sessionId)) return null;
+  const session = pairingSessions.get(sessionId) || { sessionId, last4: '----', status: 'Pairing session', code: '' };
+  Object.assign(session, changes);
+  pairingSessions.set(sessionId, session);
+  renderPairingSessions();
+  return session;
+}
+function resetRequestButton(){
+  requestBtn.disabled = false;
+  requestBtn.innerHTML = '<i class="fas fa-key"></i> Summon Pairing Code';
+  if (requestAckTimer) clearTimeout(requestAckTimer);
+  requestAckTimer = null;
+  pendingSessionId = null;
+}
+
+restorePairingSessions();
+renderPairingSessions();
+socket.on('connect', () => {
+  for (const sessionId of pairingSessions.keys()) socket.emit('set-user', sessionId);
+});
 
 requestBtn.addEventListener('click', ()=>{
   const number = phoneInput.value.replace(/\D/g,'');
-  if(!number || number.length < 10){
-    setStatus('The gate requires a valid number with country code.', 'error');
+  if(number.length < 10 || number.length > 15){
+    setStatus('Enter a valid WhatsApp number with country code (10–15 digits).', 'error');
     phoneInput.focus();
     return;
   }
+  if(!socket.connected){
+    setStatus('The pairing gateway is reconnecting. Please wait and try again.', 'error');
+    return;
+  }
+  const sessionId = createSessionId();
+  pendingSessionId = sessionId;
   requestBtn.disabled = true;
   requestBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Summoning...';
-  setStatus('Pain is opening the Akatsuki pairing gate...', 'warning');
-
-  const userId = 'user_' + Math.random().toString(36).substr(2,9);
-  socket.emit('set-user', userId);
-  socket.emit('pair-request', { userId, number });
+  updatePairingSession(sessionId, { last4: number.slice(-4), status: 'Requesting an isolated pairing session…', code: '', connected: false });
+  setStatus(`Opening a separate pairing gate for account ending ${number.slice(-4)}…`, 'warning');
+  requestAckTimer = setTimeout(() => {
+    if (pendingSessionId === sessionId){
+      resetRequestButton();
+      updatePairingSession(sessionId, { status: 'No response from the pairing gateway. You can try again.' });
+      setStatus('The pairing gateway did not acknowledge the request. Please try again.', 'error');
+    }
+  }, 10000);
+  socket.emit('pair-request', { sessionId, number });
 });
 
-socket.on('pairing-code', (code)=>{
-  requestBtn.disabled = false;
-  requestBtn.innerHTML = '<i class="fas fa-key"></i> Summon Pairing Code';
-  setStatus('The Shroud code is ready. Link it in WhatsApp within 60 seconds.', 'success');
-  codeWrap.style.display = 'block';
-  pairingCode.innerText = code;
+socket.on('pairing-started', ({ sessionId } = {})=>{
+  if (sessionId === pendingSessionId) resetRequestButton();
+  updatePairingSession(sessionId, { status: 'Session created. Preparing the pairing code…' });
 });
 
-socket.on('pair-error', (msg)=>{
-  requestBtn.disabled = false;
-  requestBtn.innerHTML = '<i class="fas fa-key"></i> Summon Pairing Code';
-  setStatus(msg || 'The Akatsuki gate rejected the request. Try again.', 'error');
+socket.on('pairing-code', (payload)=>{
+  const sessionId = typeof payload === 'string' ? pendingSessionId : payload?.sessionId;
+  const code = typeof payload === 'string' ? payload : payload?.code;
+  if (!sessionId || !code) return;
+  updatePairingSession(sessionId, { code, status: 'Code ready. Link this account in WhatsApp within 60 seconds.' });
+  setStatus(`Pairing code ready for account ending ${pairingSessions.get(sessionId)?.last4 || '----'}. You can request another account now.`, 'success');
+});
+
+socket.on('pair-error', (payload)=>{
+  const sessionId = typeof payload === 'string' ? pendingSessionId : payload?.sessionId;
+  const message = typeof payload === 'string' ? payload : payload?.message;
+  if (sessionId){
+    updatePairingSession(sessionId, { status: `Pairing failed: ${message || 'Please try again.'}`, code: '', connected: false });
+  }
+  if (!sessionId || sessionId === pendingSessionId){
+    resetRequestButton();
+    setStatus(message || 'The Akatsuki gate rejected the request. Try again.', 'error');
+  }
 });
 
 socket.on('connection-status', (status)=>{
-  if(status && status.connected){
-    pairingCode.innerText = 'LINKED';
-    pairingCode.style.color = '#39ff14';
-    pairingCode.style.borderColor = '#39ff14';
-    setStatus('The Shroud is connected. The Six Paths are online.', 'success');
-    showToast('AKATSUKI LINK ESTABLISHED!');
-    setTimeout(()=>location.reload(), 3000);
+  if(!status?.sessionId || !pairingSessions.has(status.sessionId)) return;
+  if(status.connected){
+    updatePairingSession(status.sessionId, { connected: true, code: '', status: 'Linked successfully. This account is online.' });
+    setStatus(`Account ending ${pairingSessions.get(status.sessionId)?.last4 || '----'} is linked. You can continue pairing more accounts.`, 'success');
+    showToast('AKATSUKI ACCOUNT LINKED!');
+  } else if(status.connecting){
+    updatePairingSession(status.sessionId, { connected: false, status: 'Pairing session is connecting…' });
+  } else {
+    updatePairingSession(status.sessionId, { connected: false, status: 'Not currently connected. You can request a new pairing code.' });
   }
 });
 
