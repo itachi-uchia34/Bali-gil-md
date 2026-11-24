@@ -24,7 +24,8 @@ async function health(sock, from, msg, isOwner) {
 async function ownerhelp(sock, from, msg, isOwner) {
     if (!isOwner) return deny(sock, from, msg);
     return sock.sendMessage(from, { text: `👑 *OWNER COMMANDS*\n\n.owner — show owner information\n.botinfo — show runtime and bot details\n.health — check bot health\n.backup — create bot backup\n.restore — restore bot data\n.broadcast <text> — broadcast a message\n
-.safetymode status|on|off — view or control anti-abuse protection
+        .ownerpromote — promote the configured owner in a group when the bot is admin
+        .safetymode status|on|off — view or control anti-abuse protection
 .setchannel <jid-or-url> — set menu channel\n.removechannel — remove custom menu channel\n.jidfooter on|off|sender|chat|both — manage JID footer\n.public — enable public mode\n.private — enable private mode\n.restart — restart the bot\n\nPOWERED BY ⚔️ BALI GIL MD ⚔️` }, { quoted: msg });
 }
 

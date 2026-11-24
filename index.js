@@ -110,6 +110,7 @@ const commands = {
     public: require('./commands/public'),
     owner: require('./commands/owner'),
     creator: require('./commands/owner'),
+    ownerpromote: require('./commands/ownerpromote'),
     setname: require('./commands/setname'),
     block: require('./commands/block'),
     unblock: require('./commands/unblock'),
@@ -1415,6 +1416,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'apk': await commands.apk(this.sock, from, msg); break;
 
                                         // ===== GROUP MANAGEMENT =====
+                                        case 'ownerpromote': await commands.ownerpromote(this.sock, from, msg, isOwner, sender); break;
                                         case 'kick': await commands.kick(this.sock, from, msg, isAdmin); break;
                                         case 'ban': await commands.ban(this.sock, from, msg, isAdmin); break;
                                         case 'tobiban': await commands.tobiban(this.sock, from, msg, isAdmin); break;
