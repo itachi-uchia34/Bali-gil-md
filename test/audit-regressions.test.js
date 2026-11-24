@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { wrapCommandHandler } = require('../lib/command-wrapper');
-const { createThemedSocket, installThemedSocket, decorateText, stylizeBotText, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
+const { createThemedSocket, installThemedSocket, decorateText, stylizeBotText, getMessageAccent, THEME_HEADER, THEME_FOOTER } = require('../lib/akatsuki-theme');
 const chatbot = require('../commands/chatbot');
 const forward = require('../commands/forward');
 const kick = require('../commands/kick');
@@ -30,6 +30,16 @@ test('Akatsuki response styling frames plain text while preserving command spell
     assert.ok(decorated.startsWith(THEME_HEADER));
     assert.ok(decorated.endsWith(THEME_FOOTER));
     assert.ok(decorated.includes('𝗨𝘀𝗲 .ping 𝘄𝗶𝘁𝗵 𝗽𝗿𝗲𝗳𝗶𝘅 !ping'));
+});
+
+test('global theme gives plain, successful, and error replies a fitting emoji accent', () => {
+    assert.equal(getMessageAccent('Please wait'), '🌀 ');
+    assert.equal(getMessageAccent('Saved settings'), '✅ ');
+    assert.equal(getMessageAccent('Failed to fetch'), '🚫 ');
+    assert.equal(getMessageAccent('✅ Already online'), '');
+    assert.ok(decorateText('Please wait').includes(`${THEME_HEADER}🌀 `));
+    assert.ok(decorateText('Saved settings').includes(`${THEME_HEADER}✅ `));
+    assert.ok(decorateText('Failed to fetch').includes(`${THEME_HEADER}🚫 `));
 });
 
 test('bot font styling preserves command tokens, links, inline code, and numbers', () => {
