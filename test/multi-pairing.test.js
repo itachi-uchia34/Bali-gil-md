@@ -114,3 +114,14 @@ test('dashboard keeps pairing codes and connection statuses isolated per account
     assert.equal(sessions[2].qrDataUrl, 'data:image/png;base64,AAAA');
     assert.equal(sessions[2].last4, 'QR');
 });
+
+test('server captures startup QR events and saves credentials before requesting a pairing code', () => {
+    const fs = require('node:fs');
+    const source = fs.readFileSync(require.resolve('../index.js'), 'utf8');
+    const captureIndex = source.indexOf("this.sock.ev.on('connection.update', captureStartupConnectionUpdate)");
+    const credsIndex = source.indexOf("this.sock.ev.on('creds.update', saveCreds)");
+    const requestIndex = source.indexOf('this.sock.requestPairingCode(pairingNumber)');
+    assert.ok(captureIndex >= 0 && credsIndex >= 0 && requestIndex >= 0);
+    assert.ok(captureIndex < requestIndex, 'startup connection updates must be captured before the code request');
+    assert.ok(credsIndex < requestIndex, 'pairing credentials must be saved before the code request');
+});

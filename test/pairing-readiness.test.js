@@ -30,6 +30,31 @@ test('pairing readiness rejects a timed-out modern Baileys handshake', async () 
     );
 });
 
+test('pairing readiness accepts a QR event already seen during socket startup', async () => {
+    let waitCalled = false;
+    const result = await waitForPairingReady({
+        waitForConnectionUpdate: async () => { waitCalled = true; }
+    }, { initialUpdates: [{ connection: 'connecting' }, { qr: 'early-qr-token' }] });
+    assert.deepEqual(result, { ready: true });
+    assert.equal(waitCalled, false);
+});
+
+test('a later startup close takes precedence over an earlier QR signal', async () => {
+    await assert.rejects(
+        waitForPairingReady({}, { initialUpdates: [{ qr: 'old-qr-token' }, { connection: 'close' }] }),
+        /connection closed before pairing was ready/i
+    );
+});
+
+test('older Baileys event emitters wait for QR and detach the temporary listener', async () => {
+    const { EventEmitter } = require('node:events');
+    const ev = new EventEmitter();
+    const waiting = waitForPairingReady({ ev }, { timeoutMs: 100, fallbackDelayMs: 1 });
+    setTimeout(() => ev.emit('connection.update', { qr: 'legacy-qr-token' }), 5);
+    assert.deepEqual(await waiting, { ready: true });
+    assert.equal(ev.listenerCount('connection.update'), 0);
+});
+
 test('older Baileys compatibility path uses only the configured short delay', async () => {
     const delays = [];
     const result = await waitForPairingReady({}, {

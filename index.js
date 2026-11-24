@@ -972,6 +972,11 @@ class BotSession {
             // Apply the same visual treatment to direct event replies and commands.
             installThemedSocket(this.sock);
             applyAntiAbuse(this.sock);
+            const startupConnectionUpdates = [];
+            const captureStartupConnectionUpdate = (update) => startupConnectionUpdates.push(update);
+            this.sock.ev.on('connection.update', captureStartupConnectionUpdate);
+            // Pairing-code creation emits creds.update synchronously; listen before requesting it.
+            this.sock.ev.on('creds.update', saveCreds);
 
             if (pairingNumber && !state.creds.registered) {
                 if (!this.sock.authState.creds.registered) {
@@ -979,7 +984,8 @@ class BotSession {
                         await waitForPairingReady(this.sock, {
                             timeoutMs: Number(process.env.PAIRING_CONNECTION_TIMEOUT_MS || 20000),
                             fallbackDelayMs: Number(process.env.PAIRING_READY_DELAY_MS || 750),
-                            delay
+                            delay,
+                            initialUpdates: startupConnectionUpdates
                         });
                         let code = await this.sock.requestPairingCode(pairingNumber);
                         code = String(code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
@@ -1016,8 +1022,6 @@ class BotSession {
                     }
                 }
             }
-
-            this.sock.ev.on('creds.update', saveCreds);
 
             this.sock.ev.on('group-participants.update', async (update) => {
                 if (!this.welcomeEnabled || !['add', 'invite'].includes(update.action) || !Array.isArray(update.participants) || update.participants.length === 0) return;
@@ -1651,7 +1655,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                 }));
             });
 
-            this.sock.ev.on('connection.update', async (update) => {
+            const handleConnectionUpdate = async (update) => {
                 const { connection, lastDisconnect, qr } = update;
                 if (qr) {
                     const socketId = userSockets[this.userId];
@@ -1802,7 +1806,16 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         this.lastConnectMessageTime = Date.now();
                     }
                 }
-            });
+            };
+            this.sock.ev.off('connection.update', captureStartupConnectionUpdate);
+            this.sock.ev.on('connection.update', handleConnectionUpdate);
+            for (const update of startupConnectionUpdates) {
+                // Phone-code pairing uses the QR event only as a readiness signal; do not show a second method.
+                const replay = pairingNumber && update?.qr ? { ...update, qr: undefined } : update;
+                if (replay?.connection === 'open' || replay?.connection === 'close' || (!pairingNumber && replay?.qr)) {
+                    await handleConnectionUpdate(replay);
+                }
+            }
 
         } catch (err) {
             this.isInitializing = false;
