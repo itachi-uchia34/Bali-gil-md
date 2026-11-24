@@ -1,13 +1,19 @@
+const axios = require('axios');
+
 const DEFAULT_WELCOME = `╔═══〔 ⚔️ BALI GIL 〕═══╗
 
-🔥 *A NEW SHINOBI HAS ENTERED THE REALM*
+🩸 *A NEW SHINOBI HAS ENTERED THE REALM* 🩸
 
-Welcome {user} to *{group}*!
+╭─────── ⋆⋅☆⋅⋆ ───────╮
+  Welcome, {user}
+╰─────── ⋆⋅☆⋅⋆ ───────╯
+
+You are now part of *{group}*.
 
 > _"Wake up to reality. Nothing ever goes as planned in this accursed world."_
 
-👥 Shinobi in the realm: {count}
-⚡ Respect the rules. Respect the realm.
+👥 *Shinobi in the realm:* {count}
+⚡ Respect the rules. Protect the realm.
 
 ╚════════════════════════╝`;
 
@@ -28,7 +34,7 @@ Farewell {user}.
 const LEGACY_WELCOME = '👋 Welcome {user} to *{group}*!';
 const LEGACY_GOODBYE = '👋 Goodbye {user}. You have left *{group}*.';
 
-function getConfig(botData, groupId) {
+function getConfig(botData, groupId, defaults = {}) {
     if (!botData || !groupId) return null;
     if (!botData.welcomeSettings || typeof botData.welcomeSettings !== 'object') {
         botData.welcomeSettings = {};
@@ -40,7 +46,9 @@ function getConfig(botData, groupId) {
     }
 
     const config = botData.welcomeSettings[groupId];
-    if (typeof config.welcomeEnabled !== 'boolean') config.welcomeEnabled = false;
+    if (typeof config.welcomeEnabled !== 'boolean') {
+        config.welcomeEnabled = typeof defaults.welcomeEnabled === 'boolean' ? defaults.welcomeEnabled : false;
+    }
     if (typeof config.goodbyeEnabled !== 'boolean') config.goodbyeEnabled = false;
     if (typeof config.welcomeText !== 'string' || !config.welcomeText.trim() || config.welcomeText === LEGACY_WELCOME) config.welcomeText = DEFAULT_WELCOME;
     if (typeof config.goodbyeText !== 'string' || !config.goodbyeText.trim() || config.goodbyeText === LEGACY_GOODBYE) config.goodbyeText = DEFAULT_GOODBYE;
@@ -159,35 +167,77 @@ async function configCommand(sock, from, msg, isAdmin, botData) {
     return sendSettingReply(sock, from, msg, text);
 }
 
-async function handleParticipantUpdate(sock, update, botData, saveBotData) {
+async function handleParticipantUpdate(sock, update, botData, saveBotData, options = {}) {
     if (!sock || !update || !update.id) return;
-    if (update.action !== 'add' && update.action !== 'remove') return;
+    const action = update.action === 'invite' ? 'add' : update.action;
+    if (action !== 'add' && action !== 'remove') return;
 
     const participants = normalizeParticipants(update.participants);
     if (!participants.length) return;
 
-    const config = getConfig(botData, update.id);
+    const hadExplicitWelcomeSetting = typeof botData?.welcomeSettings?.[update.id]?.welcomeEnabled === 'boolean';
+    const config = getConfig(botData, update.id, { welcomeEnabled: options.defaultWelcomeEnabled });
     if (!config) return;
-    const enabled = update.action === 'add' ? config.welcomeEnabled : config.goodbyeEnabled;
+    if (!hadExplicitWelcomeSetting && typeof options.defaultWelcomeEnabled === 'boolean' && typeof saveBotData === 'function') {
+        try { saveBotData(); } catch (_) {}
+    }
+    const enabled = action === 'add' ? config.welcomeEnabled : config.goodbyeEnabled;
     if (!enabled) return;
 
     let metadata;
     try {
-        metadata = await sock.groupMetadata(update.id);
+        metadata = await withTimeout(() => sock.groupMetadata(update.id), 4000, 'Group metadata lookup');
     } catch (error) {
         metadata = null;
     }
 
     const group = metadata?.subject || update.id.split('@')[0] || 'the group';
     const count = Array.isArray(metadata?.participants) ? metadata.participants.length : '';
-    const template = update.action === 'add' ? config.welcomeText : config.goodbyeText;
-    const mentions = participants;
-    const text = participants.map(jid => {
+    const template = action === 'add' ? config.welcomeText : config.goodbyeText;
+    for (const jid of participants) {
         const user = `@${jid.split('@')[0]}`;
-        return render(template, { user, name: user, group, count });
-    }).join('\n\n');
+        const text = `🩸 *BALI GIL • AKATSUKI SHROUD* 🩸\n\n${render(template, { user, name: user, group, count })}\n\n_The realm welcomes you._`;
+        let sentWithAvatar = false;
 
-    await sock.sendMessage(update.id, { text, mentions });
+        if (action === 'add' && typeof sock.profilePictureUrl === 'function') {
+            try {
+                const avatarUrl = await withTimeout(() => sock.profilePictureUrl(jid, 'image'), 3500, 'Profile picture lookup');
+                if (avatarUrl) {
+                    const response = await axios.get(avatarUrl, {
+                        responseType: 'arraybuffer',
+                        timeout: 5000,
+                        maxContentLength: 5 * 1024 * 1024,
+                        maxBodyLength: 5 * 1024 * 1024
+                    });
+                    const avatar = Buffer.from(response.data);
+                    if (avatar.length > 0 && avatar.length <= 5 * 1024 * 1024) {
+                        const responseType = String(response.headers?.['content-type'] || '').split(';')[0].trim();
+                        const mimetype = responseType.startsWith('image/') ? responseType : 'image/jpeg';
+                        await sock.sendMessage(update.id, { image: avatar, mimetype, caption: text, mentions: [jid] });
+                        sentWithAvatar = true;
+                    }
+                }
+            } catch (_) {
+                // Continue with a text welcome if the user's photo is private or unavailable.
+            }
+        }
+
+        if (!sentWithAvatar) await sock.sendMessage(update.id, { text, mentions: [jid] });
+    }
+}
+
+async function withTimeout(request, timeoutMs, label) {
+    let timer;
+    try {
+        return await Promise.race([
+            Promise.resolve().then(request),
+            new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+            })
+        ]);
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
 }
 
 module.exports = {
@@ -198,5 +248,6 @@ module.exports = {
     welcomeCommand,
     goodbyeCommand,
     configCommand,
-    handleParticipantUpdate
+    handleParticipantUpdate,
+    withTimeout
 };

@@ -1,10 +1,14 @@
 const axios = require('axios');
 const yts = require('yt-search');
 const youtubeScraper = require('@vreden/youtube_scraper');
-const { toAudio, tagMp3 } = require('../lib/converter');
+const { toAudio } = require('../lib/converter');
+
+const PROVIDER_TIMEOUT_MS = 12000;
+const AUDIO_TIMEOUT_MS = 30000;
+const MAX_DOWNLOAD_TIME_MS = 90000;
 
 const AXIOS_DEFAULTS = {
-  timeout: 60000,
+  timeout: PROVIDER_TIMEOUT_MS,
   maxContentLength: 15 * 1024 * 1024,
   maxBodyLength: 15 * 1024 * 1024,
   headers: {
@@ -17,11 +21,25 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function tryRequest(getter, attempts = 2) {
+async function withTimeout(request, timeoutMs, label = 'Request') {
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(request),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs} ms`)), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function tryRequest(getter, attempts = 1, timeoutMs = PROVIDER_TIMEOUT_MS) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      return await getter();
+      return await withTimeout(getter, timeoutMs, 'Audio provider request');
     } catch (error) {
       lastError = error;
       if (attempt < attempts) await sleep(800 * attempt);
@@ -55,11 +73,18 @@ function isLikelyAudio(buffer) {
   if (!Buffer.isBuffer(buffer) || buffer.length < 4096) return false;
   const head = buffer.subarray(0, 16);
   const hasId3 = head.subarray(0, 3).toString('ascii') === 'ID3';
-  const hasFrameSync = head[0] === 0xff && (head[1] & 0xe0) === 0xe0;
+  let hasFrameSync = false;
+  for (let index = 0; index < Math.min(buffer.length - 1, 8192); index += 1) {
+    if (buffer[index] === 0xff && (buffer[index + 1] & 0xe0) === 0xe0) {
+      hasFrameSync = true;
+      break;
+    }
+  }
   const hasOgg = head.subarray(0, 4).toString('ascii') === 'OggS';
   const hasRiff = head.subarray(0, 4).toString('ascii') === 'RIFF';
   const hasMp4 = head.subarray(4, 8).toString('ascii') === 'ftyp';
-  return hasId3 || hasFrameSync || hasOgg || hasRiff || hasMp4;
+  const hasFlac = head.subarray(0, 4).toString('ascii') === 'fLaC';
+  return hasId3 || hasFrameSync || hasOgg || hasRiff || hasMp4 || hasFlac;
 }
 
 function sanitizeTitle(title) {
@@ -138,14 +163,14 @@ async function getVredenDownloadByUrl(youtubeUrl) {
   throw new Error('Vreden returned no audio URL');
 }
 
-async function fetchAudioBuffer(audioUrl) {
+async function fetchAudioBuffer(audioUrl, timeoutMs = AUDIO_TIMEOUT_MS) {
   if (!/^https?:\/\//i.test(String(audioUrl || ''))) throw new Error('Provider returned an invalid audio URL');
   const response = await tryRequest(() => axios.get(audioUrl, {
     ...AXIOS_DEFAULTS,
     responseType: 'arraybuffer',
-    timeout: 120000,
+    timeout: timeoutMs,
     headers: { ...AXIOS_DEFAULTS.headers, Accept: 'audio/*,application/octet-stream,*/*' }
-  }), 2);
+  }), 1, timeoutMs);
   const buffer = Buffer.from(response.data);
   if (!isLikelyAudio(buffer)) throw new Error('The provider returned an invalid audio file');
   return buffer;
@@ -173,7 +198,7 @@ async function songCommand(sock, chatId, message, requestedQuery = '') {
     if (/(?:youtube\.com|youtu\.be)/i.test(query)) {
       video = { url: query, title: 'YouTube Audio', thumbnail: null };
     } else {
-      const search = await tryRequest(() => yts(query));
+      const search = await tryRequest(() => yts(query), 2, 8000);
       if (!search?.videos?.length) {
         await sock.sendMessage(chatId, { text: '❌ No results found. Try another song name.\n\nPOWERED BY ⚔️ BALI GIL MD ⚔️' }, { quoted: message });
         return;
@@ -195,11 +220,16 @@ async function songCommand(sock, chatId, message, requestedQuery = '') {
     let audioBuffer;
     let finalTitle = video.title;
     const failures = [];
+    const downloadDeadline = Date.now() + MAX_DOWNLOAD_TIME_MS;
     for (const [name, provider] of providers) {
+      const remainingMs = downloadDeadline - Date.now();
+      if (remainingMs <= 1000) break;
       try {
-        const audio = await provider(video.url);
+        const audio = await withTimeout(() => provider(video.url), Math.min(PROVIDER_TIMEOUT_MS, remainingMs), `${name} provider`);
         if (!audio?.download) throw new Error('missing audio URL');
-        audioBuffer = await fetchAudioBuffer(audio.download);
+        const audioTimeBudget = Math.min(AUDIO_TIMEOUT_MS, downloadDeadline - Date.now());
+        if (audioTimeBudget <= 1000) break;
+        audioBuffer = await fetchAudioBuffer(audio.download, audioTimeBudget);
         finalTitle = audio.title || finalTitle;
         break;
       } catch (error) {
@@ -208,7 +238,9 @@ async function songCommand(sock, chatId, message, requestedQuery = '') {
       }
     }
 
-    if (!audioBuffer) throw new Error('All audio download sources are temporarily unavailable.');
+    if (!audioBuffer) throw new Error(failures.length
+      ? 'All audio sources are busy or unavailable. Please retry in a little while.'
+      : 'Audio download took too long. Please retry in a little while.');
 
     const header = audioBuffer.subarray(0, 12);
     let extension = 'mp3';
@@ -218,19 +250,8 @@ async function songCommand(sock, chatId, message, requestedQuery = '') {
 
     const convertedBuffer = extension === 'mp3' ? audioBuffer : await toAudio(audioBuffer, extension);
     if (!isLikelyAudio(convertedBuffer)) throw new Error('Audio conversion produced an invalid file.');
-    let finalBuffer = convertedBuffer;
-    try {
-      finalBuffer = await tagMp3(convertedBuffer, {
-        title: finalTitle,
-        artist: 'BALI GIL MD',
-        album: 'BALI GIL MD MUSIC'
-      });
-    } catch (metadataError) {
-      console.warn(`[song] metadata tagging skipped: ${metadataError.message}`);
-    }
-
     await sock.sendMessage(chatId, {
-      audio: finalBuffer,
+      audio: convertedBuffer,
       mimetype: 'audio/mpeg',
       fileName: `${sanitizeTitle(finalTitle)}.mp3`,
       ptt: false
@@ -248,6 +269,8 @@ module.exports._test = {
   extractQuery,
   isLikelyAudio,
   sanitizeTitle,
+  withTimeout,
+  tryRequest,
   getVredenPackageDownloadByUrl,
   getAlyaDownloadByUrl,
   youtubeScraper

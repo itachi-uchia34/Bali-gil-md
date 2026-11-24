@@ -1035,34 +1035,18 @@ class BotSession {
 
             this.sock.ev.on('group-participants.update', async (update) => {
                 this.groupMetadataCache.delete(update.id);
-                if (!this.welcomeEnabled || !['add', 'invite'].includes(update.action) || !Array.isArray(update.participants) || update.participants.length === 0) return;
+                if (!['add', 'invite'].includes(update.action) || !Array.isArray(update.participants) || update.participants.length === 0) return;
+                const groupWelcomeSetting = botData.welcomeSettings?.[update.id]?.welcomeEnabled;
+                const welcomeEnabled = typeof groupWelcomeSetting === 'boolean' ? groupWelcomeSetting : this.welcomeEnabled;
+                if (!welcomeEnabled) return;
                 try {
-                    const metadata = await this.sock.groupMetadata(update.id);
-                    const groupName = metadata.subject || 'the group';
-                    const groupDescription = metadata.desc || 'No group description has been set.';
-                    const mentions = update.participants;
-                    const names = mentions.map((jid) => `@${jid.split('@')[0]}`).join(', ');
-                    const memberCount = metadata.participants?.length || 0;
-                    const welcomeText = `🩸 *━───── 🔴 BALI GIL MD 🔴 ─────━* 🩸
-
-*Welcome to the Shroud,* ${names} 👋
-
-You have entered: *@gname*
-👥 *Ranks Count:* *@count* members
-
-📜 *ORGANIZATION LAWS:*
-@desc
-
-> _"Those who do not understand true pain can never understand true peace."_
-
-⚔️ Put on the cloak, wear your ring, and obey the dynamic. Weakness will not be tolerated.`
-                        .replace('@gname', `*${groupName}*`)
-                        .replace('@count', String(memberCount))
-                        .replace('@desc', groupDescription);
-                    await this.sock.sendMessage(update.id, {
-                        text: welcomeText,
-                        mentions
-                    });
+                    await require('./commands/welcome').handleParticipantUpdate(
+                        this.sock,
+                        update,
+                        botData,
+                        saveBotData,
+                        { defaultWelcomeEnabled: this.welcomeEnabled }
+                    );
                 } catch (error) {
                     this.sendLog(`Welcome message failed: ${error.message}`, 'warning');
                 }
