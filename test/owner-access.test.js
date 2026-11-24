@@ -41,6 +41,11 @@ test('.owner and .creator profile output shows both updated identities', async (
     assert.match(sentText, new RegExp(String(settings.ownerNumber).split(',')[0].replace(/\D/g, '')));
     assert.match(sentText, new RegExp(settings.creatorName));
     assert.match(sentText, new RegExp(String(settings.creatorNumber).split(',')[0].replace(/\D/g, '')));
+    const creatorDigits = String(settings.creatorNumber).split(',')[0].replace(/\D/g, '');
+    assert.match(sentText, /PREMIUM ACCESS REQUEST/);
+    assert.match(sentText, /Suggested message/);
+    assert.match(sentText, new RegExp(`https://wa\\.me/${creatorDigits}`));
+    assert.match(sentText, /only after the Creator\/Owner approves/);
 });
 
 test('menu credits include both Owner and Creator phone details', () => {
