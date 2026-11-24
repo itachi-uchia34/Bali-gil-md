@@ -13,7 +13,7 @@ const { OpenAI } = require('openai');
 const os = require('os');
 const { loadPlugins } = require('./lib/plugin-loader');
 const { installThemedSocket } = require('./lib/akatsuki-theme');
-const { formatFramedMenu, sendFramedMenu, sendAudioWithFallback } = require('./lib/menu-format');
+const { sendAudioWithFallback } = require('./lib/menu-format');
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/command-parser');
 const { nextAutoReactEmoji } = require('./lib/auto-react');
 const { normalizeJidUserId } = require('./lib/whatsapp-id');
@@ -22,6 +22,7 @@ const { wrapCommandHandler } = require('./lib/command-wrapper');
 const { reportMenuFailure } = require('./lib/menu-failure');
 const { isValidWebSessionId, parsePairingRequest } = require('./lib/pairing');
 const { waitForPairingReady } = require('./lib/pairing-readiness');
+const { CATEGORY_MENU_CONFIG, createCategoryMenu } = require('./lib/menu-categories');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -400,6 +401,9 @@ for (const [name, args] of Object.entries(referenceSimpleArgs)) {
 // Load modular Akatsuki plugins after the built-in commands.
 const pluginRegistry = loadPlugins(path.join(__dirname, 'plugins'), Object.keys(commands));
 Object.assign(commands, pluginRegistry.commands);
+for (const [commandName, config] of Object.entries(CATEGORY_MENU_CONFIG)) {
+    if (typeof commands[commandName] !== 'function') commands[commandName] = createCategoryMenu(config);
+}
 
 // Give every command the shared Akatsuki response layer without changing command APIs.
 for (const [commandName, commandHandler] of Object.entries(commands)) {
@@ -1354,49 +1358,11 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                             const allMenuCmd = require('./commands/allmenu');
                                             await allMenuCmd(this.sock, from, msg, this, commands, Object.keys(pluginRegistry.commands), commandPrefix);
                                             break;
-                                        case 'ownermenu': {
-                                            const text = formatFramedMenu({
-                                                title: 'BALI GIL MD OWNER MENU',
-                                                subtitle: '🔴 SHADOW LEADERSHIP // OWNER SCROLL',
-                                                sections: [{ title: '👑 OWNER COMMANDS', commands: ['.public', '.private', '.block', '.unblock', '.restart', '.shutdown', '.bcall', '.bcgc'] }]
-                                            });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
+                                        case 'ownermenu': case 'groupmenu': case 'aimenu': case 'bugmenu':
+                                            await commands[commandName](this.sock, from, msg, { commands, commandPrefix });
                                             break;
-                                        }
-                                        case 'groupmenu': {
-                                            const text = formatFramedMenu({
-                                                title: 'AKATSUKI GROUP MENU',
-                                                subtitle: '🩸 PAIN’S GROUP CONTROL // SHROUD ONLINE',
-                                                sections: [{ title: '⚔️ GROUP COMMANDS', commands: ['.kick', '.ban', '.tobiban', '.add', '.promote', '.madarapromote', '.demote', '.mute / .gcoff', '.unmute / .gcon', '.tagall', '.hidetag', '.grouplink', '.groupinfo'] }]
-                                            });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
-                                            break;
-                                        }
                                         case 'downloadmenu': {
-                                            const text = formatFramedMenu({
-                                                title: 'BALI GIL MD DOWNLOAD MENU',
-                                                subtitle: '🎴 SHROUD MEDIA SCROLLS // READY',
-                                                sections: [{ title: '⬇️ DOWNLOAD COMMANDS', commands: ['.song', '.video', '.insta', '.tiktok', '.facebook', '.youtube', '.spotify', '.apk'] }]
-                                            });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
-                                            break;
-                                        }
-                                        case 'aimenu': {
-                                            const text = formatFramedMenu({
-                                                title: 'PAIN AI MENU',
-                                                subtitle: '🧠 INTELLIGENCE NETWORK // ONLINE',
-                                                sections: [{ title: '🤖 AI COMMANDS', commands: ['.ai', '.autochat', '.chatbot', '.gali'] }]
-                                            });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
-                                            break;
-                                        }
-                                        case 'bugmenu': {
-                                            const text = formatFramedMenu({
-                                                title: 'AKATSUKI BUG MENU',
-                                                subtitle: '🛡️ SECURITY BARRIERS // TEST SCROLL',
-                                                sections: [{ title: '🐛 BUG COMMANDS', commands: ['.crash', '.freeze', '.bug'] }]
-                                            });
-                                            await sendFramedMenu(this.sock, from, msg, text, settings.startimage, settings.startimageFallbacks);
+                                            await commands.downloadmenu(this.sock, from, msg);
                                             break;
                                         }
 
@@ -1636,7 +1602,9 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                     session: this,
                                                     botData,
                                                     saveBotData,
-                                                    commands
+                                                    commands,
+                                                    commandPrefix,
+                                                    pluginCommandNames: Object.keys(pluginRegistry.commands)
                                                 });
                                                 }
                                             }

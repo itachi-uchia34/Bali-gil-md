@@ -15,6 +15,8 @@ const { runPreCommandHooks } = require('../lib/precommand-hooks');
 const { buildMenuFailureMessage, reportMenuFailure } = require('../lib/menu-failure');
 const { installThemedSocket } = require('../lib/akatsuki-theme');
 const { wrapCommandHandler } = require('../lib/command-wrapper');
+const { CATEGORY_MENU_CONFIG, MENU_SHORTCUTS, createCategoryMenu } = require('../lib/menu-categories');
+const downloadMenuCommand = require('../commands/downloadmenu');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
     assert.deepEqual(parseCommand('  !MeNu   hello   World  ', '!'), {
@@ -61,10 +63,61 @@ test('pre-command hook failures cannot prevent subsequent command processing', a
 test('menu is allowed for ordinary users in private mode without opening other commands', () => {
     assert.equal(isPublicInfoCommand('menu'), true);
     assert.equal(isPublicInfoCommand('MENU'), true);
+    assert.equal(isPublicInfoCommand('groupmenu'), true);
+    assert.equal(isCommandAllowed('downloadmenu', { isPublic: false, isAuthorized: false }), true);
     assert.equal(isPublicInfoCommand('ping'), false);
     assert.equal(isCommandAllowed('menu', { isPublic: false, isAuthorized: false }), true);
     assert.equal(isCommandAllowed('ping', { isPublic: false, isAuthorized: false }), false);
     assert.equal(isCommandAllowed('ping', { isPublic: true, isAuthorized: false }), true);
+});
+
+test('category menu handlers show only registered commands and honor a custom prefix', async () => {
+    const sent = [];
+    const sock = { async sendMessage(_chatId, payload) {
+        if (payload.image) throw new Error('Use the text fallback in this test');
+        sent.push(payload.text);
+    } };
+    const handler = createCategoryMenu(CATEGORY_MENU_CONFIG.groupmenu);
+    const commands = { kick: () => {}, ban: () => {}, groupinfo: () => {}, absent: null };
+
+    await handler(sock, 'chat', {}, { commands, commandPrefix: '!' });
+
+    assert.match(sent[0], /!kick/);
+    assert.match(sent[0], /!ban/);
+    assert.match(sent[0], /!groupinfo/);
+    assert.doesNotMatch(sent[0], /!absent|!ai/);
+});
+
+test('download menu uses the active command prefix', async () => {
+    const originalPrefix = settings.prefix;
+    const sent = [];
+    const sock = { async sendMessage(_chatId, payload) { sent.push(payload.text); } };
+    settings.prefix = '!';
+    try {
+        await downloadMenuCommand(sock, 'chat', {});
+        assert.match(sent[0], /!song <name\/link>/);
+        assert.match(sent[0], /!directdl <public-url>/);
+        assert.doesNotMatch(sent[0], /\.song <name\/link>/);
+    } finally {
+        settings.prefix = originalPrefix;
+    }
+});
+
+test('plugin menu deduplicates installed commands and skips unregistered plugins', async () => {
+    const sent = [];
+    const sock = { async sendMessage(_chatId, payload) {
+        if (payload.image) throw new Error('Use the text fallback in this test');
+        sent.push(payload.text);
+    } };
+    const handler = createCategoryMenu(CATEGORY_MENU_CONFIG.pluginmenu);
+    await handler(sock, 'chat', {}, {
+        commands: { 'custom-plugin': () => {} },
+        pluginCommandNames: ['custom-plugin', 'custom-plugin', 'missing-plugin'],
+        commandPrefix: '!'
+    });
+
+    assert.equal((sent[0].match(/!custom-plugin/g) || []).length, 1);
+    assert.doesNotMatch(sent[0], /!missing-plugin/);
 });
 
 test('autoreact shuffles every emoji without repeating within a cycle or at the cycle boundary', () => {
@@ -302,6 +355,8 @@ test('help and allmenu render only usable commands', async () => {
         help: async () => {},
         menu: async () => {},
         allmenu: async () => {},
+        groupmenu: async () => {},
+        downloadmenu: async () => {},
         autoreact: async () => {},
         autoreacts: async () => {},
         ping: async () => {},
@@ -325,13 +380,11 @@ test('help and allmenu render only usable commands', async () => {
     assert.match(sent[0], /\.autoreact/);
     assert.match(sent[0], /\.autoreacts/);
     assert.doesNotMatch(sent[0], /\.utils|\.akatsuki|\.painquote/);
-    assert.match(sent[1], /!ping/);
     assert.match(sent[1], /!menu/);
-    assert.match(sent[1], /!autoreact/);
-    assert.match(sent[1], /!autoreacts/);
-    assert.match(sent[1], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗔𝗟𝗟 𝗠𝗘𝗡𝗨/);
-    assert.match(sent[1], /𝗦𝗜𝗫 𝗣𝗔𝗧𝗛𝗦 𝗧𝗢𝗢𝗟𝗞𝗜𝗧/);
-    assert.doesNotMatch(sent[1], /!𝗽𝗶𝗻𝗴/);
+    assert.match(sent[1], /!groupmenu/);
+    assert.match(sent[1], /!downloadmenu/);
+    assert.match(sent[1], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗠𝗘𝗡𝗨 𝗗𝗜𝗥𝗘𝗖𝗧𝗢𝗥𝗬/);
+    assert.doesNotMatch(sent[1], /!ping|!autoreact|!autoreacts/);
     for (const menu of sent) {
         assert.match(menu, /OWNER: BALI GIL/);
         assert.match(menu, /OWNER NUMBER: \+?\d+/);
@@ -348,18 +401,39 @@ test('allmenu deduplicates valid plugin names and tolerates malformed plugin inp
             sent.push(payload.text);
         }
     };
-    const commands = { allmenu: async () => {}, 'custom-plugin': async () => {}, ping: async () => {} };
+    const commands = { allmenu: async () => {}, pluginmenu: async () => {}, 'custom-plugin': async () => {}, ping: async () => {} };
 
     await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, ['custom-plugin', 'custom-plugin', '', 42], '!');
-    assert.equal((sent[0].match(/!custom-plugin/g) || []).length, 1);
-    assert.match(sent[0], /𝗔𝗞𝗔𝗧𝗦𝗨𝗞𝗜 𝗣𝗟𝗨𝗚𝗜𝗡𝗦/);
-    assert.match(sent[0], /!ping/);
+    assert.equal((sent[0].match(/!pluginmenu/g) || []).length, 1);
+    assert.doesNotMatch(sent[0], /!custom-plugin/);
 
     sent.length = 0;
     await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, null, '!');
-    assert.match(sent[0], /!custom-plugin/);
-    assert.doesNotMatch(sent[0], /𝗔𝗞𝗔𝗧𝗦𝗨𝗞𝗜 𝗣𝗟𝗨𝗚𝗜𝗡𝗦/);
-    assert.match(sent[0], /!ping/);
+    assert.doesNotMatch(sent[0], /!pluginmenu|!custom-plugin/);
+});
+
+test('.allmenu exposes individual category-menu shortcuts', async () => {
+    const sent = [];
+    const sock = { async sendMessage(_chatId, payload) {
+        if (payload.image) throw new Error('Use the text fallback in this test');
+        sent.push(payload.text);
+    } };
+    const commands = Object.fromEntries(MENU_SHORTCUTS.map(([name]) => [name, async () => {}]));
+    commands.allmenu = async () => {};
+    commands.kick = async () => {};
+    commands.song = async () => {};
+    commands.ping = async () => {};
+    commands.testplugin = async () => {};
+
+    await allMenuCommand(sock, 'chat', {}, {}, commands, ['testplugin'], '!');
+
+    assert.match(sent[0], /📚 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬 𝗠𝗘𝗡𝗨𝗦/);
+    assert.match(sent[0], /!groupmenu/);
+    assert.match(sent[0], /!downloadmenu/);
+    assert.match(sent[0], /!toolmenu/);
+    assert.match(sent[0], /!securitymenu/);
+    assert.match(sent[0], /!pluginmenu/);
+    assert.doesNotMatch(sent[0], /!kick|!song|!ping/);
 });
 
 test('anime command handles missing query without making a network request', async () => {

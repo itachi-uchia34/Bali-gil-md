@@ -51,12 +51,13 @@ const DOWNLOAD_EMOJIS = {
 };
 
 async function downloadMenu(sock, chatId, message) {
+  const prefix = typeof settings.prefix === 'string' && settings.prefix ? settings.prefix : '.';
   const lines = [
     '╭━━━〔 📥 *BALI GIL DOWNLOAD ARSENAL* 〕━━━╮',
     '┃ 🎧 Audio  ·  🎬 Video  ·  📁 Files',
     '╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯',
     '',
-    ...DOWNLOAD_COMMANDS.map(([command]) => `┃ ${DOWNLOAD_EMOJIS[command] || '🔹'} ${command}`),
+    ...DOWNLOAD_COMMANDS.map(([command]) => `┃ ${DOWNLOAD_EMOJIS[command] || '🔹'} ${command.replace(/^\./, prefix)}`),
     '',
     `⚔️ POWERED BY ${settings.poweredBy}`
   ];

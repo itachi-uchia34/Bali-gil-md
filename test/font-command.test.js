@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fontCommand = require('../commands/font');
 const allMenuCommand = require('../commands/allmenu');
 const { generateMenuText } = require('../lib/menu-text');
+const { CATEGORY_MENU_CONFIG, createCategoryMenu } = require('../lib/menu-categories');
 
 test('.font produces exactly 50 uniquely named and visibly different styles', () => {
     const styles = fontCommand.styles;
@@ -38,8 +39,8 @@ test('.font explains missing input and rejects overly long text', async () => {
     assert.match(sent[1], /100 characters or fewer/);
 });
 
-test('.font is listed in compact and complete menus when registered', async () => {
-    const commands = { font: async () => {}, ping: async () => {} };
+test('.font is listed in .menu and .toolmenu while .allmenu links to the category', async () => {
+    const commands = { font: async () => {}, ping: async () => {}, menu: async () => {}, help: async () => {}, toolmenu: async () => {} };
     const compact = generateMenuText('Tester', { isPublic: true }, commands, '.');
     assert.match(compact, /\.font/);
 
@@ -48,6 +49,12 @@ test('.font is listed in compact and complete menus when registered', async () =
         if (payload.image) throw new Error('mock cover unavailable');
         sent.push(payload.text);
     } };
-    await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, [], '.');
+    await createCategoryMenu(CATEGORY_MENU_CONFIG.toolmenu)(sock, 'chat', {}, { commands, commandPrefix: '.' });
     assert.match(sent[0], /\.font/);
+
+    sent.length = 0;
+    await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, [], '.');
+    assert.match(sent[0], /\.toolmenu/);
+    assert.match(sent[0], /\.menu/);
+    assert.doesNotMatch(sent[0], /\.font/);
 });
