@@ -46,24 +46,25 @@ function normalizeMode(value, configured) {
 function pick(items) {
     return items[Math.floor(Math.random() * items.length)];
 }
-function nextItem(chatId, mode, config) {
+function nextItems(chatId, mode, config, count) {
     const custom = mode === 'boys' ? config.customBoys : config.customGirls;
     const local = mode === 'boys' ? BOY_IMAGES : GIRL_IMAGES;
     const items = [...custom.map((url, index) => ({ source: 'custom', value: url, number: index + 1 })), ...local.map((file, index) => ({ source: 'local', value: file, number: custom.length + index + 1 }))];
     const key = `${chatId}:${mode}`;
     const index = rotation.get(key) || 0;
-    rotation.set(key, (index + 1) % items.length);
-    return items[index % items.length];
+    const batch = Array.from({ length: Math.min(count, items.length) }, (_, offset) => items[(index + offset) % items.length]);
+    rotation.set(key, (index + batch.length) % items.length);
+    return batch;
 }
 function localPath(filename) {
     return path.join(__dirname, '..', 'assets', filename);
 }
-function caption(mode, item, config) {
+function caption(mode, item, config, position, total) {
     const title = mode === 'boys' ? 'BOYS DPZ' : 'GIRLS DPZ';
     const symbol = mode === 'boys' ? '⚔️' : '🌙';
     const line = mode === 'boys' ? pick(BOY_LINES) : pick(GIRL_LINES);
     const customCount = mode === 'boys' ? config.customBoys.length : config.customGirls.length;
-    return `╔══〔 ${symbol} 𝗠𝗔𝗗𝗔𝗥𝗔 ${title} 〕══╗\n\n${line}\n\n🖼️ *STYLE:* ${item.number}\n📚 *COLLECTION:* ${customCount + 10} visuals\n🔁 *ROTATION:* Next request selects another style.\n\nUse ".dpz boys" or ".dpz girls" to choose a collection.\n\n╚════════════════════╝`;
+    return `╔══〔 ${symbol} 𝗠𝗔𝗗𝗔𝗥𝗔 ${title} 〕══╗\n\n${line}\n\n🖼️ *STYLE:* ${item.number}\n📨 *IMAGE:* ${position}/${total}\n📚 *COLLECTION:* ${customCount + 10} visuals\n🔁 *ROTATION:* Next request continues with new styles.\n\nUse ".dpz boys" or ".dpz girls" to choose a collection.\n\n╚════════════════════╝`;
 }
 function settingsText(config) {
     return `╔══〔 👁️ 𝗗𝗣𝗭 SETTINGS 〕══╗\n\n⚙️ *Status:* ${config.enabled ? 'ON' : 'OFF'}\n🎯 *Mode:* ${config.mode}\n⚔️ *Boys visuals:* ${config.customBoys.length + 10}\n🌙 *Girls visuals:* ${config.customGirls.length + 10}\n🔗 *Trusted custom URLs:* ${config.customBoys.length + config.customGirls.length}\n\nAdmin commands:\n.dpzconfig on\n.dpzconfig off\n.dpzconfig mode boys|girls|random\n.dpzconfig add boys|girls <direct-image-url>\n.dpzconfig clear boys|girls|all\n.dpzconfig reset\n.dpzconfig show\n\n╚════════════════════╝`;
@@ -72,15 +73,26 @@ async function dpzCommand(sock, from, msg, q = '', botData = {}, saveBotData = (
     const config = getConfig(botData, from);
     if (!config.enabled) return sock.sendMessage(from, { text: '⚠️ DPZ visuals are disabled in this chat. An admin can use `.dpzconfig on`.' }, { quoted: msg });
     const mode = normalizeMode(q, config.mode);
-    const item = nextItem(from, mode, config);
-    try {
-        const image = item.source === 'local' ? fs.readFileSync(localPath(item.value)) : { url: item.value };
-        return await sock.sendMessage(from, { image, caption: caption(mode, item, config) }, { quoted: msg });
-    } catch (error) {
-        console.error(`DPZ ${mode} image delivery failed:`, error.message);
-        const fallback = mode === 'boys' ? pick(BOY_LINES) : pick(GIRL_LINES);
-        return sock.sendMessage(from, { text: `⚠️ The selected DPZ image could not be sent.\n\n${fallback}\n\nTry again for the next visual.` }, { quoted: msg });
+    const batchSize = 8 + Math.floor(Math.random() * 3);
+    const items = nextItems(from, mode, config, batchSize);
+    let sent = 0;
+    let lastError;
+    for (const [index, item] of items.entries()) {
+        try {
+            const image = item.source === 'local' ? fs.readFileSync(localPath(item.value)) : { url: item.value };
+            await sock.sendMessage(from, { image, caption: caption(mode, item, config, index + 1, items.length) }, index === 0 ? { quoted: msg } : undefined);
+            sent += 1;
+        } catch (error) {
+            lastError = error;
+            console.error(`DPZ ${mode} image ${item.number} delivery failed:`, error.message);
+        }
     }
+    if (sent === 0) {
+        const fallback = mode === 'boys' ? pick(BOY_LINES) : pick(GIRL_LINES);
+        return sock.sendMessage(from, { text: `⚠️ DPZ images could not be sent. ${lastError?.message || ''}\n\n${fallback}\n\nTry again later.` }, { quoted: msg });
+    }
+    if (sent < items.length) await sock.sendMessage(from, { text: `⚠️ Sent ${sent} of ${items.length} DPZ images; some could not be delivered.` });
+    return { sent, requested: items.length, mode };
 }
 async function dpzConfigCommand(sock, from, msg, isAdmin, q = '', botData = {}, saveBotData = () => {}) {
     if (!from.endsWith('@g.us')) return sock.sendMessage(from, { text: '❌ DPZ settings are available in groups only.' }, { quoted: msg });
