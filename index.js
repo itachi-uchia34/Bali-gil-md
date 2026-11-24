@@ -24,6 +24,11 @@ const { isValidWebSessionId, parsePairingRequest } = require('./lib/pairing');
 const { waitForPairingReady } = require('./lib/pairing-readiness');
 const { CATEGORY_MENU_CONFIG, createCategoryMenu } = require('./lib/menu-categories');
 const { getGroupMetadataCached } = require('./lib/group-metadata-cache');
+const COMMANDS_WITHOUT_GROUP_ADMIN_LOOKUP = new Set([
+    'help', 'h', 'menu', 'allmenu', 'ownermenu', 'groupmenu', 'downloadmenu', 'aimenu', 'bugmenu',
+    'toolmenu', 'funmenu', 'islamicmenu', 'animemenu', 'logomenu', 'textmenu', 'automenu',
+    'securitymenu', 'systemmenu', 'kagemenu', 'pluginmenu', 'othermenu', 'ping'
+]);
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -1122,8 +1127,13 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         this.sendLog('Received an undecryptable message. This might be due to a session conflict.', 'warning');
                     }
 
+                    let currentMessageId = null;
+                    let currentChatId = null;
+                    let currentCommandName = null;
+                    let currentCommandPrefix = '.';
                     try {
                         const from = msg.key.remoteJid;
+                        currentChatId = from;
                         const isMe = msg.key.fromMe;
                         const isGroup = from.endsWith('@g.us');
                         const isStatus = from === 'status@broadcast';
@@ -1133,7 +1143,12 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                         let type = Object.keys(messageContent)[0];
                         const text = getMessageText(messageContent);
+                        const commandPrefix = typeof settings.prefix === 'string' && settings.prefix.length ? settings.prefix : '.';
+                        const parsedCommand = parseCommand(text, commandPrefix);
+                        currentCommandName = parsedCommand?.commandName || null;
+                        currentCommandPrefix = commandPrefix;
                         const msgId = msg.key.id;
+                        currentMessageId = msgId || null;
                         if (msgId && this.processedMessages.has(msgId)) return;
                         if (msgId) {
                             this.processedMessages.add(msgId);
@@ -1191,11 +1206,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         // Auto-react with a deterministic rotation so every configured emoji is used.
                         if (this.autoReact && !isMe && !isStatus) {
                             const emoji = nextAutoReactEmoji(this);
-                            try {
-                                await this.sock.sendMessage(from, { react: { text: emoji, key: msg.key } });
-                            } catch (e) {
-                                this.sendLog(`Auto-react failed for ${emoji}: ${e.message}`, 'warning');
-                            }
+                            void this.sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+                                .catch((e) => this.sendLog(`Auto-react failed for ${emoji}: ${e.message}`, 'warning'));
                         }
 
                         // AI auto-reply
@@ -1266,7 +1278,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         const isAuthorized = this.isPublic || isOwner || isSessionUser || isMe;
 
                         let isAdmin = isOwner;
-                        if (!isAdmin && isGroup) {
+                        if (!isAdmin && isGroup && (!parsedCommand || !COMMANDS_WITHOUT_GROUP_ADMIN_LOOKUP.has(parsedCommand.commandName))) {
                             try {
                                 const groupMetadata = await getGroupMetadataCached(this.sock, this.groupMetadataCache, from);
                                 const normalizedSender = jidNormalizedUser(sender);
@@ -1340,8 +1352,6 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             return;
                         }
 
-                        const commandPrefix = typeof settings.prefix === 'string' && settings.prefix.length ? settings.prefix : '.';
-                        const parsedCommand = parseCommand(text, commandPrefix);
                         const isPublicMenuRequest = isPublicInfoCommand(parsedCommand?.commandName);
 
                         // Keep informational menu access available even when the bot is private or hidden.
@@ -1362,7 +1372,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             // Re-check authorization for commands
                             if (!isCommandAllowed(commandName, { isPublic: this.isPublic, isAuthorized })) return;
 
-                            (async () => {
+                            await (async () => {
                                 try {
                                     // =================== 120+ COMMAND SWITCH ===================
                                     switch (commandName) {
@@ -1610,18 +1620,22 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                             } else {
                                                 const pluginCommand = commands[commandName];
                                                 if (typeof pluginCommand === 'function') {
-                                                await pluginCommand(this.sock, from, msg, {
-                                                    args,
-                                                    query: q,
-                                                    isAdmin,
-                                                    isOwner,
-                                                    session: this,
-                                                    botData,
-                                                    saveBotData,
-                                                    commands,
-                                                    commandPrefix,
-                                                    pluginCommandNames: Object.keys(pluginRegistry.commands)
-                                                });
+                                                    await pluginCommand(this.sock, from, msg, {
+                                                        args,
+                                                        query: q,
+                                                        isAdmin,
+                                                        isOwner,
+                                                        session: this,
+                                                        botData,
+                                                        saveBotData,
+                                                        commands,
+                                                        commandPrefix,
+                                                        pluginCommandNames: Object.keys(pluginRegistry.commands)
+                                                    });
+                                                } else {
+                                                    await this.sock.sendMessage(from, {
+                                                        text: `Unknown command: ${commandPrefix}${commandName}. Use ${commandPrefix}menu to see available commands.`
+                                                    }, { quoted: msg });
                                                 }
                                             }
                                             break;
@@ -1631,12 +1645,30 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                     this.sendLog(`Command error (${commandName}): ` + e.message, 'error');
                                     if (commandName === 'menu' || commandName === 'allmenu') {
                                         await reportMenuFailure(this.sock, from, msg, commandName, commandPrefix, e);
+                                    } else {
+                                        try {
+                                            await this.sock.sendMessage(from, {
+                                                text: `❌ The ${commandPrefix}${commandName} command failed while processing. Please try again shortly.`
+                                            }, { quoted: msg });
+                                        } catch (sendError) {
+                                            this.sendLog(`Command failure notice failed (${commandName}): ${sendError.message}`, 'warning');
+                                        }
                                     }
                                 }
                             })();
                         }
                     } catch (e) {
+                        if (currentMessageId) this.processedMessages.delete(currentMessageId);
                         console.error('Message Processing Error:', e);
+                        if (currentCommandName && currentChatId) {
+                            try {
+                                await this.sock.sendMessage(currentChatId, {
+                                    text: `❌ ${currentCommandPrefix}${currentCommandName} could not finish because of a processing error. Please try again.`
+                                }, { quoted: msg });
+                            } catch (sendError) {
+                                this.sendLog(`Pre-dispatch failure notice failed (${currentCommandName}): ${sendError.message}`, 'warning');
+                            }
+                        }
                     }
                 }));
             });
