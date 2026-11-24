@@ -1,6 +1,6 @@
 const { formatFramedMenu, sendFramedMenu } = require('../lib/menu-format');
 const { getCommandNames, toSansBold } = require('../lib/menu-text');
-const { MENU_SHORTCUTS } = require('../lib/menu-categories');
+const { MENU_SHORTCUTS } = require('../lib/menu-catalogue');
 const settings = require('../settings');
 
 async function allMenu(sock, from, msg, session, commands = {}, pluginCommandNames = [], commandPrefix = settings.prefix) {

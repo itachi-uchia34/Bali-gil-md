@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('../lib/command-parser');
-const { generateMenuText, getCommandNames } = require('../lib/menu-text');
+const { generateMenuText, getCommandNames, toSansBold } = require('../lib/menu-text');
 const helpCommand = require('../commands/help');
 const allMenuCommand = require('../commands/allmenu');
 const animeCommand = require('../commands/anime');
@@ -15,7 +15,7 @@ const { runPreCommandHooks } = require('../lib/precommand-hooks');
 const { buildMenuFailureMessage, reportMenuFailure } = require('../lib/menu-failure');
 const { installThemedSocket } = require('../lib/akatsuki-theme');
 const { wrapCommandHandler } = require('../lib/command-wrapper');
-const { CATEGORY_MENU_CONFIG, MENU_SHORTCUTS, createCategoryMenu } = require('../lib/menu-categories');
+const { MENU_CATEGORIES, CATEGORY_MENU_CONFIG, MENU_SHORTCUTS, createCategoryMenu } = require('../lib/menu-categories');
 const downloadMenuCommand = require('../commands/downloadmenu');
 
 test('command parser accepts the configured prefix and normalizes the command name only', () => {
@@ -120,6 +120,33 @@ test('plugin menu deduplicates installed commands and skips unregistered plugins
     assert.doesNotMatch(sent[0], /!missing-plugin/);
 });
 
+test('other menu lists remaining registered commands without category or plugin duplicates', async () => {
+    const sent = [];
+    const sock = { async sendMessage(_chatId, payload) {
+        if (payload.image) throw new Error('Use the text fallback in this test');
+        sent.push(payload.text);
+    } };
+    const handler = createCategoryMenu(CATEGORY_MENU_CONFIG.othermenu);
+    await handler(sock, 'chat', {}, {
+        commands: {
+            ping: () => {},
+            'extra-command': () => {},
+            'custom-plugin': () => {},
+            menu: () => {},
+            allmenu: () => {},
+            help: () => {},
+            othermenu: () => {}
+        },
+        pluginCommandNames: ['custom-plugin'],
+        commandPrefix: '!'
+    });
+
+    assert.match(sent[0], /!extra-command/);
+    assert.doesNotMatch(sent[0], /!ping/);
+    assert.doesNotMatch(sent[0], /!custom-plugin/);
+    assert.doesNotMatch(sent[0], /!othermenu|!menu|!allmenu|!help/);
+});
+
 test('autoreact shuffles every emoji without repeating within a cycle or at the cycle boundary', () => {
     assert.ok(AUTO_REACT_EMOJIS.length >= 100);
     assert.equal(new Set(AUTO_REACT_EMOJIS).size, AUTO_REACT_EMOJIS.length);
@@ -179,23 +206,20 @@ test('WhatsApp device-suffixed JIDs normalize to the configured owner number', (
 });
 
 test('menu includes callable commands with the configured prefix and excludes internal objects', () => {
-    const commands = {
-        menu: () => {},
-        allmenu: () => {},
-        autoreact: () => {},
-        autoreacts: () => {},
-        ping: () => {},
-        utils: { ping: () => {} },
-        missing: null
-    };
+    const allNames = new Set([
+        ...Object.values(MENU_CATEGORIES).flat(),
+        ...MENU_SHORTCUTS.map(([name]) => name),
+        'menu', 'allmenu', 'help', 'h', 'extra-command'
+    ]);
+    const commands = Object.fromEntries([...allNames].map((name) => [name, () => {}]));
+    commands.utils = { ping: () => {} };
+    commands.missing = null;
     const output = generateMenuText('Tester', { isPublic: true }, commands, '!');
 
-    assert.deepEqual(getCommandNames(commands), ['menu', 'allmenu', 'autoreact', 'autoreacts', 'ping']);
+    assert.deepEqual(getCommandNames(commands), [...allNames]);
     assert.match(output, /PREFIX: !/);
-    assert.match(output, /!ping/);
-    assert.match(output, /!menu/);
-    assert.match(output, /!autoreact/);
-    assert.match(output, /!autoreacts/);
+    for (const name of allNames) assert.ok(output.includes(`!${name}`), `missing !${name} from full menu`);
+    for (const title of Object.keys(MENU_CATEGORIES)) assert.ok(output.includes(toSansBold(title)), `missing category ${title}`);
     assert.match(output, /OWNER: BALI GIL/);
     assert.match(output, /OWNER NUMBER: \+?\d+/);
     assert.match(output, /DEVELOPER: ITACHI UCHIHA/);
