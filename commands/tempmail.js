@@ -89,7 +89,7 @@ module.exports = async function(sock, chatId, msg) {
                                           `🕐 *Date:* ${new Date(fullMsg.createdAt).toLocaleString()}\n\n` +
                                           (otp ? `🔐 *OTP DETECTED:* \`${otp}\`\n\n` : '') +
                                           `📝 *Preview:*\n${fullMsg.intro || fullMsg.text?.substring(0, 500) || 'No content'}\n\n` +
-                                          `_Powered by Shadow MD Bot_`;
+                                          `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
 
                         await sock.sendMessage(chatId, { text: forwardText });
                         session.seenMessages.push(message.id);
@@ -105,7 +105,7 @@ module.exports = async function(sock, chatId, msg) {
                          `🔔 New Emails: ${newMessages.length}\n\n` +
                          `⏳ Checking for OTPs every 30 seconds...\n` +
                          `🔄 Type .tempmail again to check for new emails\n\n` +
-                         `_Powered by Shadow MD Bot_`;
+                         `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
 
             await sock.sendMessage(chatId, { text }, { quoted: msg });
             return;
@@ -131,7 +131,7 @@ module.exports = async function(sock, chatId, msg) {
                      `🔔 I will forward any OTPs/emails to this chat\n\n` +
                      `📝 Use this email to receive OTPs\n` +
                      `🔄 Type .tempmail again to check for new emails\n\n` +
-                     `_Powered by Shadow MD Bot_`;
+                     `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
 
         await sock.sendMessage(chatId, { text }, { quoted: msg });
 
@@ -177,7 +177,7 @@ function startEmailChecker(sock, chatId, userId) {
                                       `🕐 *Date:* ${new Date(fullMsg.createdAt).toLocaleString()}\n\n` +
                                       (otp ? `🔐 *OTP DETECTED:* \`${otp}\`\n\n` : '') +
                                       `📝 *Preview:*\n${fullMsg.intro || fullMsg.text?.substring(0, 500) || 'No content'}\n\n` +
-                                      `_Powered by Shadow MD Bot_`;
+                                      `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
 
                     await sock.sendMessage(chatId, { text: forwardText });
                     session.seenMessages.push(message.id);

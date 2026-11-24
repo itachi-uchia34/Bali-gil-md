@@ -1,54 +1,38 @@
-const settings = require('../settings'); // اگر settings نہیں تو اس لائن کو ہٹا دو
+const settings = require('../settings');
 
-module.exports = async function(sock, chatId, msg, args) {
-    // ── Helper: Branded send (newsletter forward) ──
-    const sendMsg = async (text) => {
-        return await sock.sendMessage(chatId, {
-            text: text,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: "120363207208218980@newsletter",
-                    newsletterName: "𝐒𝐘𝐄𝐃 𝐓𝐄𝐂𝐇",
-                    serverMessageId: 200
-                }
-            }
-        }, { quoted: msg });
-    };
+const REPOSITORY_URL = 'https://github.com/itachi-uchia34/Madara-Uchiha-MD';
+
+module.exports = async function repoCommand(sock, chatId, msg) {
+    const sendMsg = text => sock.sendMessage(chatId, { text }, { quoted: msg });
 
     try {
-        // ── Reaction ──
-        await sock.sendMessage(chatId, { react: { text: "🔗", key: msg.key } });
+        if (msg?.key) {
+            await sock.sendMessage(chatId, { react: { text: '🔗', key: msg.key } });
+        }
 
-        // ── Heavy Box Response ──
         const response = `
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃  💀  *𝙎𝙔𝙀𝘿 𝙈𝘿  —  𝙍𝙀𝙋𝙊𝙎𝙄𝙏𝙊𝙍𝙔*  💀  ┃
+┃  💀  *𝙈𝘼𝙍𝘿𝘼𝙍𝘼 𝙐𝘾𝙃𝙄𝙃𝘼 — 𝙍𝙀𝙋𝙊𝙎𝙄𝙏𝙊𝙍𝙔*  💀  ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃  🔗 *Official Website*                   ┃
-┃  ➤ https://syed-md-production.up.railway.app/ ┃
-┃  ➤ https://syed-md-production.up.railway.app/ ┃
-┃  ➤ https://syed-md-production.up.railway.app/ ┃
+┃  🔗 *GitHub Repository*                ┃
+┃  ➤ ${REPOSITORY_URL}                    ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃  📱 *Pairing Guide*                      ┃
+┃  📱 *Pairing Guide*                     ┃
 ┃  ➤ Type .pair 92XXXXXXXXXX              ┃
-┃  ➤ Scan QR or enter code in WhatsApp    ┃
+┃  ➤ Scan QR or enter the code in WhatsApp┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃  🚀 *Quick Connect*                      ┃
-┃  ✨ .pair 923XXXXXXXXX                   ┃
-┃  ⚡ Scan • Pair • Enjoy        ┃
+┃  🚀 *Quick Connect*                     ┃
+┃  ✨ .pair 923XXXXXXXXX                  ┃
+┃  ⚡ Scan • Pair • Enjoy                  ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃  👑 *Version*   : ${settings?.version || '3.0'}  ┃
-┃  🔐 *Security*  : Premium Encrypted      ┃
-┃  ☠️ *Powered by* : SYED MD TEAM          ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-        `;
+┃  👑 *Version*   : ${settings.version || '2.0.5'}       ┃
+┃  🔐 *Security*  : Premium Encrypted     ┃
+┃  ☠️ *POWERED BY* : ⚔️ BALI GIL MD ⚔️     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
 
         await sendMsg(response);
-
     } catch (error) {
-        console.error("❌ Repo command error:", error);
-        await sendMsg("⚠️ کچھ غلط ہو گیا، براہِ کرم دوبارہ کوشش کریں۔");
+        console.error('❌ Repo command error:', error);
+        await sendMsg('⚠️ Something went wrong. Please try again.');
     }
 };

@@ -17,13 +17,13 @@ module.exports = async function(sock, chatId, msg, q) {
             // Simple fallback using random image
             await sock.sendMessage(chatId, { 
                 image: { url: `https://image.pollinations.ai/prompt/${encodeURIComponent(q)}?width=1024&height=1024&nologo=true` },
-                caption: `*\u1F4F7 Pinterest: ${q}*\n\n_Powered by SHADOW MD BOT_`
+                caption: `*\u1F4F7 Pinterest: ${q}*\n\n_POWERED BY ⚔️ BALI GIL MD ⚔️_`
             }, { quoted: msg });
         } else {
             const img = fallback.data.results[0];
             await sock.sendMessage(chatId, { 
                 image: { url: img.urls.regular },
-                caption: `*\u1F4F7 Result for: ${q}*\n\nBy: ${img.user.name}\n_Powered by SHADOW MD BOT_`
+                caption: `*\u1F4F7 Result for: ${q}*\n\nBy: ${img.user.name}\n_POWERED BY ⚔️ BALI GIL MD ⚔️_`
             }, { quoted: msg });
         }
     } catch (e) {

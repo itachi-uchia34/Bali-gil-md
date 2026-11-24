@@ -1,5 +1,4 @@
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-const { toAudio } = require('../lib/converter');
 
 module.exports = async function(sock, chatId, msg) {
     try {
@@ -13,15 +12,11 @@ module.exports = async function(sock, chatId, msg) {
         const stream = await downloadContentFromMessage(quoted, 'video');
         let buffer = Buffer.from([]);
         for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-        if (!buffer.length) throw new Error('The replied video could not be downloaded.');
-        const mp3 = await toAudio(buffer, 'mp4');
-        if (!mp3.length) throw new Error('Audio conversion produced an empty file.');
         
         await sock.sendMessage(chatId, { 
-            audio: mp3,
+            document: buffer,
             mimetype: 'audio/mpeg',
-            fileName: 'converted.mp3',
-            ptt: false
+            fileName: 'converted.mp3'
         }, { quoted: msg });
     } catch (e) {
         await sock.sendMessage(chatId, { text: '\u274C Error: ' + e.message }, { quoted: msg });

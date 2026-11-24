@@ -4,14 +4,17 @@ module.exports = async function(sock, chatId, msg, isOwner, q) {
     
     try {
         const allChats = Object.keys(sock.chats).filter(jid => jid.endsWith('@s.whatsapp.net') || jid.endsWith('@g.us'));
+        if (sock.antiAbuse) sock.antiAbuse.assertBroadcastAllowed(allChats.length);
         await sock.sendMessage(chatId, { text: `\u1F4E3 Broadcasting to ${allChats.length} chats...` }, { quoted: msg });
         
         let sent = 0;
         for (const jid of allChats) {
             try {
-                await sock.sendMessage(jid, { text: `*\u1F4E3 BROADCAST*\n\n${q}\n\n_From: BALI GIL MD Owner_` });
+                await sock.sendMessage(jid, { text: `*\u1F4E3 BROADCAST*\n\n${q}\n\n_From: ⚔️ BALI GIL MD ⚔️ Owner_` });
                 sent++;
-            } catch (e) {}
+            } catch (e) {
+                if (sock.antiAbuse?.paused) break;
+            }
         }
         
         await sock.sendMessage(chatId, { text: `\u2705 Broadcast sent to ${sent} chats!` }, { quoted: msg });

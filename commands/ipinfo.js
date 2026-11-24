@@ -28,7 +28,7 @@ module.exports = async function(sock, chatId, msg, q) {
                          `🌐 *ISP:* ${data.org || 'N/A'}\n` +
                          `📡 *ASN:* ${data.asn || 'N/A'}\n` +
                          `⏰ *Timezone:* ${data.timezone || 'N/A'}\n\n` +
-                         `_Powered by Shadow MD Bot_`;
+                         `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
 
             await sock.sendMessage(chatId, { text }, { quoted: msg });
         } catch (apiErr) {
@@ -36,7 +36,7 @@ module.exports = async function(sock, chatId, msg, q) {
                          `📍 *IP:* ${ip}\n` +
                          `⚠️ *Status:* API limit reached or IP not found\n` +
                          `🔄 Try again later or use a different IP.\n\n` +
-                         `_Powered by Shadow MD Bot_`;
+                         `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
             await sock.sendMessage(chatId, { text }, { quoted: msg });
         }
     } catch (err) {

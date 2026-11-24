@@ -1,18 +1,10 @@
 const settings = require('../settings');
 
 async function ownerCommand(sock, from, msg) {
-    const ownerName = settings.ownerName || 'BALI GIL';
-    const ownerNumber = String(settings.ownerNumber || '').replace(/\D/g, '');
-    const ownerText = `🩸 *━───── 🔴 BALI GIL 🔴 ─────━* 🩸\n\n` +
-        `*☠️ SHROUD ARCHITECT ☠️*\n\n` +
-        `👤 *CREATOR:* ${ownerName}\n` +
-        `📱 *CONTACT:* ${ownerNumber ? `+${ownerNumber}` : 'Not configured'}\n` +
-        `⚔️ *TITLE:* Keeper of the Akatsuki Command Center\n\n` +
-        `🔗 *OFFICIAL WHATSAPP CHANNEL:*\n` +
-        `> *https://whatsapp.com/channel/0029VbC1gR3J3jv22YgI511b*\n\n` +
-        `> _"Those who break the rules are scum, but those who abandon their comrades are worse than scum."_\n\n` +
-        `🩸 Honor the cloak. Follow the dynamic.`;
-
+    const ownerText = `👤 *BOT OWNER:* ${settings.ownerName}\n` +
+                    `📱 *NUMBER:* +${settings.ownerNumber}\n` +
+                    `🔗 *OFFICIAL WHATSAPP CHANNEL:*\n` +
+                    `> *${settings.whatsappChannel}*`;
     await sock.sendMessage(from, { text: ownerText }, { quoted: msg });
 }
 

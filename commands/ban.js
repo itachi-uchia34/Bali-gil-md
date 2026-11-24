@@ -1,47 +1,26 @@
-module.exports = async function banCommand(sock, chatId, msg, isAdmin) {
-    if (!chatId.endsWith('@g.us')) {
-        await sock.sendMessage(chatId, { text: '⚠️ `.kick` and `.ban` can only be used inside a group.' }, { quoted: msg });
-        return;
+async function banCommand(sock, from, msg, isAdmin, q) {
+    if (!from.endsWith('@g.us')) {
+        return sock.sendMessage(from, { text: '❌ This command can only be used in groups.' }, { quoted: msg });
     }
-
     if (!isAdmin) {
-        await sock.sendMessage(chatId, { text: '❌ *PAIN’S DECREE DENIED*\nOnly group admins can invoke Almighty Push.' }, { quoted: msg });
-        return;
+        return sock.sendMessage(from, { text: '❌ Only group admins can use ban commands.' }, { quoted: msg });
     }
 
-    const contextInfo = msg.message?.extendedTextMessage?.contextInfo ||
-        msg.message?.imageMessage?.contextInfo ||
-        msg.message?.videoMessage?.contextInfo || {};
-    const target = contextInfo.mentionedJid?.[0] || contextInfo.participant;
+    const context = msg.message?.extendedTextMessage?.contextInfo;
+    const participant = context?.mentionedJid?.[0] || context?.participant;
+    const number = (q || '').replace(/[^0-9]/g, '');
+    const target = participant || (number ? `${number}@s.whatsapp.net` : null);
 
     if (!target) {
-        await sock.sendMessage(chatId, {
-            text: '⚠️ Reply to a member’s message or tag them.\nExample: `.ban @member`'
-        }, { quoted: msg });
-        return;
-    }
-
-    const botJid = sock.user?.id;
-    if (botJid && target.split(':')[0] === botJid.split(':')[0]) {
-        await sock.sendMessage(chatId, { text: '❌ Even Almighty Push cannot target the Akatsuki itself.' }, { quoted: msg });
-        return;
+        return sock.sendMessage(from, { text: '⚠️ Reply to the user’s message, mention them, or provide a phone number.\nExample: .ban1 923001234567' }, { quoted: msg });
     }
 
     try {
-        await sock.groupParticipantsUpdate(chatId, [target], 'remove');
-        const mention = `@${target.split('@')[0].split(':')[0]}`;
-        await sock.sendMessage(chatId, {
-            text: `🩸 *━───── 🔴 PAIN’S ALMIGHTY PUSH 🔴 ─────━* 🩸\n\n` +
-                `🌀 *SHINRA TENSEI!*\n\n` +
-                `${mention} has been repelled from the Shroud.\n` +
-                `The Six Paths have delivered judgment, and the organization remains in balance.\n\n` +
-                `> _"Those who do not understand true pain can never understand true peace."_`,
-            mentions: [target]
-        }, { quoted: msg });
+        await sock.groupParticipantsUpdate(from, [target], 'remove');
+        await sock.sendMessage(from, { text: `✅ Ban action completed for @${target.split('@')[0]}.`, mentions: [target] }, { quoted: msg });
     } catch (error) {
-        console.error('Pain Almighty Push ban error:', error);
-        await sock.sendMessage(chatId, {
-            text: '❌ *ALMIGHTY PUSH FAILED*\nConfirm that the bot is a group admin and that the target can be removed.'
-        }, { quoted: msg });
+        await sock.sendMessage(from, { text: '❌ Could not ban this participant. Make sure the bot is a group admin and the target is valid.' }, { quoted: msg });
     }
-};
+}
+
+module.exports = banCommand;

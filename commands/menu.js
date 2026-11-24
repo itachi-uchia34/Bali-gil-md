@@ -5,7 +5,11 @@ const { sendMenuWithSong, sendMenuText } = require('../lib/menu-format');
 async function menuCommand(sock, chatId, msg, session, commands = {}, botData = {}, commandPrefix = settings.prefix) {
     const prefix = typeof commandPrefix === 'string' && commandPrefix.length ? commandPrefix : '.';
     const userName = botData?.userNames?.[session?.userId] || msg?.pushName || 'User';
-    const menuText = generateMenuText(userName, session, commands, prefix);
+    const baseMenuText = generateMenuText(userName, session, commands, prefix);
+    const menuChannel = botData?.channelSettings?.[session?.userId];
+    const menuText = menuChannel?.display
+        ? `${baseMenuText}\n\n📡 WHATSAPP CHANNEL: ${menuChannel.display}`
+        : baseMenuText;
     let delivery;
     try {
         delivery = await sendMenuWithSong(

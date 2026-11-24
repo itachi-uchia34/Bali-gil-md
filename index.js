@@ -101,8 +101,8 @@ const commands = {
     setppgc: require('./commands/setppgc'),
     getbio: require('./commands/getbio'),
     getdp: require('./commands/getdp'),
-    welcome: require('./commands/welcome'),
-    goodbye: require('./commands/goodbye'),
+    welcome: require('./commands/welcome').welcomeCommand,
+    goodbye: require('./commands/welcome').goodbyeCommand,
     accept: require('./commands/accept'),
 
     // Admin/Owner
@@ -270,6 +270,131 @@ const commands = {
     kage: require('./commands/kage'),
     utils: require('./commands/utils')
 };
+
+// Ported reference commands retain their original handler contracts, while Bali's
+// multi-account lifecycle, menu, and plugin registry remain authoritative.
+const referenceLevels = require('./commands/levels');
+const referenceModeration = require('./commands/moderation');
+const referenceMadarachat = require('./commands/madarachat');
+const referenceGroup = require('./commands/groupplus');
+const referenceOwner = require('./commands/ownerplus');
+const referenceExtras = require('./commands/extras');
+const referenceExtrasPlus = require('./commands/extrasplus');
+const referenceFun = require('./commands/funplus');
+const referenceFonts = require('./commands/fonts');
+const referenceDpz = require('./commands/dpz');
+const referenceChannel = require('./commands/channel');
+const referencePoetry = require('./commands/poetry');
+const { applyAntiAbuse } = require('./lib/anti_abuse');
+Object.assign(commands, {
+    directdl: require('./commands/directdl'), urldl: require('./commands/directdl'), download: require('./commands/directdl'),
+    customdl: require('./commands/directdl'), audiourl: require('./commands/directdl'), videourl: require('./commands/directdl'),
+    imagedl: require('./commands/directdl'), docdl: require('./commands/directdl'),
+    thumbnail: require('./commands/thumbnail'), thumb: require('./commands/thumbnail'),
+    downloadmenu: require('./commands/downloadmenu'),
+    dpz: referenceDpz.dpzCommand, dpzconfig: referenceDpz.dpzConfigCommand, dpzsettings: referenceDpz.dpzConfigCommand,
+    safetymode: require('./commands/antisafety').safetymode, antiban: require('./commands/antisafety').safetymode,
+    unban: require('./commands/unban'),
+    channel: referenceChannel.channelCommand, setchannel: referenceChannel.setChannelCommand, removechannel: referenceChannel.removeChannelCommand,
+    jidfooter: require('./commands/jidfooter'), jid: require('./commands/jidfooter'),
+    rank: referenceLevels.rankCommand, profile: referenceLevels.rankCommand, leaderboard: referenceLevels.leaderboardCommand,
+    level: referenceLevels.levelCommand, levelconfig: referenceLevels.levelConfigCommand,
+    madara: referenceMadarachat.madaraCommand, madaraauto: referenceMadarachat.madaraAutoCommand, madaraconfig: referenceMadarachat.madaraConfig,
+    moderationconfig: referenceModeration.moderationConfig,
+    antilinkwarn: referenceModeration.antiLinkWarningCommand, antispam: referenceModeration.antiSpamCommand,
+    antispamwarn: referenceModeration.antiSpamWarningCommand,
+    botinfo: referenceOwner.botinfo, health: referenceOwner.health, ownerhelp: referenceOwner.ownerhelp,
+    admins: referenceGroup.admins, members: referenceGroup.members, groupstats: referenceGroup.groupstats,
+    groupname: referenceGroup.groupname, groupopen: referenceGroup.groupopen, groupclose: referenceGroup.groupclose,
+    setdesc: referenceGroup.setdesc, grouplink: referenceGroup.grouplink, poll: referenceGroup.poll, password: referenceExtras.password,
+    clear: require('./commands/clear'), welcomeconfig: require('./commands/welcome').configCommand,
+    adminsonly: referenceGroup.adminsonly, allmembers: referenceGroup.allmembers, revokeinvite: referenceGroup.revokeinvite,
+    grouphelp: referenceGroup.grouphelp,
+    vv2: require('./commands/vv').createVvCommand('vv2'), vv3: require('./commands/vv').createVvCommand('vv3'),
+    dpboys: referenceDpz.dpBoysCommand, dpgirls: referenceDpz.dpGirlsCommand,
+    about: referenceExtrasPlus.about, rules: referenceExtrasPlus.rules, groupid: referenceExtrasPlus.groupid,
+    chatid: referenceExtrasPlus.chatid, randomtool: referenceExtrasPlus.randomtool, timestamp: referenceExtrasPlus.timestamp,
+    urlencode: referenceExtrasPlus.urlencode, hextext: referenceExtrasPlus.hextext, jsonfmt: referenceExtrasPlus.jsonfmt,
+    textstats: referenceExtrasPlus.textstats,
+    play: commands.song, ytmp3: commands.song, ytmp4: commands.video, igdl: commands.insta, fbdown: commands.facebook,
+    pindl: commands.pinterest, reddown: commands.reddit, spdl: commands.spotify, ttdl: commands.tiktok, twtdl: commands.twitter,
+    fortune: referenceFun.fortune, compatibility: referenceFun.compatibility, madarafact: referenceFun.madarafact,
+    battle: referenceFun.battle, prediction: referenceFun.prediction, shinobiquiz: referenceFun.shinobiquiz,
+    roastme: referenceFun.roastme, praise: referenceFun.praise,
+    time: referenceExtras.time, date: referenceExtras.date, choose: referenceExtras.choose, eightball: referenceExtras.eightball,
+    motivate: referenceExtras.motivate, uuid: referenceExtras.uuid, color: referenceExtras.color, dice: referenceExtras.dice,
+    countdown: referenceExtras.countdown,
+    fonts: referenceFonts.fonts, sadpoetry: referencePoetry.sadPoetryCommand, romanticpoetry: referencePoetry.romanticPoetryCommand
+});
+for (let index = 1; index <= 50; index += 1) commands[`font${index}`] = referenceFonts[`font${index}`];
+for (let index = 1; index <= 50; index += 1) {
+    commands[`ban${index}`] = commands.ban;
+    commands[`unban${index}`] = commands.unban;
+}
+
+const referenceCommandAdapters = {
+    directdl: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    unban: (sock, from, msg, q, isAdmin) => commands.unban(sock, from, msg, isAdmin, q),
+    urldl: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    download: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    customdl: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    audiourl: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    videourl: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    imagedl: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    docdl: (sock, from, msg, q) => commands.directdl(sock, from, msg, q),
+    thumbnail: (sock, from, msg, q) => commands.thumbnail(sock, from, msg, q),
+    thumb: (sock, from, msg, q) => commands.thumbnail(sock, from, msg, q),
+    downloadmenu: (sock, from, msg) => commands.downloadmenu(sock, from, msg),
+    clear: (sock, from, msg) => commands.clear(sock, from, msg),
+    welcomeconfig: (sock, from, msg, q, isAdmin) => commands.welcomeconfig(sock, from, msg, isAdmin, botData),
+    dpboys: (sock, from, msg, q) => commands.dpboys(sock, from, msg, q, botData, saveBotData),
+    dpgirls: (sock, from, msg, q) => commands.dpgirls(sock, from, msg, q, botData, saveBotData),
+    vv2: (sock, from, msg) => commands.vv2(sock, from, msg),
+    vv3: (sock, from, msg) => commands.vv3(sock, from, msg),
+    dpz: (sock, from, msg, q) => commands.dpz(sock, from, msg, q, botData, saveBotData),
+    dpzconfig: (sock, from, msg, q, isAdmin) => commands.dpzconfig(sock, from, msg, isAdmin, q, botData, saveBotData),
+    dpzsettings: (sock, from, msg, q, isAdmin) => commands.dpzconfig(sock, from, msg, isAdmin, q, botData, saveBotData),
+    safetymode: (sock, from, msg, q, isAdmin, isOwner, session) => commands.safetymode(sock, from, msg, isOwner, q, session),
+    antiban: (sock, from, msg, q, isAdmin, isOwner, session) => commands.safetymode(sock, from, msg, isOwner, q, session),
+    channel: (sock, from, msg, q, isAdmin, isOwner, session) => commands.channel(sock, from, msg, isOwner, botData, session.userId),
+    setchannel: (sock, from, msg, q, isAdmin, isOwner, session) => commands.setchannel(sock, from, msg, isOwner, q, botData, saveBotData, session.userId),
+    removechannel: (sock, from, msg, q, isAdmin, isOwner, session) => commands.removechannel(sock, from, msg, isOwner, botData, saveBotData, session.userId),
+    jidfooter: (sock, from, msg, q, isAdmin, isOwner, session) => commands.jidfooter(sock, from, msg, isAdmin, q, botData, saveBotData, session.userId),
+    rank: (sock, from, msg, q, isAdmin, isOwner, session, sender) => commands.rank(sock, from, msg, q, botData, sender),
+    profile: (sock, from, msg, q, isAdmin, isOwner, session, sender) => commands.profile(sock, from, msg, q, botData, sender),
+    leaderboard: (sock, from, msg) => commands.leaderboard(sock, from, msg, botData),
+    level: (sock, from, msg, q, isAdmin) => commands.level(sock, from, msg, isAdmin, q, botData, saveBotData),
+    levelconfig: (sock, from, msg, q, isAdmin) => commands.levelconfig(sock, from, msg, isAdmin, botData),
+    madara: (sock, from, msg, q) => commands.madara(sock, from, msg, q),
+    madaraauto: (sock, from, msg, q, isAdmin) => commands.madaraauto(sock, from, msg, isAdmin, q, botData, saveBotData),
+    madaraconfig: (sock, from, msg, q, isAdmin) => commands.madaraconfig(sock, from, msg, isAdmin, botData),
+    moderationconfig: (sock, from, msg, q, isAdmin) => commands.moderationconfig(sock, from, msg, isAdmin, botData),
+    antilinkwarn: (sock, from, msg, q, isAdmin, isOwner, session, sender, args) => commands.antilinkwarn(sock, from, msg, isAdmin, botData, saveBotData, args),
+    antispam: (sock, from, msg, q, isAdmin, isOwner, session, sender, args) => commands.antispam(sock, from, msg, isAdmin, botData, saveBotData, args),
+    antispamwarn: (sock, from, msg, q, isAdmin, isOwner, session, sender, args) => commands.antispamwarn(sock, from, msg, isAdmin, botData, saveBotData, args),
+    botinfo: (sock, from, msg, q, isAdmin, isOwner) => commands.botinfo(sock, from, msg, isOwner),
+    health: (sock, from, msg, q, isAdmin, isOwner) => commands.health(sock, from, msg, isOwner),
+    ownerhelp: (sock, from, msg, q, isAdmin, isOwner) => commands.ownerhelp(sock, from, msg, isOwner)
+};
+for (const name of Object.keys(referenceFonts)) {
+    if (!/^font\d+$/.test(name)) continue;
+    referenceCommandAdapters[name] = (sock, from, msg, q) => commands[name](sock, from, msg, q);
+}
+const referenceSimpleArgs = {
+    admins: [], members: [], groupstats: [], groupname: ['admin', 'query'], groupopen: ['admin'], groupclose: ['admin'],
+    adminsonly: ['admin'], allmembers: ['admin'], revokeinvite: ['admin'], grouphelp: [],
+    about: [], rules: [], groupid: [], chatid: [], randomtool: ['query'], timestamp: ['query'], urlencode: ['query'],
+    hextext: ['query'], jsonfmt: ['query'], textstats: ['query'], fortune: [], compatibility: [], madarafact: [], battle: [],
+    prediction: ['query'], shinobiquiz: [], roastme: [], praise: [], time: [], date: [], choose: ['query'], eightball: ['query'],
+    motivate: [], password: ['query'], uuid: [], color: [], dice: ['query'], countdown: ['query'], sadpoetry: [], romanticpoetry: []
+};
+for (const [name, args] of Object.entries(referenceSimpleArgs)) {
+    if (referenceCommandAdapters[name]) continue;
+    referenceCommandAdapters[name] = (sock, from, msg, q, isAdmin) => {
+        const values = args.map((arg) => arg === 'admin' ? isAdmin : q);
+        return commands[name](sock, from, msg, ...values);
+    };
+}
 
 // Load modular Akatsuki plugins after the built-in commands.
 const pluginRegistry = loadPlugins(path.join(__dirname, 'plugins'), Object.keys(commands));
@@ -588,6 +713,13 @@ botData.antilinkGroups ||= {};
 botData.antiStatusGroups ||= {};
 botData.statusSettings ||= {};
 botData.antiCall ||= {};
+botData.moderationGroups ||= {};
+botData.levelProfiles ||= {};
+botData.levelSettings ||= {};
+botData.jidFooters ||= {};
+botData.dpzSettings ||= {};
+botData.channelSettings ||= {};
+botData.madaraAutoReplies ||= {};
 
 function saveBotData() {
     fs.writeJsonSync(DATA_FILE, botData);
@@ -839,6 +971,7 @@ class BotSession {
             });
             // Apply the same visual treatment to direct event replies and commands.
             installThemedSocket(this.sock);
+            applyAntiAbuse(this.sock);
 
             if (pairingNumber && !state.creds.registered) {
                 if (!this.sock.authState.creds.registered) {
@@ -1119,6 +1252,20 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             }
                         }
 
+                        // Reference leveling runs on ordinary messages, never on bot/self/status traffic.
+                        if (text && !text.startsWith(settings.prefix || '.') && !isMe && !isStatus) {
+                            try {
+                                await referenceLevels.handleActivity(this.sock, from, msg, sender, isGroup, isMe, text, botData, saveBotData);
+                            } catch (error) {
+                                this.sendLog(`Level tracking failed: ${error.message}`, 'warning');
+                            }
+                            try {
+                                if (await referenceMadarachat.handleAutoReply(this.sock, from, msg, text, sender, isGroup, isAdmin, isOwner, botData)) return;
+                            } catch (error) {
+                                this.sendLog(`Madara auto-reply failed: ${error.message}`, 'warning');
+                            }
+                        }
+
                         // Anti-status in groups
                         if (isGroup && botData.antiStatusGroups && botData.antiStatusGroups[from] && !isAdmin) {
                             const isStatusMsg = msg.message?.protocolMessage?.type === 0 || 
@@ -1249,16 +1396,16 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         }
 
                                         // ===== MEDIA & DOWNLOAD =====
-                                        case 'song': await commands.song(this.sock, from, msg, q); break;
-                                        case 'video': await commands.video(this.sock, from, msg, q); break;
-                                        case 'insta': case 'ig': await commands.insta(this.sock, from, msg, q); break;
-                                        case 'tiktok': case 'tt': await commands.tiktok(this.sock, from, msg, q); break;
-                                        case 'facebook': case 'fb': await commands.facebook(this.sock, from, msg, q); break;
+                                        case 'song': case 'play': case 'ytmp3': await commands.song(this.sock, from, msg, q); break;
+                                        case 'video': case 'ytmp4': await commands.video(this.sock, from, msg, q); break;
+                                        case 'insta': case 'ig': case 'igdl': await commands.insta(this.sock, from, msg, q); break;
+                                        case 'tiktok': case 'tt': case 'ttdl': await commands.tiktok(this.sock, from, msg, q); break;
+                                        case 'facebook': case 'fb': case 'fbdown': await commands.facebook(this.sock, from, msg, q); break;
                                         case 'youtube': case 'yt': await commands.youtube(this.sock, from, msg, q); break;
-                                        case 'pinterest': case 'pin': await commands.pinterest(this.sock, from, msg, q); break;
+                                        case 'pinterest': case 'pin': case 'pindl': await commands.pinterest(this.sock, from, msg, q); break;
                                         case 'twitter': case 'x': case 'twit': await commands.twitter(this.sock, from, msg, q); break;
-                                        case 'reddit': await commands.reddit(this.sock, from, msg, q); break;
-                                        case 'spotify': case 'spot': await commands.spotify(this.sock, from, msg, q); break;
+                                        case 'reddit': case 'reddown': await commands.reddit(this.sock, from, msg, q); break;
+                                        case 'spotify': case 'spot': case 'spdl': await commands.spotify(this.sock, from, msg, q); break;
                                         case 'mediafire': case 'mf': await commands.mf(this.sock, from, msg, q); break;
                                         case 'gdrive': await commands.gdrive(this.sock, from, msg, q); break;
                                         case 'apk': await commands.apk(this.sock, from, msg); break;
@@ -1280,7 +1427,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'gcon': await commands.gcon(this.sock, from, msg, isAdmin); break;
                                         case 'join': await commands.join(this.sock, from, msg, q); break;
                                         case 'leave': await commands.leave(this.sock, from, msg, isAdmin); break;
-                                        case 'setdesc': await commands.setdesc(this.sock, from, msg, isAdmin, q); break;
+                                        case 'setdesc': case 'groupdesc': await commands.setdesc(this.sock, from, msg, isAdmin, q); break;
                                         case 'setppgc': await commands.setppgc(this.sock, from, msg, isAdmin); break;
                                         case 'getbio': await commands.getbio(this.sock, from, msg, q); break;
                                         case 'getdp': await commands.getdp(this.sock, from, msg, q); break;
@@ -1289,10 +1436,10 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'hidetag': await commands.hidetag(this.sock, from, msg, isAdmin, q); break;
                                         case 'tagall': await commands.tagall(this.sock, from, msg, isAdmin, q); break;
                                         case 'groupinfo': case 'ginfo': await commands.groupinfo(this.sock, from, msg); break;
-                                        case 'welcome': await commands.welcome(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
-                                        case 'goodbye': await commands.goodbye(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
+                                        case 'welcome': await commands.welcome(this.sock, from, msg, isAdmin, q, botData, saveBotData); break;
+                                        case 'goodbye': await commands.goodbye(this.sock, from, msg, isAdmin, q, botData, saveBotData); break;
                                         case 'accept': await commands.accept(this.sock, from, msg, isAdmin); break;
-                                        case 'poll': await commands.poll(this.sock, from, msg, q); break;
+                                        case 'poll': await commands.poll(this.sock, from, msg, isAdmin, q); break;
                                         case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, isAdmin, q); break;
                                         case 'listonline': await commands.listonline(this.sock, from, msg); break;
 
@@ -1369,8 +1516,8 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                                         // ===== TOOLS =====
                                         case 'ping': await commands.ping(this.sock, from, msg); break;
-                                        case 'dp':
-                                        case 'dpz': await commands.dp(this.sock, from, msg); break;
+                                        case 'dp': await commands.dp(this.sock, from, msg); break;
+                                        case 'dpz': await referenceCommandAdapters.dpz(this.sock, from, msg, q, isAdmin, isOwner, this, sender, args); break;
                                         case 'vv': await commands.vv(this.sock, from, msg); break;
                                         case 'translate': case 'trt': await commands.translate(this.sock, from, msg, q); break;
                                         case 'base64': await commands.base64(this.sock, from, msg, q); break;
@@ -1467,8 +1614,14 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'restore': await commands.restore(this.sock, from, msg, isOwner); break;
                                         case 'mycmd': case 'mycommands': await commands.mycmd(this.sock, from, msg); break;
                                         default: {
-                                            const pluginCommand = commands[commandName];
-                                            if (typeof pluginCommand === 'function') {
+                                            const importedAdapter = referenceCommandAdapters[commandName]
+                                                || (/^ban\d+$/.test(commandName) ? (sock, chat, message, query, admin) => commands.ban(sock, chat, message, admin, query) : null)
+                                                || (/^unban\d+$/.test(commandName) ? (sock, chat, message, query, admin) => commands.unban(sock, chat, message, admin, query) : null);
+                                            if (importedAdapter) {
+                                                await importedAdapter(this.sock, from, msg, q, isAdmin, isOwner, this, sender, args);
+                                            } else {
+                                                const pluginCommand = commands[commandName];
+                                                if (typeof pluginCommand === 'function') {
                                                 await pluginCommand(this.sock, from, msg, {
                                                     args,
                                                     query: q,
@@ -1479,6 +1632,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                     saveBotData,
                                                     commands
                                                 });
+                                                }
                                             }
                                             break;
                                         }

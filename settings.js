@@ -16,6 +16,7 @@ module.exports = {
     gconSoundFallbacks: (process.env.GCON_AUDIO_FALLBACKS || process.env.GROUP_OPEN_SOUND_FALLBACKS || '').split(',').map((url) => url.trim()).filter(Boolean),
     ownerNumber: process.env.OWNER_NUMBER || '+923196181562',
     botName: 'BALI GIL MD',
+    poweredBy: 'BALI GIL MD',
     ownerName: 'BALI GIL',
     developerName: process.env.DEVELOPER_NAME || 'ITACHI UCHIHA',
     whatsappChannel: 'https://whatsapp.com/channel/0029VbC1gR3J3jv22YgI511b',

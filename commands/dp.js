@@ -1,15 +1,15 @@
 async function dpCommand(sock, from, msg) {
     try {
         let target;
-        
+
         // 1. Get target from mention
         if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
             target = msg.message.extendedTextMessage.contextInfo.mentionedJid[0];
-        } 
+        }
         // 2. Get target from reply
         else if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
             target = msg.message.extendedTextMessage.contextInfo.participant;
-        } 
+        }
         // 3. Default target
         else {
             // In group: target is sender
@@ -37,21 +37,9 @@ async function dpCommand(sock, from, msg) {
             }
         }
 
-        const members = [
-            ['Pain', 'The Six Paths observe from the Shroud.'],
-            ['Tobi', 'The masked shadow has identified the target.'],
-            ['Itachi Uchiha', 'The Sharingan remembers every face.'],
-            ['Deidara', 'Art captures the moment before the explosion.'],
-            ['Sasori', 'Every face becomes part of the collection.']
-        ];
-        const [member, line] = members[Math.floor(Math.random() * members.length)];
         await sock.sendMessage(from, {
             image: { url: ppUrl },
-            caption: `🩸 *━───── 🔴 AKATSUKI PROFILE 🔴 ─────━* 🩸\n\n` +
-                `👤 *TARGET:* @${target.split('@')[0]}\n` +
-                `☠️ *WITNESS:* ${member}\n\n` +
-                `> _${line}_\n\n` +
-                `⚔️ The Shroud remembers every face.`,
+            caption: `✅ *Profile Picture*\n👤 *User:* @${target.split('@')[0]}`,
             mentions: [target]
         }, { quoted: msg });
 

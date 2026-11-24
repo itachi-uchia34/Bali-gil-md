@@ -21,7 +21,7 @@ module.exports = async function(sock, chatId, msg, q) {
                 text: `🔐 *BALI GIL MD ENCODER* 🔐\n\n` +
                       `📝 *Original:* ${text}\n` +
                       `🔒 *Encoded:*\n\`${result}\`\n\n` +
-                      `POWERED BY ITACHI-UCHIHA ©`
+                      `_POWERED BY ⚔️ BALI GIL MD ⚔️_`
             }, { quoted: msg });
         } else if (action === 'dec' || action === 'decode') {
             try {
@@ -30,7 +30,7 @@ module.exports = async function(sock, chatId, msg, q) {
                     text: `🔓 *BALI GIL MD DECODER* 🔓\n\n` +
                           `🔒 *Encoded:* ${text}\n` +
                           `📝 *Decoded:*\n\`${result}\`\n\n` +
-                          `POWERED BY ITACHI-UCHIHA ©`
+                          `_POWERED BY ⚔️ BALI GIL MD ⚔️`
                 }, { quoted: msg });
             } catch (e) {
                 await sock.sendMessage(chatId, { text: '❌ Invalid Base64 string!' }, { quoted: msg });

@@ -18,7 +18,7 @@ module.exports = async function(sock, chatId, msg, q) {
             `USD: $${data.usd.toLocaleString()}\n` +
             `INR: \u20B9${data.inr.toLocaleString()}\n` +
             `24h Change: ${changeEmoji} ${change?.toFixed(2) || 0}%\n\n` +
-            `_Powered by CoinGecko_`;
+            `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
         
         await sock.sendMessage(chatId, { text }, { quoted: msg });
     } catch (e) {

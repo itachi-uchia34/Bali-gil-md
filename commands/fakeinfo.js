@@ -23,7 +23,7 @@ module.exports = async function(sock, chatId, msg) {
                      `🏠 *Address:* ${street}, ${city}\n` +
                      `🇵🇰 *Country:* Pakistan\n\n` +
                      `⚠️ This is FAKE information for educational/testing purposes only!\n\n` +
-                     `_Powered by Shadow MD Bot_`;
+                     `_POWERED BY ⚔️ BALI GIL MD ⚔️_`;
 
         await sock.sendMessage(chatId, { text }, { quoted: msg });
     } catch (err) {

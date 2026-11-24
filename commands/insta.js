@@ -13,7 +13,7 @@ async function instaCommand(sock, from, msg, q) {
 
         if (data && data.status && data.data && data.data.length > 0) {
             for (let item of data.data) {
-                const caption = `*\u1F4F7 Instagram Downloader*\n\n> © POWERED BY SHADOW MD BOT`;
+                const caption = `*\u1F4F7 Instagram Downloader*\n\n> © POWERED BY ⚔️ BALI GIL MD ⚔️`;
                 
                 if (item.url.includes('.mp4') || item.thumbnail) {
                     // It's likely a video if it has a thumbnail or .mp4

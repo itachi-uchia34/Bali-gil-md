@@ -1,48 +1,54 @@
-module.exports = async function tagallCommand(sock, chatId, msg, isAdmin, query) {
-    if (!chatId.endsWith('@g.us')) {
-        await sock.sendMessage(chatId, { text: '⚠️ `.tagall` can only be used inside a group.' }, { quoted: msg });
-        return;
-    }
-
-    if (!isAdmin) {
-        await sock.sendMessage(chatId, { text: '❌ Only group admins can summon the entire organization.' }, { quoted: msg });
-        return;
+async function tagallCommand(sock, from, msg, isAdmin, q) {
+    if (!isAdmin || !from.endsWith('@g.us')) {
+        return sock.sendMessage(from, { text: '❌ Only group admins can use this command.' }, { quoted: msg });
     }
 
     try {
-        const metadata = await sock.groupMetadata(chatId);
-        const participants = (metadata.participants || [])
-            .map((participant) => participant.id || participant.jid)
-            .filter(Boolean);
-        const groupName = metadata.subject || 'the group';
-        const announcement = String(query || '').trim() || 'The Akatsuki has summoned every member. Stand by for further orders.';
-        const mentionNames = participants.map((jid) => `@${jid.split('@')[0]}`);
-        const mentionRows = [];
-        for (let i = 0; i < mentionNames.length; i += 4) {
-            mentionRows.push(mentionNames.slice(i, i + 4).join(' '));
-        }
-
-        const text = [
-            '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
-            '🔴 BALI GIL MD ┃ AKATSUKI SUMMONS 🔴',
-            '🩸 ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🩸',
-            `🏯 GROUP: ${groupName} ┃ 👥 MEMBERS: ${participants.length}`,
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-            '📜 ANNOUNCEMENT',
-            announcement,
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-            '⚔️ SUMMONED SHINOBI',
-            mentionRows.join('\n'),
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-            '> _"Those who do not understand true pain can never understand true peace."_',
-            '🩸 Wear the cloak ┃ Honor the ring ┃ Respond to the call',
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-            'POWERED BY ITACHI-UCHIHA ©'
+        const groupMetadata = await sock.groupMetadata(from);
+        const participants = Array.isArray(groupMetadata.participants) ? groupMetadata.participants : [];
+        const groupName = groupMetadata.subject || 'The Shinobi Realm';
+        const announcement = (q || '').trim() || 'The realm has been summoned. Please gather your attention.';
+        const mentions = participants.map(member => member.id || member.jid).filter(Boolean);
+        const memberLines = mentions.map((jid, index) => `${String(index + 1).padStart(2, '0')}. @${jid.split('@')[0]}`);
+        const header = [
+            '╔═════════════════════════╗',
+            '    👁️‍🗨️  𝗠𝗔𝗗𝗔𝗥𝗔  𝗨𝗖𝗛𝗜𝗛𝗔  👁️‍🗨️',
+            '╚═════════════════════════╝',
+            '',
+            '⚔️ *SHINOBI SUMMONING*',
+            `🏯 *Realm:* ${groupName}`,
+            `👥 *Summoned:* ${mentions.length} shinobi`,
+            '⛓️ *FINAL DECREE:*',
+            `📜 *Announcement:* ${announcement}`,
+            '',
+            '━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '🩸 *THE SHINOBI ROSTER*',
+            ''
+        ].join('\n');
+        const footer = [
+            '',
+            '━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '⚡ *POWERED BY ⚔️ BALI GIL MD ⚔️*'
         ].join('\n');
 
-        await sock.sendMessage(chatId, { text, mentions: participants }, { quoted: msg });
+        const maxLength = 6000;
+        const chunks = [];
+        let current = header;
+        for (const line of memberLines) {
+            if ((current + line + '\n').length > maxLength) {
+                chunks.push(current.trimEnd());
+                current = '🩸 *CONTINUED SHINOBI ROSTER*\n\n';
+            }
+            current += `${line}\n`;
+        }
+        chunks.push(`${current.trimEnd()}${footer}`);
+
+        for (let index = 0; index < chunks.length; index++) {
+            await sock.sendMessage(from, { text: chunks[index], mentions }, { quoted: index === 0 ? msg : undefined });
+        }
     } catch (error) {
-        console.error('Tagall command error:', error);
-        await sock.sendMessage(chatId, { text: `❌ Could not summon the group: ${error.message || 'unknown error'}` }, { quoted: msg });
+        await sock.sendMessage(from, { text: `❌ Tagall failed: ${error.message}` }, { quoted: msg });
     }
-};
+}
+
+module.exports = tagallCommand;

@@ -3,6 +3,9 @@ async function aiCommand(sock, from, msg, isAdmin, session, args) {
     
     const action = args[0]?.toLowerCase();
     if (action === 'on') {
+        if (!String(process.env.OPENAI_API_KEY || '').trim()) {
+            return await sock.sendMessage(from, { text: '❌ Set OPENAI_API_KEY in your deployment secrets and restart the bot before enabling AI Auto-Reply.' }, { quoted: msg });
+        }
         session.aiEnabled = true;
         await sock.sendMessage(from, { text: "✅ AI Auto-Reply Enabled!" }, { quoted: msg });
     } else if (action === 'off') {

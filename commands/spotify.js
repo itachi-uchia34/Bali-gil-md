@@ -17,7 +17,7 @@ module.exports = async function(sock, chatId, msg, q) {
                 `🎵 *Title:* ${track.title}\n` +
                 `👤 *Artist:* ${track.artist}\n` +
                 `💿 *Album:* ${track.album || 'N/A'}\n\n` +
-                `> © POWERED BY SHADOW MD BOT`;
+                `> © POWERED BY ⚔️ BALI GIL MD ⚔️`;
 
             // Send Audio/Document
             await sock.sendMessage(chatId, { 
