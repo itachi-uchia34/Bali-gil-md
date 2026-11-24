@@ -148,16 +148,21 @@ test('kick removes the requested group member when invoked by an admin', async (
     assert.deepEqual(sock.sent[0].payload.mentions, [target]);
 });
 
-test('owner-only disruptive commands reject unauthorized users without sending to a target', async () => {
-    for (const command of [lag, locspam, vcardspam, buttonspam, pollspam, contactspam]) {
+test('owner-only lag rejects non-owners and bulk-spam actions are disabled', async () => {
+    const lagSocket = mockSocket();
+    const msg = { message: { extendedTextMessage: { contextInfo: { mentionedJid: ['target@s.whatsapp.net'] } } } };
+    await lag(lagSocket, 'lag-group@g.us', msg, false, '1234567890');
+    assert.equal(lagSocket.sent.length, 1);
+    assert.match(lagSocket.sent[0].payload.text, /Owner only/);
+
+    for (const [index, command] of [locspam, vcardspam, buttonspam, pollspam, contactspam].entries()) {
         const sock = mockSocket();
-        const msg = { message: { extendedTextMessage: { contextInfo: { mentionedJid: ['target@s.whatsapp.net'] } } } };
-
-        await command(sock, 'group@g.us', msg, false, '1234567890');
-
+        const chatId = `blocked-${index}@g.us`;
+        await command(sock, chatId, msg, true, '1234567890');
         assert.equal(sock.sent.length, 1);
-        assert.equal(sock.sent[0].chatId, 'group@g.us');
-        assert.match(sock.sent[0].payload.text, /Owner only/);
+        assert.equal(sock.sent[0].chatId, chatId);
+        assert.match(sock.sent[0].payload.text, /disabled to protect recipients/);
+        assert.equal(sock.sent.some(item => item.chatId === 'target@s.whatsapp.net'), false);
     }
 });
 

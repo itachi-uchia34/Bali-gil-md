@@ -5,6 +5,8 @@ const path = require('path');
 const os = require('os');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('ffmpeg-static');
+const MAX_MEDIA_BYTES = 8 * 1024 * 1024;
+const MAX_VIDEO_SECONDS = 10;
 
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath);
 
@@ -28,9 +30,18 @@ function findMedia(message) {
 }
 
 async function downloadMedia(media) {
+    const reportedSize = Number(media.content?.fileLength);
+    if (Number.isFinite(reportedSize) && reportedSize > MAX_MEDIA_BYTES) {
+        throw new Error('Media is too large. Please use a file smaller than 8 MB.');
+    }
     const stream = await downloadContentFromMessage(media.content, media.type);
     const chunks = [];
-    for await (const chunk of stream) chunks.push(chunk);
+    let totalBytes = 0;
+    for await (const chunk of stream) {
+        totalBytes += chunk.length;
+        if (totalBytes > MAX_MEDIA_BYTES) throw new Error('Media is too large. Please use a file smaller than 8 MB.');
+        chunks.push(chunk);
+    }
     return Buffer.concat(chunks);
 }
 
@@ -64,10 +75,15 @@ function videoToSticker(inputPath, outputPath) {
 
 module.exports = async function stickerCommand(sock, chatId, msg) {
     let inputPath;
+    let tempDir;
     try {
         const media = findMedia(msg.message);
         if (!media) {
             return sock.sendMessage(chatId, { text: '⚠️ Send or reply to an image, GIF, or short video with .sticker.' }, { quoted: msg });
+        }
+        const duration = Number(media.content?.seconds ?? media.content?.duration);
+        if (media.type === 'video' && Number.isFinite(duration) && duration > MAX_VIDEO_SECONDS) {
+            return sock.sendMessage(chatId, { text: '⚠️ Video stickers are limited to 10 seconds. Trim the clip and try again.' }, { quoted: msg });
         }
         await sock.sendMessage(chatId, { text: '✨ Converting media to sticker...' }, { quoted: msg });
         const input = await downloadMedia(media);
@@ -77,7 +93,7 @@ module.exports = async function stickerCommand(sock, chatId, msg) {
         if (media.type === 'image') {
             stickerBuffer = await imageToSticker(input);
         } else {
-            const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mardara-sticker-'));
+            tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bali-gil-sticker-'));
             inputPath = path.join(tempDir, 'input.mp4');
             const outputPath = path.join(tempDir, 'output.webp');
             await fs.writeFile(inputPath, input);
@@ -88,11 +104,15 @@ module.exports = async function stickerCommand(sock, chatId, msg) {
         if (!stickerBuffer?.length) throw new Error('Sticker conversion produced no output.');
         await sock.sendMessage(chatId, { sticker: stickerBuffer }, { quoted: msg });
     } catch (error) {
-        await sock.sendMessage(chatId, { text: `❌ Sticker conversion failed: ${error.message}` }, { quoted: msg });
+        const message = String(error?.message || error || '');
+        const detail = message.includes('8 MB') ? message : 'Could not make the sticker. Try a clear JPEG/PNG image or a short video under 8 MB.';
+        await sock.sendMessage(chatId, { text: `❌ ${detail}` }, { quoted: msg });
     } finally {
-        if (inputPath) await fs.remove(path.dirname(inputPath)).catch(() => {});
+        if (tempDir) await fs.remove(tempDir).catch(() => {});
     }
 };
 
 module.exports.findMedia = findMedia;
 module.exports.imageToSticker = imageToSticker;
+module.exports.MAX_MEDIA_BYTES = MAX_MEDIA_BYTES;
+module.exports.MAX_VIDEO_SECONDS = MAX_VIDEO_SECONDS;
