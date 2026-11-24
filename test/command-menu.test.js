@@ -32,6 +32,14 @@ test('command parser ignores messages without the configured prefix or an empty 
     assert.equal(parseCommand('', '!'), null);
 });
 
+test('command parser routes common menu aliases and ignores trailing punctuation', () => {
+    assert.equal(parseCommand('.commands').commandName, 'menu');
+    assert.equal(parseCommand('.allmen.').commandName, 'allmenu');
+    assert.equal(parseCommand('.downloadmen').commandName, 'downloadmenu');
+    assert.equal(parseCommand('.downloadmenu').commandName, 'downloadmenu');
+    assert.equal(parseCommand('.commands!').commandName, 'menu');
+});
+
 test('menu handler failures produce a useful in-chat diagnostic', async () => {
     const sent = [];
     const sock = { async sendMessage(chatId, payload, options) { sent.push({ chatId, payload, options }); } };
