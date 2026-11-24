@@ -1574,7 +1574,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'serverinfo': case 'si': await commands.serverinfo(this.sock, from, msg); break;
                                         case 'speedtest': case 'speed': await commands.speedtest(this.sock, from, msg); break;
                                         case 'device': case 'dev': await commands.device(this.sock, from, msg); break;
-                                        case 'runtime': case 'rt': await commands.runtime(this.sock, from, msg); break;
+                                        case 'runtime': case 'rt': await commands.runtime(this.sock, from, msg, sessions); break;
 
                                         // ===== UTILITIES =====
                                         case 'timer': await commands.timer(this.sock, from, msg, q); break;
