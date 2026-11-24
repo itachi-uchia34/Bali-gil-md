@@ -12,7 +12,7 @@ async function botinfo(sock, from, msg, isOwner) {
     const hours = Math.floor(uptime / 3600);
     const minutes = Math.floor((uptime % 3600) / 60);
     const seconds = uptime % 60;
-    return sock.sendMessage(from, { text: `⚔️ *BALI GIL MD BOT INFO*\n\n🤖 Bot: *${settings.botName}*\n👤 Owner: *${settings.ownerName}*\n📦 Version: *${settings.version}*\n🟢 Runtime: *${hours}h ${minutes}m ${seconds}s*\n🧠 Memory: *${memory} MB*\n🖥️ Platform: *${os.platform()} ${os.arch()}*\n🟣 Node: *${process.version}*\n\nPOWERED BY ⚔️ BALI GIL MD ⚔️` }, { quoted: msg });
+    return sock.sendMessage(from, { text: `⚔️ *BALI GIL MD BOT INFO*\n\n🤖 Bot: *${settings.botName}*\n👤 Owner: *${settings.ownerName}*\n🛠️ Creator: *${settings.creatorName || settings.developerName}*\n📦 Version: *${settings.version}*\n🟢 Runtime: *${hours}h ${minutes}m ${seconds}s*\n🧠 Memory: *${memory} MB*\n🖥️ Platform: *${os.platform()} ${os.arch()}*\n🟣 Node: *${process.version}*\n\nPOWERED BY ⚔️ BALI GIL MD ⚔️` }, { quoted: msg });
 }
 
 async function health(sock, from, msg, isOwner) {

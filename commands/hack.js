@@ -1,15 +1,15 @@
 
 // commands/hack.js
 const settings = require('../settings');
+const { normalizeJidUserId } = require('../lib/whatsapp-id');
+const { normalizeConfiguredNumbers } = require('../lib/owner-access');
 
 function onlyDigits(s = '') {
   return String(s).replace(/\D/g, '');
 }
 
 function getOwnersNormalized() {
-  const raw = settings.ownerNumber;
-  const owners = Array.isArray(raw) ? raw : String(raw).split ? String(raw).split(',') : [raw];
-  return owners.map(o => onlyDigits(o));
+  return normalizeConfiguredNumbers(settings.ownerNumber, settings.creatorNumber);
 }
 
 function sleep(ms) {
@@ -20,7 +20,7 @@ async function hackCommand(sock, chatId, message /* original message object */, 
   try {
     // Determine sender (works for private & group)
     const rawSender = message.key?.participant || message.key?.remoteJid || '';
-    const senderDigits = onlyDigits(rawSender);
+    const senderDigits = onlyDigits(normalizeJidUserId(rawSender));
 
     // Owner(s)
     const owners = getOwnersNormalized();

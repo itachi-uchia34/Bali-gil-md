@@ -220,9 +220,9 @@ test('menu includes callable commands with the configured prefix and excludes in
     assert.match(output, /PREFIX: !/);
     for (const name of allNames) assert.ok(output.includes(`!${name}`), `missing !${name} from full menu`);
     for (const title of Object.keys(MENU_CATEGORIES)) assert.ok(output.includes(toSansBold(title)), `missing category ${title}`);
-    assert.match(output, /OWNER: BALI GIL/);
+    assert.match(output, /OWNER: BALI-GIL/);
     assert.match(output, /OWNER NUMBER: \+?\d+/);
-    assert.match(output, /DEVELOPER: ITACHI UCHIHA/);
+    assert.match(output, /CREATOR: ITACHI-UCHIHA/);
     assert.doesNotMatch(output, /!utils|!missing/);
 });
 
@@ -262,7 +262,7 @@ test('dedicated menu command sends complete menu text before optional cover and 
         assert.ok(sent[0].text.includes('USER: Saved Tester'));
         assert.ok(sent[0].text.includes('PREFIX: !'));
         assert.ok(sent[0].text.includes('OWNER NUMBER:'));
-        assert.ok(sent[0].text.includes('DEVELOPER:'));
+        assert.ok(sent[0].text.includes('CREATOR:'));
         assert.deepEqual(sent[1].image, { url: 'test-cover-url' });
         assert.deepEqual(sent[2].audio, { url: 'test-song-url' });
         assert.deepEqual(result, { mode: 'image', imageUrl: 'test-cover-url', menu: 'sent', song: 'sent', songUrl: 'test-song-url', delivery: 'url' });
@@ -410,9 +410,9 @@ test('help and allmenu render only usable commands', async () => {
     assert.match(sent[1], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗠𝗘𝗡𝗨 𝗗𝗜𝗥𝗘𝗖𝗧𝗢𝗥𝗬/);
     assert.doesNotMatch(sent[1], /!ping|!autoreact|!autoreacts/);
     for (const menu of sent) {
-        assert.match(menu, /OWNER: BALI GIL/);
+        assert.match(menu, /OWNER: BALI-GIL/);
         assert.match(menu, /OWNER NUMBER: \+?\d+/);
-        assert.match(menu, /DEVELOPER: ITACHI UCHIHA/);
+        assert.match(menu, /CREATOR: ITACHI-UCHIHA/);
     }
     assert.doesNotMatch(sent[1], /!utils/);
 });

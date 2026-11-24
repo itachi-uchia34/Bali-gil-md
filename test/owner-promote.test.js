@@ -39,7 +39,7 @@ test('only the configured owner can use .ownerpromote', async () => {
     await ownerpromote(sock, groupJid, {}, false, ownerJid);
     assert.equal(sock.metadataCalls, 0);
     assert.equal(sock.promoted.length, 0);
-    assert.match(sock.sent[0].payload.text, /configured bot owner number/i);
+    assert.match(sock.sent[0].payload.text, /configured bot owner and creator numbers/i);
 });
 
 test('owner cannot invoke .ownerpromote in a private chat', async () => {
@@ -106,4 +106,16 @@ test('.ownerpromote is registered, routed with owner authorization, and document
     const ownerCommands = require('../commands/ownerplus');
     await ownerCommands.ownerhelp({ async sendMessage(_chatId, payload) { helpText = payload.text; } }, groupJid, {}, true);
     assert.match(helpText, /\.ownerpromote/);
+});
+
+test('configured creator may run .ownerpromote but the target remains the configured owner', async () => {
+    const creatorNumber = String(settings.creatorNumber).split(',')[0].replace(/\D/g, '');
+    const creatorJid = `${creatorNumber}@s.whatsapp.net`;
+    const sock = createMock({ participants: participants() });
+
+    await ownerpromote(sock, groupJid, {}, true, creatorJid);
+
+    assert.deepEqual(sock.promoted, [{ chatId: groupJid, jids: [ownerJid], action: 'promote' }]);
+    assert.deepEqual(sock.sent[0].payload.mentions, [ownerJid]);
+    assert.match(sock.sent[0].payload.text, new RegExp(ownerNumber));
 });

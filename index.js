@@ -24,6 +24,7 @@ const { isValidWebSessionId, parsePairingRequest } = require('./lib/pairing');
 const { waitForPairingReady } = require('./lib/pairing-readiness');
 const { CATEGORY_MENU_CONFIG, createCategoryMenu } = require('./lib/menu-categories');
 const { getGroupMetadataCached } = require('./lib/group-metadata-cache');
+const { isConfiguredOwnerNumber } = require('./lib/owner-access');
 const COMMANDS_WITHOUT_GROUP_ADMIN_LOOKUP = new Set([
     'help', 'h', 'menu', 'allmenu', 'ownermenu', 'groupmenu', 'downloadmenu', 'aimenu', 'bugmenu',
     'toolmenu', 'funmenu', 'islamicmenu', 'animemenu', 'logomenu', 'textmenu', 'automenu',
@@ -1252,8 +1253,9 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         const sender = msg.key.participant || from;
                         const senderClean = normalizeJidUserId(sender);
 
-                        const ownerNumbers = String(settings.ownerNumber).split(',').map(n => n.replace(/\D/g, ''));
-                        const isOwner = isMe || ownerNumbers.some(on => senderClean === on) || senderClean === botNumberClean;
+                        const isOwner = isMe
+                            || isConfiguredOwnerNumber(senderClean, settings.ownerNumber, settings.creatorNumber)
+                            || senderClean === botNumberClean;
 
                         const isSessionUser = senderClean === this.phoneNumber || senderClean === this.userId || senderClean === botNumberClean;
 

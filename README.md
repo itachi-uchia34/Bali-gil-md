@@ -111,6 +111,9 @@ If `.env.example` is not present in your checkout, create `.env` manually using 
 | Variable | Required | Purpose |
 |---|---:|---|
 | `OWNER_NUMBER` | Recommended | Owner WhatsApp number, including country code. Use digits or a leading `+`; the bot normalizes the display. |
+| `OWNER_NAME` | Optional | Owner display name used by `.owner`, `.creator`, and menu credits. |
+| `CREATOR_NUMBER` | Optional | Creator WhatsApp number. This number shares WhatsApp owner-only command access with `OWNER_NUMBER`. |
+| `CREATOR_NAME` | Optional | Creator display name used by `.owner`, `.creator`, and menu credits. |
 | `OWNER_TELEGRAM_ID` | Optional | Telegram user ID allowed to receive owner-level integration behavior. |
 | `TELEGRAM_BOT_TOKEN` | Optional | Token created with Telegram’s [BotFather](https://t.me/BotFather). Required for Telegram commands and pairing messages. Regenerate it immediately if it has ever been exposed. |
 | `OPENAI_API_KEY` | Optional | Enables features that use the configured OpenAI integration. Keep it only in the deployment secret manager. |
@@ -122,6 +125,9 @@ A production `.env` should look like this, with your own private values:
 
 ```dotenv
 OWNER_NUMBER=923001234567
+OWNER_NAME=Your Owner Name
+CREATOR_NUMBER=923001234568
+CREATOR_NAME=Your Creator Name
 OWNER_TELEGRAM_ID=123456789
 TELEGRAM_BOT_TOKEN=replace_with_a_new_botfather_token
 OPENAI_API_KEY=replace_with_your_private_key
