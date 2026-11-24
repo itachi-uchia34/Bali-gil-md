@@ -25,6 +25,7 @@ const { waitForPairingReady } = require('./lib/pairing-readiness');
 const { CATEGORY_MENU_CONFIG, createCategoryMenu } = require('./lib/menu-categories');
 const { getGroupMetadataCached } = require('./lib/group-metadata-cache');
 const { isConfiguredOwnerNumber, isApprovedOwnerCommandUser } = require('./lib/owner-access');
+const { findMatchingRule } = require('./lib/auto-reply-rules');
 const COMMANDS_WITHOUT_GROUP_ADMIN_LOOKUP = new Set([
     'help', 'h', 'menu', 'allmenu', 'ownermenu', 'groupmenu', 'downloadmenu', 'aimenu', 'bugmenu',
     'toolmenu', 'funmenu', 'islamicmenu', 'animemenu', 'logomenu', 'textmenu', 'automenu',
@@ -795,6 +796,7 @@ class BotSession {
         this.aiEnabled = false;
         this.autochatGroups = botData.statusSettings[userId]?.autochatGroups || {};
         this.keywordRepliesEnabled = botData.statusSettings[userId]?.keywordRepliesEnabled !== false;
+        this.customAutoReplyEnabled = botData.statusSettings[userId]?.customAutoReplyEnabled === true;
         this.autoReact = botData.statusSettings[userId]?.autoReact || false;
         this.autoReactIndex = 0;
         this.pairingCodeTimer = null;
@@ -1197,8 +1199,26 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                 .catch((e) => this.sendLog(`Auto-react failed for ${emoji}: ${e.message}`, 'warning'));
                         }
 
+                        // Custom keyword auto-reply (checked before AI/quote replies to prevent duplicate answers).
+                        let keywordTriggered = false;
+                        if (this.customAutoReplyEnabled && !isMe && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
+                            const rules = botData.statusSettings[this.userId]?.autoReplyRules || [];
+                            const rule = findMatchingRule(text, rules);
+                            this.customAutoReplyLastReplyAt ||= {};
+                            const now = Date.now();
+                            if (rule && now - (this.customAutoReplyLastReplyAt[from] || 0) >= 8000) {
+                                this.customAutoReplyLastReplyAt[from] = now;
+                                keywordTriggered = true;
+                                try {
+                                    await this.sock.sendMessage(from, { text: rule.response }, { quoted: msg });
+                                } catch (e) {
+                                    this.sendLog(`Custom keyword auto-reply failed: ${e.message}`, 'warning');
+                                }
+                            }
+                        }
+
                         // AI auto-reply
-                        if (this.aiEnabled && !isMe && !isGroup && text && !text.startsWith(settings.prefix || '.')) {
+                        if (!keywordTriggered && this.aiEnabled && !isMe && !isGroup && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
                             try {
                                 const aiResponse = await this.getAIResponse(from, text);
                                 await this.sock.sendMessage(from, { text: aiResponse }, { quoted: msg });
@@ -1208,8 +1228,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // Akatsuki keyword quote response
-                        let keywordTriggered = false;
-                        if (this.keywordRepliesEnabled && !isMe && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
+                        if (!keywordTriggered && this.keywordRepliesEnabled && !isMe && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
                             const keywordMatch = commands.keyword.findMatch(text);
                             this.keywordLastReplyAt ||= {};
                             const now = Date.now();
@@ -1479,7 +1498,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         // ===== AI =====
                                         case 'ai': await commands.ai(this.sock, from, msg, isAdmin, this, args); break;
                                         case 'autochat': await commands.autochat(this.sock, from, msg, isAdmin, this, args, botData, saveBotData); break;
-                                        case 'autoreply': await commands.autoreply(this.sock, from, msg, isAdmin, this, args); break;
+                                        case 'autoreply': await commands.autoreply(this.sock, from, msg, isAdmin, this, args, botData, saveBotData, this.userId); break;
                                         case 'keyword': case 'keywords': await commands.keyword(this.sock, from, msg, isAdmin, this, args, botData, saveBotData, this.userId); break;
                                         case 'chatbot': await commands.chatbot(this.sock, from, msg, this, args, isAdmin); break;
                                                                                 case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
