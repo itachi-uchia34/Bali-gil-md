@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const settings = require('../settings');
 const isOwner = require('../lib/isOwner');
-const { normalizeConfiguredNumbers, isConfiguredOwnerNumber } = require('../lib/owner-access');
+const { normalizeConfiguredNumbers, isConfiguredOwnerNumber, isApprovedOwnerCommandUser } = require('../lib/owner-access');
 const ownerCommand = require('../commands/owner');
 const { getMenuCredits } = require('../lib/menu-credits');
 
@@ -24,6 +24,14 @@ test('owner-only checks allow only the configured owner and creator, including d
     assert.equal(isOwner(`${ownerNumber}:4@s.whatsapp.net`), true);
     assert.equal(isOwner(`${creatorNumber}:12@s.whatsapp.net`), true);
     assert.equal(isOwner('923001112222@s.whatsapp.net'), false);
+});
+
+test('approved premium numbers can access owner commands and are denied after removal', () => {
+    const botData = { ownerCommandAccess: ['+923001234567'] };
+    assert.equal(isApprovedOwnerCommandUser('923001234567:8@s.whatsapp.net', botData), true);
+    botData.ownerCommandAccess = [];
+    assert.equal(isApprovedOwnerCommandUser('923001234567@s.whatsapp.net', botData), false);
+    assert.equal(isApprovedOwnerCommandUser('923001234567@s.whatsapp.net', {}), false);
 });
 
 test('.owner and .creator profile output shows both updated identities', async () => {

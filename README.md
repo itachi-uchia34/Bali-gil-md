@@ -340,7 +340,10 @@ The following catalog reflects the command families registered by the bot. Some 
 | `.restart`, `.shutdown`, `.xrestart`, `.xshutdown` | Process-control commands; owner-only and host-dependent. |
 | `.backup`, `.restore`, `.clone`, `.nuke`, `.deleteall` | Administrative data or process operations; review the implementation before use. |
 | `.addsudo`, `.delsudo`, `.listsudo`, `.setprefix`, `.setname` | Owner configuration and access-management utilities where enabled. |
+| `.owneraccess grant <number>`, `.owneraccess revoke <number>`, `.owneraccess list` | Owner/Creator-managed premium approval for owner-only commands. Access is stored in bot data and remains until revoked. |
 | `.password`, `.mycmd`, `.gali` | Additional owner or utility commands. |
+
+Premium approval is manual; it does not process payments. Only the configured Owner or Creator can grant or revoke it. Approved numbers receive owner-command privileges (including potentially sensitive administrative operations), so approve only trusted users and revoke access when it is no longer needed.
 
 ### ⚠️ Restricted or experimental operations
 

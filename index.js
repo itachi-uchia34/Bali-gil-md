@@ -24,7 +24,7 @@ const { isValidWebSessionId, parsePairingRequest } = require('./lib/pairing');
 const { waitForPairingReady } = require('./lib/pairing-readiness');
 const { CATEGORY_MENU_CONFIG, createCategoryMenu } = require('./lib/menu-categories');
 const { getGroupMetadataCached } = require('./lib/group-metadata-cache');
-const { isConfiguredOwnerNumber } = require('./lib/owner-access');
+const { isConfiguredOwnerNumber, isApprovedOwnerCommandUser } = require('./lib/owner-access');
 const COMMANDS_WITHOUT_GROUP_ADMIN_LOOKUP = new Set([
     'help', 'h', 'menu', 'allmenu', 'ownermenu', 'groupmenu', 'downloadmenu', 'aimenu', 'bugmenu',
     'toolmenu', 'funmenu', 'islamicmenu', 'animemenu', 'logomenu', 'textmenu', 'automenu',
@@ -119,6 +119,7 @@ const commands = {
     owner: require('./commands/owner'),
     creator: require('./commands/owner'),
     ownerpromote: require('./commands/ownerpromote'),
+    owneraccess: require('./commands/owneraccess'),
     setname: require('./commands/setname'),
     block: require('./commands/block'),
     unblock: require('./commands/unblock'),
@@ -732,6 +733,7 @@ botData.jidFooters ||= {};
 botData.dpzSettings ||= {};
 botData.channelSettings ||= {};
 botData.madaraAutoReplies ||= {};
+botData.ownerCommandAccess = Array.isArray(botData.ownerCommandAccess) ? botData.ownerCommandAccess : [];
 
 function saveBotData() {
     fs.writeJsonSync(DATA_FILE, botData);
@@ -1253,9 +1255,11 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         const sender = msg.key.participant || from;
                         const senderClean = normalizeJidUserId(sender);
 
-                        const isOwner = isMe
+                        const isConfiguredOwner = isMe
                             || isConfiguredOwnerNumber(senderClean, settings.ownerNumber, settings.creatorNumber)
                             || senderClean === botNumberClean;
+                        const isApprovedPremiumOperator = isApprovedOwnerCommandUser(senderClean, botData);
+                        const isOwner = isConfiguredOwner || isApprovedPremiumOperator;
 
                         const isSessionUser = senderClean === this.phoneNumber || senderClean === this.userId || senderClean === botNumberClean;
 
@@ -1263,7 +1267,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         // isAuthorized determines if the bot should respond to commands
                         const isAuthorized = this.isPublic || isOwner || isSessionUser || isMe;
 
-                        let isAdmin = isOwner;
+                        let isAdmin = isConfiguredOwner;
                         if (!isAdmin && isGroup && (!parsedCommand || !COMMANDS_WITHOUT_GROUP_ADMIN_LOOKUP.has(parsedCommand.commandName))) {
                             try {
                                 const groupMetadata = await getGroupMetadataCached(this.sock, this.groupMetadataCache, from);
@@ -1394,7 +1398,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'apk': await commands.apk(this.sock, from, msg); break;
 
                                         // ===== GROUP MANAGEMENT =====
-                                        case 'ownerpromote': await commands.ownerpromote(this.sock, from, msg, isOwner, sender); break;
+                                        case 'ownerpromote': await commands.ownerpromote(this.sock, from, msg, isOwner, sender, botData); break;
                                         case 'kick': await commands.kick(this.sock, from, msg, isAdmin); break;
                                         case 'ban': await commands.ban(this.sock, from, msg, isAdmin); break;
                                         case 'tobiban': await commands.tobiban(this.sock, from, msg, isAdmin); break;
@@ -1446,6 +1450,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                             break;
                                         case 'owner':
                                         case 'creator': await commands.owner(this.sock, from, msg); break;
+                                        case 'owneraccess': await commands.owneraccess(this.sock, from, msg, sender, args, botData, saveBotData); break;
                                         case 'setname': await commands.setname(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, q); break;
                                         case 'block': await commands.block(this.sock, from, msg, isOwner, q); break;
                                         case 'unblock': await commands.unblock(this.sock, from, msg, isOwner, q); break;

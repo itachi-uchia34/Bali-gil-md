@@ -1,6 +1,6 @@
 const settings = require('../settings');
 const { normalizeJidUserId } = require('../lib/whatsapp-id');
-const { normalizeConfiguredNumbers } = require('../lib/owner-access');
+const { normalizeConfiguredNumbers, isApprovedOwnerCommandUser } = require('../lib/owner-access');
 
 function send(sock, chatId, msg, text, mentions = []) {
     return sock.sendMessage(chatId, { text, ...(mentions.length ? { mentions } : {}) }, { quoted: msg });
@@ -14,15 +14,15 @@ function configuredPrimaryOwnerNumber() {
     return normalizeConfiguredNumbers(settings.ownerNumber)[0] || '';
 }
 
-module.exports = async function ownerpromote(sock, chatId, msg, isOwner, sender) {
+module.exports = async function ownerpromote(sock, chatId, msg, isOwner, sender, botData = {}) {
     const senderJid = typeof sender === 'string'
         ? sender
         : msg?.key?.participant || msg?.key?.remoteJid || '';
     const senderNumber = normalizeJidUserId(senderJid).replace(/\D/g, '');
 
     // Do not rely on isOwner alone: index.js also treats the bot's own messages as owner traffic.
-    if (!isOwner || !senderNumber || !configuredPrivilegedNumbers().includes(senderNumber)) {
-        return send(sock, chatId, msg, '❌ This command is restricted to the configured bot owner and creator numbers.');
+    if (!isOwner || !senderNumber || (!configuredPrivilegedNumbers().includes(senderNumber) && !isApprovedOwnerCommandUser(senderNumber, botData))) {
+        return send(sock, chatId, msg, '❌ This command is restricted to the configured Owner, Creator, and Creator-approved premium users.');
     }
     if (typeof chatId !== 'string' || !chatId.endsWith('@g.us')) {
         return send(sock, chatId, msg, '⚠️ Use .ownerpromote inside a group where the bot is present.');

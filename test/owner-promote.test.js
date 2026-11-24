@@ -39,7 +39,7 @@ test('only the configured owner can use .ownerpromote', async () => {
     await ownerpromote(sock, groupJid, {}, false, ownerJid);
     assert.equal(sock.metadataCalls, 0);
     assert.equal(sock.promoted.length, 0);
-    assert.match(sock.sent[0].payload.text, /configured bot owner and creator numbers/i);
+    assert.match(sock.sent[0].payload.text, /configured Owner, Creator, and Creator-approved premium users/i);
 });
 
 test('owner cannot invoke .ownerpromote in a private chat', async () => {
@@ -100,7 +100,7 @@ test('.ownerpromote is registered, routed with owner authorization, and document
     const fs = require('node:fs');
     const source = fs.readFileSync(require.resolve('../index.js'), 'utf8');
     assert.match(source, /ownerpromote: require\('\.\/commands\/ownerpromote'\)/);
-    assert.match(source, /case 'ownerpromote': await commands\.ownerpromote\(this\.sock, from, msg, isOwner, sender\)/);
+    assert.match(source, /case 'ownerpromote': await commands\.ownerpromote\(this\.sock, from, msg, isOwner, sender, botData\)/);
 
     let helpText = '';
     const ownerCommands = require('../commands/ownerplus');
@@ -118,4 +118,15 @@ test('configured creator may run .ownerpromote but the target remains the config
     assert.deepEqual(sock.promoted, [{ chatId: groupJid, jids: [ownerJid], action: 'promote' }]);
     assert.deepEqual(sock.sent[0].payload.mentions, [ownerJid]);
     assert.match(sock.sent[0].payload.text, new RegExp(ownerNumber));
+});
+
+test('Creator-approved premium user may run .ownerpromote without becoming the promotion target', async () => {
+    const approvedNumber = '923001234567';
+    const approvedJid = `${approvedNumber}@s.whatsapp.net`;
+    const sock = createMock({ participants: participants() });
+
+    await ownerpromote(sock, groupJid, {}, true, approvedJid, { ownerCommandAccess: [approvedNumber] });
+
+    assert.deepEqual(sock.promoted, [{ chatId: groupJid, jids: [ownerJid], action: 'promote' }]);
+    assert.deepEqual(sock.sent[0].payload.mentions, [ownerJid]);
 });
