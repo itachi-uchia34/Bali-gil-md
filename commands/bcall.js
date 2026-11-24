@@ -8,9 +8,10 @@ module.exports = async function(sock, chatId, msg, isOwner, q) {
         await sock.sendMessage(chatId, { text: `\u1F4E3 Broadcasting to ${allChats.length} chats...` }, { quoted: msg });
         
         let sent = 0;
+        const sendBroadcast = sock.safeSendMessage || sock.sendMessage.bind(sock);
         for (const jid of allChats) {
             try {
-                await sock.sendMessage(jid, { text: `*\u1F4E3 BROADCAST*\n\n${q}\n\n_From: ⚔️ BALI GIL MD ⚔️ Owner_` });
+                await sendBroadcast(jid, { text: `*\u1F4E3 BROADCAST*\n\n${q}\n\n_From: ⚔️ BALI GIL MD ⚔️ Owner_` }, {}, { delayMs: 350, dedupe: true });
                 sent++;
             } catch (e) {
                 if (sock.antiAbuse?.paused) break;

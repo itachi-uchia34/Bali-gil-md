@@ -23,6 +23,7 @@ const { reportMenuFailure } = require('./lib/menu-failure');
 const { isValidWebSessionId, parsePairingRequest } = require('./lib/pairing');
 const { waitForPairingReady } = require('./lib/pairing-readiness');
 const { CATEGORY_MENU_CONFIG, createCategoryMenu } = require('./lib/menu-categories');
+const { getGroupMetadataCached } = require('./lib/group-metadata-cache');
 // Import all commands
 function unwrapMessageContent(message) {
     let content = message;
@@ -795,6 +796,8 @@ class BotSession {
         this.isPublic = botData.statusSettings[userId]?.isPublic !== undefined ? botData.statusSettings[userId].isPublic : true; 
         this.authPath = path.join(AUTH_DIR, userId);
         this.processedMessages = new Set();
+        this.groupMetadataCache = new Map();
+        this.mediaCacheInFlight = 0;
         this.activeInterval = null;
         this.isInitializing = false;
         this.stopRequested = false;
@@ -836,25 +839,22 @@ class BotSession {
     }
 
     async getAIResponse(userJid, userMessage, systemPrompt = "Helpful assistant.") {
+        const apiUrl = `https://api.siputzx.my.id/api/ai/chatgpt?prompt=${encodeURIComponent(systemPrompt)}&text=${encodeURIComponent(userMessage)}`;
         try {
-            // Using a more reliable AI API endpoint
-            const apiUrl = `https://api.siputzx.my.id/api/ai/chatgpt?prompt=${encodeURIComponent(systemPrompt)}&text=${encodeURIComponent(userMessage)}`;
-            const response = await axios.get(apiUrl);
-            
-            if (response.data && response.data.status) {
-                return response.data.data;
-            } else {
-                // Fallback to another API if the first one fails
-                const fallbackUrl = `https://widipe.com/openai?text=${encodeURIComponent(userMessage)}`;
-                const fallbackRes = await axios.get(fallbackUrl);
-                if (fallbackRes.data && fallbackRes.data.result) {
-                    return fallbackRes.data.result;
-                }
-                throw new Error("Invalid API response from all sources");
-            }
+            const response = await axios.get(apiUrl, { timeout: 5000 });
+            if (response.data && response.data.status && response.data.data) return response.data.data;
         } catch (error) {
-            return "\u{274C} AI Error: " + error.message;
+            this.sendLog(`Primary AI provider failed: ${error.message}`, 'warning');
         }
+
+        try {
+            const fallbackUrl = `https://widipe.com/openai?text=${encodeURIComponent(userMessage)}`;
+            const fallbackRes = await axios.get(fallbackUrl, { timeout: 5000 });
+            if (fallbackRes.data && fallbackRes.data.result) return fallbackRes.data.result;
+        } catch (error) {
+            this.sendLog(`Fallback AI provider failed: ${error.message}`, 'warning');
+        }
+        return '❌ AI is temporarily unavailable. Please try again shortly.';
     }
 
     startActiveCheck() {
@@ -1029,6 +1029,7 @@ class BotSession {
             }
 
             this.sock.ev.on('group-participants.update', async (update) => {
+                this.groupMetadataCache.delete(update.id);
                 if (!this.welcomeEnabled || !['add', 'invite'].includes(update.action) || !Array.isArray(update.participants) || update.participants.length === 0) return;
                 try {
                     const metadata = await this.sock.groupMetadata(update.id);
@@ -1063,6 +1064,7 @@ You have entered: *@gname*
             });
 
             this.sock.ev.on('group-participants.update', async (update) => {
+                this.groupMetadataCache.delete(update.id);
                 if (!this.goodbyeEnabled || !['remove', 'leave'].includes(update.action) || !Array.isArray(update.participants) || update.participants.length === 0) return;
                 try {
                     const metadata = await this.sock.groupMetadata(update.id);
@@ -1131,9 +1133,15 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                         let type = Object.keys(messageContent)[0];
                         const text = getMessageText(messageContent);
+                        const msgId = msg.key.id;
+                        if (msgId && this.processedMessages.has(msgId)) return;
+                        if (msgId) {
+                            this.processedMessages.add(msgId);
+                            if (this.processedMessages.size > 1000) this.processedMessages.delete(this.processedMessages.values().next().value);
+                        }
 
                         // Nonessential read/storage/snipe hooks must not block command dispatch.
-                        await runPreCommandHooks({
+                        void runPreCommandHooks({
                             sock: this.sock,
                             msg,
                             isMe,
@@ -1142,33 +1150,41 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             storeMessage,
                             handleSnipe,
                             onError: (hook, error) => this.sendLog(`${hook} pre-command hook failed: ${error.message}`, 'warning')
-                        });
+                        }).catch((error) => this.sendLog(`Pre-command hooks failed: ${error.message}`, 'warning'));
 
                         if (msg.message?.protocolMessage?.type === 0) {
                             await handleMessageRevocation(this.sock, msg);
                             return;
                         }
 
-                        const msgId = msg.key.id;
-                        if (this.processedMessages.has(msgId)) return;
-                        this.processedMessages.add(msgId);
-                        if (this.processedMessages.size > 1000) this.processedMessages.delete(this.processedMessages.values().next().value);
-
-                        if (!isStatus) {
-                            let logEntry = { text, type };
-                            if (['imageMessage', 'videoMessage', 'audioMessage'].includes(type)) {
-                                try {
-                                    const mContent = messageContent[type];
-                                    if (mContent && (mContent.directPath || mContent.url)) {
-                                        const stream = await downloadContentFromMessage(mContent, type.replace('Message', ''));
-                                        let buffer = Buffer.from([]);
-                                        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-                                        logEntry.buffer = buffer;
-                                    }
-                                } catch (e) {}
-                            }
-                            logEntry.pushName = msg.pushName || 'User';
+                        if (!isStatus && msgId) {
+                            const logEntry = { text, type, pushName: msg.pushName || 'User' };
                             messageLogs[msgId] = logEntry;
+                            const mediaContent = messageContent[type];
+                            if (['imageMessage', 'videoMessage', 'audioMessage'].includes(type)
+                                && mediaContent && (mediaContent.directPath || mediaContent.url)
+                                && !text.startsWith(settings.prefix || '.')
+                                && this.mediaCacheInFlight < 2) {
+                                const knownSize = Number(mediaContent.fileLength);
+                                if (!Number.isFinite(knownSize) || knownSize <= 8 * 1024 * 1024) {
+                                    this.mediaCacheInFlight += 1;
+                                    void (async () => {
+                                        try {
+                                            const stream = await downloadContentFromMessage(mediaContent, type.replace('Message', ''));
+                                            const chunks = [];
+                                            let totalBytes = 0;
+                                            for await (const chunk of stream) {
+                                                totalBytes += chunk.length;
+                                                if (totalBytes > 8 * 1024 * 1024) return;
+                                                chunks.push(chunk);
+                                            }
+                                            if (chunks.length) logEntry.buffer = Buffer.concat(chunks);
+                                        } finally {
+                                            this.mediaCacheInFlight -= 1;
+                                        }
+                                    })().catch(() => {});
+                                }
+                            }
                             if (Object.keys(messageLogs).length > 2000) delete messageLogs[Object.keys(messageLogs)[0]];
                         }
 
@@ -1252,7 +1268,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         let isAdmin = isOwner;
                         if (!isAdmin && isGroup) {
                             try {
-                                const groupMetadata = await this.sock.groupMetadata(from);
+                                const groupMetadata = await getGroupMetadataCached(this.sock, this.groupMetadataCache, from);
                                 const normalizedSender = jidNormalizedUser(sender);
                                 const participant = groupMetadata.participants.find(p => jidNormalizedUser(p.id) === normalizedSender);
                                 isAdmin = Boolean(participant && (participant.admin === 'admin' || participant.admin === 'superadmin'));
