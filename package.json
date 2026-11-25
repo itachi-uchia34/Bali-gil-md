@@ -1,7 +1,7 @@
 {
-  "name": "syed-mini-bot",
+  "name": "itachi-uchiha-bot",
   "version": "3.0.0",
-  "description": "SYED MINI BOT - Ultimate WhatsApp Automation Tool with 120+ Commands",
+  "description": "ITACHI UCHIHA BOT - WhatsApp automation bot with Akatsuki-themed commands",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -41,10 +41,10 @@
   "keywords": [
     "whatsapp-bot",
     "baileys",
-    "syed-md",
+    "itachi-uchiha-bot",
     "whatsapp-automation",
     "bot"
   ],
-  "author": "SYED",
+  "author": "ITACHI UCHIHA",
   "license": "MIT"
 }

@@ -24,7 +24,7 @@ module.exports = async function(sock, chatId, message, q) {
         const reportTypes = ['spam', 'abuse', 'harassment', 'fraud', 'illegal_content'];
         
         await sock.sendMessage(chatId, { 
-            text: `🚨 **SYED MASS REPORTER** 🚨\n\n👤 **Target:** +${target}\n📊 **Action:** Sending Official Abuse Reports\n\n_Please wait..._` 
+            text: `🚨 **ITACHI UCHIHA BOT REPORT** 🚨\n\n👤 **Target:** +${target}\n📊 **Action:** Sending Official Abuse Reports\n\n_Please wait..._`
         }, { quoted: message });
 
         let successCount = 0;
