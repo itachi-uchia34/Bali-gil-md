@@ -3,13 +3,22 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const pingCommand = require('../commands/ping');
 const { parseCommand } = require('../lib/command-parser');
+const { dispatchSimpleCommand } = require('../lib/command-dispatch');
 
 const msg = { key: { id: 'ping-test' } };
 
-test('.ping is parsed and routed to the latency command', () => {
-    assert.equal(parseCommand('.ping').commandName, 'ping');
+test('.ping is parsed and routed through the shared latency-command dispatcher', async () => {
+    const parsed = parseCommand('.ping');
+    assert.equal(parsed.commandName, 'ping');
+    const calls = [];
+    const sock = {};
+    await dispatchSimpleCommand(parsed.commandName, {
+        ping: async (...args) => calls.push(args)
+    }, [sock, 'chat', msg]);
+    assert.deepEqual(calls, [[sock, 'chat', msg]]);
+
     const source = fs.readFileSync(require.resolve('../index.js'), 'utf8');
-    assert.match(source, /case 'ping': await commands\.ping\(this\.sock, from, msg\)/);
+    assert.match(source, /case 'ping': await dispatchSimpleCommand\(commandName, commands/);
 });
 
 test('.ping reports measured response latency in milliseconds by editing its probe message', async () => {

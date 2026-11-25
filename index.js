@@ -15,6 +15,8 @@ const { loadPlugins } = require('./lib/plugin-loader');
 const { installThemedSocket } = require('./lib/akatsuki-theme');
 const { sendAudioWithFallback } = require('./lib/menu-format');
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('./lib/command-parser');
+const { dispatchSimpleCommand, sendUnknownCommand } = require('./lib/command-dispatch');
+const { dispatchMenuCommand } = require('./lib/menu-dispatch');
 const { nextAutoReactEmoji } = require('./lib/auto-react');
 const { normalizeJidUserId } = require('./lib/whatsapp-id');
 const { runPreCommandHooks } = require('./lib/precommand-hooks');
@@ -1388,18 +1390,23 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         // ===== MENU =====
                                         case 'help':
                                         case 'h': await commands.help(this.sock, from, msg, this, commands); break;
-                                        case 'menu': await commands.menu(this.sock, from, msg, this, commands, botData, commandPrefix); break;
-                                        case 'allmenu': 
-                                            const allMenuCmd = require('./commands/allmenu');
-                                            await allMenuCmd(this.sock, from, msg, this, commands, Object.keys(pluginRegistry.commands), commandPrefix);
+                                        case 'menu':
+                                        case 'allmenu':
+                                        case 'downloadmenu':
+                                            await dispatchMenuCommand(commandName, {
+                                                sock: this.sock,
+                                                chatId: from,
+                                                msg,
+                                                session: this,
+                                                commands,
+                                                botData,
+                                                pluginCommandNames: Object.keys(pluginRegistry.commands),
+                                                commandPrefix
+                                            });
                                             break;
                                         case 'ownermenu': case 'groupmenu': case 'aimenu': case 'bugmenu':
                                             await commands[commandName](this.sock, from, msg, { commands, commandPrefix });
                                             break;
-                                        case 'downloadmenu': {
-                                            await commands.downloadmenu(this.sock, from, msg);
-                                            break;
-                                        }
 
                                         // ===== MEDIA & DOWNLOAD =====
                                         case 'song': case 'play': case 'ytmp3': await commands.song(this.sock, from, msg, q); break;
@@ -1504,7 +1511,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                                                 case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
                                         case 'kage': case 'kagerivalry': await commands.kage(this.sock, from, msg, this, args); break;
                                         // ===== FUN =====
-                                        case 'joke': await commands.joke(this.sock, from, msg); break;
+                                        case 'joke': await dispatchSimpleCommand(commandName, commands, [this.sock, from, msg]); break;
                                         case 'meme': await commands.meme(this.sock, from, msg); break;
                                         case 'dare': await commands.dare(this.sock, from, msg); break;
                                         case 'truth': await commands.truth(this.sock, from, msg); break;
@@ -1523,7 +1530,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'wyr': case 'wouldyourather': await commands.wouldyourather(this.sock, from, msg); break;
 
                                         // ===== TOOLS =====
-                                        case 'ping': await commands.ping(this.sock, from, msg); break;
+                                        case 'ping': await dispatchSimpleCommand(commandName, commands, [this.sock, from, msg]); break;
                                         case 'dp': await commands.dp(this.sock, from, msg); break;
                                         case 'dpz': await referenceCommandAdapters.dpz(this.sock, from, msg, q, isAdmin, isOwner, this, sender, args); break;
                                         case 'vv': await commands.vv(this.sock, from, msg); break;
@@ -1643,9 +1650,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                                         pluginCommandNames: Object.keys(pluginRegistry.commands)
                                                     });
                                                 } else {
-                                                    await this.sock.sendMessage(from, {
-                                                        text: `Unknown command: ${commandPrefix}${commandName}. Use ${commandPrefix}menu to see available commands.`
-                                                    }, { quoted: msg });
+                                                    await sendUnknownCommand(this.sock, from, msg, commandPrefix, commandName);
                                                 }
                                             }
                                             break;
