@@ -178,12 +178,12 @@ Do not use a token from a public archive or commit history. Revoke any previousl
 
 ## Command usage
 
-The default prefix is `.`. Use the built-in menus to discover commands:
+The default prefix is `*`; the previous `.` prefix remains accepted for compatibility. Use the built-in menus to discover commands:
 
 ```text
 *menu
 *help
-.h
+*h
 ```
 
 Most commands accept plain text after the command. Group-targeting commands generally accept either a mention or a reply to the target member.

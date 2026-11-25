@@ -1168,7 +1168,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                             const mediaContent = messageContent[type];
                             if (['imageMessage', 'videoMessage', 'audioMessage'].includes(type)
                                 && mediaContent && (mediaContent.directPath || mediaContent.url)
-                                && !text.startsWith(settings.prefix || '.')
+                                && !parsedCommand
                                 && this.mediaCacheInFlight < 2) {
                                 const knownSize = Number(mediaContent.fileLength);
                                 if (!Number.isFinite(knownSize) || knownSize <= 8 * 1024 * 1024) {
@@ -1202,7 +1202,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                         // Custom keyword auto-reply (checked before AI/quote replies to prevent duplicate answers).
                         let keywordTriggered = false;
-                        if (this.customAutoReplyEnabled && !isMe && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
+                        if (this.customAutoReplyEnabled && !isMe && !isStatus && text && !parsedCommand) {
                             const rules = botData.statusSettings[this.userId]?.autoReplyRules || [];
                             const rule = findMatchingRule(text, rules);
                             this.customAutoReplyLastReplyAt ||= {};
@@ -1219,7 +1219,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // AI auto-reply
-                        if (!keywordTriggered && this.aiEnabled && !isMe && !isGroup && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
+                        if (!keywordTriggered && this.aiEnabled && !isMe && !isGroup && !isStatus && text && !parsedCommand) {
                             try {
                                 const aiResponse = await this.getAIResponse(from, text);
                                 await this.sock.sendMessage(from, { text: aiResponse }, { quoted: msg });
@@ -1229,7 +1229,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // Akatsuki keyword quote response
-                        if (!keywordTriggered && this.keywordRepliesEnabled && !isMe && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
+                        if (!keywordTriggered && this.keywordRepliesEnabled && !isMe && !isStatus && text && !parsedCommand) {
                             const keywordMatch = commands.keyword.findMatch(text);
                             this.keywordLastReplyAt ||= {};
                             const now = Date.now();
@@ -1242,7 +1242,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // Group autochat AI response
-                        if (!keywordTriggered && this.autochatGroups?.[from] && !isMe && isGroup && !isStatus && text && !text.startsWith(settings.prefix || '.')) {
+                        if (!keywordTriggered && this.autochatGroups?.[from] && !isMe && isGroup && !isStatus && text && !parsedCommand) {
                             this.autochatLastReplyAt ||= {};
                             const now = Date.now();
                             const lastReply = this.autochatLastReplyAt[from] || 0;
@@ -1300,7 +1300,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                         }
 
                         // Reference leveling runs on ordinary messages, never on bot/self/status traffic.
-                        if (text && !text.startsWith(settings.prefix || '.') && !isMe && !isStatus) {
+                        if (text && !parsedCommand && !isMe && !isStatus) {
                             try {
                                 await referenceLevels.handleActivity(this.sock, from, msg, sender, isGroup, isMe, text, botData, saveBotData);
                             } catch (error) {

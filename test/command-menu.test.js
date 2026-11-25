@@ -25,10 +25,11 @@ test('command parser accepts the configured prefix and normalizes the command na
     });
 });
 
-test('default command prefix is * and the old dot prefix is not accepted implicitly', () => {
+test('default command prefix is * and legacy dot commands remain accepted', () => {
     assert.equal(settings.prefix, '*');
     assert.equal(parseCommand('*menu').commandName, 'menu');
-    assert.equal(parseCommand('.menu'), null);
+    assert.equal(parseCommand('.menu').commandName, 'menu');
+    assert.equal(parseCommand('.menu', '!'), null);
 });
 
 test('command parser ignores messages without the configured prefix or an empty command', () => {
