@@ -184,7 +184,6 @@ The default prefix is `.`. Use the built-in menus to discover commands:
 .menu
 .help
 .h
-.allmenu
 ```
 
 Most commands accept plain text after the command. Group-targeting commands generally accept either a mention or a reply to the target member.
@@ -245,9 +244,8 @@ The following catalog reflects the command families registered by the bot. Some 
 
 | Command | Purpose |
 |---|---|
-| `.menu` | Main Akatsuki command-center menu with bot information. |
+| `.menu` | Full Akatsuki command index and command-center menu. |
 | `.help`, `.h` | Concise Akatsuki help menu. |
-| `.allmenu` | Full command index. |
 | `.owner`, `.creator` | BALI GIL-themed owner and creator profile. |
 | `.quote` | Rotating Akatsuki quote featuring Pain, Tobi, Itachi, Konan, Kisame, Deidara, or Sasori. |
 | `.akatsuki`, `.painquote`, `.tobiquote` | Example plugin commands for member registry and themed quotes. |

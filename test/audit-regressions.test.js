@@ -92,7 +92,7 @@ test('global style installation preserves the original socket object and method 
 test('already themed menu and font layouts are not decorated a second time', () => {
     const existingLayouts = [
         '╔══════════════════════════════════╗\n.menu',
-        '╭━━━━━━━━━━━━━━━━━━━━━━╮\n.allmenu',
+        '╭━━━━━━━━━━━━━━━━━━━━━━╮\n.groupmenu',
         '*🩸 AKATSUKI • 50 FONT STYLES 🩸*\n01. Bold'
     ];
     for (const text of existingLayouts) {
@@ -100,7 +100,7 @@ test('already themed menu and font layouts are not decorated a second time', () 
         assert.ok(!styled.startsWith(THEME_HEADER));
     }
     assert.ok(decorateText(existingLayouts[0]).includes('.menu'));
-    assert.ok(decorateText(existingLayouts[1]).includes('.allmenu'));
+    assert.ok(decorateText(existingLayouts[1]).includes('.groupmenu'));
 });
 
 test('command wrapper retains enumerable helper properties', () => {

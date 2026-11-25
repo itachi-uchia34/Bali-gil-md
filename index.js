@@ -29,7 +29,7 @@ const { getGroupMetadataCached } = require('./lib/group-metadata-cache');
 const { isConfiguredOwnerNumber, isApprovedOwnerCommandUser } = require('./lib/owner-access');
 const { findMatchingRule } = require('./lib/auto-reply-rules');
 const COMMANDS_WITHOUT_GROUP_ADMIN_LOOKUP = new Set([
-    'help', 'h', 'menu', 'allmenu', 'ownermenu', 'groupmenu', 'downloadmenu', 'aimenu', 'bugmenu',
+    'help', 'h', 'menu', 'ownermenu', 'groupmenu', 'downloadmenu', 'aimenu', 'bugmenu',
     'toolmenu', 'funmenu', 'islamicmenu', 'animemenu', 'logomenu', 'textmenu', 'automenu',
     'securitymenu', 'systemmenu', 'kagemenu', 'pluginmenu', 'othermenu', 'ping'
 ]);
@@ -258,7 +258,6 @@ const commands = {
     news: require('./commands/news'),
     crypto: require('./commands/crypto'),
     movie: require('./commands/movie'),
-    allmenu: require('./commands/allmenu'),
     help: require('./commands/help'),
     menu: require('./commands/menu'),
     anime: require('./commands/anime'),
@@ -1391,7 +1390,6 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                         case 'help':
                                         case 'h': await commands.help(this.sock, from, msg, this, commands); break;
                                         case 'menu':
-                                        case 'allmenu':
                                         case 'downloadmenu':
                                             await dispatchMenuCommand(commandName, {
                                                 sock: this.sock,
@@ -1658,7 +1656,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
                                     }
                                 } catch (e) {
                                     this.sendLog(`Command error (${commandName}): ` + e.message, 'error');
-                                    if (commandName === 'menu' || commandName === 'allmenu') {
+                                    if (commandName === 'menu') {
                                         await reportMenuFailure(this.sock, from, msg, commandName, commandPrefix, e);
                                     } else {
                                         try {

@@ -41,7 +41,7 @@ module.exports = async function helpCommand(sock, chatId, msg, session, commands
             },
             {
                 title: '⚔️ QUICK OPERATIONS',
-                commands: [command('help'), `${prefix}h`, command('menu'), command('allmenu'), command('status'), command('ping')].filter(Boolean)
+                commands: [command('help'), `${prefix}h`, command('menu'), command('status'), command('ping')].filter(Boolean)
             }
         ].filter((section) => section.commands.length)
     });

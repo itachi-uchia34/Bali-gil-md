@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const { parseCommand, isPublicInfoCommand, isCommandAllowed } = require('../lib/command-parser');
 const { generateMenuText, getCommandNames, toSansBold } = require('../lib/menu-text');
 const helpCommand = require('../commands/help');
-const allMenuCommand = require('../commands/allmenu');
 const animeCommand = require('../commands/anime');
 const { sendMenuWithSong, splitTextByUtf8Bytes } = require('../lib/menu-format');
 const autoreactsCommand = require('../commands/autoreacts');
@@ -34,7 +33,8 @@ test('command parser ignores messages without the configured prefix or an empty 
 
 test('command parser routes common menu aliases and ignores trailing punctuation', () => {
     assert.equal(parseCommand('.commands').commandName, 'menu');
-    assert.equal(parseCommand('.allmen.').commandName, 'allmenu');
+    assert.equal(parseCommand('.allmenu').commandName, 'allmenu');
+    assert.equal(parseCommand('.allmen.').commandName, 'allmen');
     assert.equal(parseCommand('.downloadmen').commandName, 'downloadmenu');
     assert.equal(parseCommand('.downloadmenu').commandName, 'downloadmenu');
     assert.equal(parseCommand('.commands!').commandName, 'menu');
@@ -45,6 +45,7 @@ test('menu handler failures produce a useful in-chat diagnostic', async () => {
     const sock = { async sendMessage(chatId, payload, options) { sent.push({ chatId, payload, options }); } };
     const msg = { key: { id: 'self-chat-menu' } };
     assert.match(buildMenuFailureMessage('menu', '.', new Error('render failed')), /\.menu could not be displayed\. render failed/);
+    assert.match(buildMenuFailureMessage('allmenu', '.', new Error('render failed')), /\.menu could not be displayed\. render failed/);
     assert.equal(await reportMenuFailure(sock, 'self-chat', msg, 'menu', '.', new Error('render failed')), true);
     assert.equal(sent[0].chatId, 'self-chat');
     assert.equal(sent[0].options.quoted, msg);
@@ -141,7 +142,6 @@ test('other menu lists remaining registered commands without category or plugin 
             'extra-command': () => {},
             'custom-plugin': () => {},
             menu: () => {},
-            allmenu: () => {},
             help: () => {},
             othermenu: () => {}
         },
@@ -152,7 +152,7 @@ test('other menu lists remaining registered commands without category or plugin 
     assert.match(sent[0], /!extra-command/);
     assert.doesNotMatch(sent[0], /!ping/);
     assert.doesNotMatch(sent[0], /!custom-plugin/);
-    assert.doesNotMatch(sent[0], /!othermenu|!menu|!allmenu|!help/);
+    assert.doesNotMatch(sent[0], /!othermenu|!menu|!help/);
 });
 
 test('autoreact shuffles every emoji without repeating within a cycle or at the cycle boundary', () => {
@@ -217,7 +217,7 @@ test('menu includes callable commands with the configured prefix and excludes in
     const allNames = new Set([
         ...Object.values(MENU_CATEGORIES).flat(),
         ...MENU_SHORTCUTS.map(([name]) => name),
-        'menu', 'allmenu', 'help', 'h', 'extra-command'
+        'menu', 'help', 'h', 'extra-command'
     ]);
     const commands = Object.fromEntries([...allNames].map((name) => [name, () => {}]));
     commands.utils = { ping: () => {} };
@@ -231,6 +231,7 @@ test('menu includes callable commands with the configured prefix and excludes in
     assert.match(output, /OWNER: BALI-GIL/);
     assert.match(output, /OWNER NUMBER: \+?\d+/);
     assert.match(output, /CREATOR: ITACHI-UCHIHA/);
+    assert.doesNotMatch(output, /!allmenu/);
     assert.doesNotMatch(output, /!utils|!missing/);
 });
 
@@ -382,11 +383,10 @@ test('.menu sends its command list through the global style hook and command wra
     }
 });
 
-test('help and allmenu render only usable commands', async () => {
+test('help and the full .menu catalogue omit the removed .allmenu shortcut', async () => {
     const commands = {
         help: async () => {},
         menu: async () => {},
-        allmenu: async () => {},
         groupmenu: async () => {},
         downloadmenu: async () => {},
         autoreact: async () => {},
@@ -404,68 +404,18 @@ test('help and allmenu render only usable commands', async () => {
     };
 
     await helpCommand(sock, 'chat', {}, { isPublic: true }, commands);
-    await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, [], '!');
+    const fullMenu = generateMenuText('Tester', { isPublic: true }, commands, '!');
 
     assert.match(sent[0], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗛𝗘𝗟𝗣/);
     assert.match(sent[0], /📜 AKATSUKI GUIDANCE/);
+    assert.match(sent[0], /\.menu/);
     assert.match(sent[0], /\.ping/);
     assert.match(sent[0], /\.autoreact/);
     assert.match(sent[0], /\.autoreacts/);
     assert.doesNotMatch(sent[0], /\.utils|\.akatsuki|\.painquote/);
-    assert.match(sent[1], /!menu/);
-    assert.match(sent[1], /!groupmenu/);
-    assert.match(sent[1], /!downloadmenu/);
-    assert.match(sent[1], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗠𝗘𝗡𝗨 𝗗𝗜𝗥𝗘𝗖𝗧𝗢𝗥𝗬/);
-    assert.doesNotMatch(sent[1], /!ping|!autoreact|!autoreacts/);
-    for (const menu of sent) {
-        assert.match(menu, /OWNER: BALI-GIL/);
-        assert.match(menu, /OWNER NUMBER: \+?\d+/);
-        assert.match(menu, /CREATOR: ITACHI-UCHIHA/);
-    }
-    assert.doesNotMatch(sent[1], /!utils/);
-});
-
-test('allmenu deduplicates valid plugin names and tolerates malformed plugin input', async () => {
-    const sent = [];
-    const sock = {
-        async sendMessage(_chatId, payload) {
-            if (payload.image) throw new Error('Use the text fallback in this test');
-            sent.push(payload.text);
-        }
-    };
-    const commands = { allmenu: async () => {}, pluginmenu: async () => {}, 'custom-plugin': async () => {}, ping: async () => {} };
-
-    await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, ['custom-plugin', 'custom-plugin', '', 42], '!');
-    assert.equal((sent[0].match(/!pluginmenu/g) || []).length, 1);
-    assert.doesNotMatch(sent[0], /!custom-plugin/);
-
-    sent.length = 0;
-    await allMenuCommand(sock, 'chat', {}, { isPublic: true }, commands, null, '!');
-    assert.doesNotMatch(sent[0], /!pluginmenu|!custom-plugin/);
-});
-
-test('.allmenu exposes individual category-menu shortcuts', async () => {
-    const sent = [];
-    const sock = { async sendMessage(_chatId, payload) {
-        if (payload.image) throw new Error('Use the text fallback in this test');
-        sent.push(payload.text);
-    } };
-    const commands = Object.fromEntries(MENU_SHORTCUTS.map(([name]) => [name, async () => {}]));
-    commands.allmenu = async () => {};
-    commands.kick = async () => {};
-    commands.song = async () => {};
-    commands.ping = async () => {};
-    commands.testplugin = async () => {};
-
-    await allMenuCommand(sock, 'chat', {}, {}, commands, ['testplugin'], '!');
-
-    assert.match(sent[0], /📚 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬 𝗠𝗘𝗡𝗨𝗦/);
-    assert.match(sent[0], /!groupmenu/);
-    assert.match(sent[0], /!downloadmenu/);
-    assert.match(sent[0], /!toolmenu/);
-    assert.match(sent[0], /!securitymenu/);
-    assert.match(sent[0], /!pluginmenu/);
-    assert.doesNotMatch(sent[0], /!kick|!song|!ping/);
+    assert.match(fullMenu, /!downloadmenu/);
+    assert.match(fullMenu, /!ping/);
+    assert.doesNotMatch(fullMenu, /!allmenu/);
 });
 
 test('anime command handles missing query without making a network request', async () => {

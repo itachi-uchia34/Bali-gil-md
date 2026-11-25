@@ -11,7 +11,6 @@ function createContext(commandPrefix) {
     const botData = { statusSettings: {} };
     const commands = {
         menu: async (...args) => calls.push({ name: 'menu', args }),
-        allmenu: async (...args) => calls.push({ name: 'allmenu', args }),
         downloadmenu: async (...args) => calls.push({ name: 'downloadmenu', args })
     };
     return {
@@ -19,12 +18,12 @@ function createContext(commandPrefix) {
         commandPrefix,
         dispatch: (commandName) => dispatchMenuCommand(commandName, {
             sock, chatId: 'chat@s.whatsapp.net', msg, session, commands, botData,
-            pluginCommandNames: ['sample-plugin'], commandPrefix
+            commandPrefix
         })
     };
 }
 
-test('the production menu dispatcher routes .menu and .commands to the menu handler', async () => {
+test('the production menu dispatcher routes .menu and .commands to the full menu handler', async () => {
     for (const input of ['.menu', '.commands']) {
         const parsed = parseCommand(input, '.');
         const context = createContext('.');
@@ -47,16 +46,6 @@ test('the production menu dispatcher routes .downloadmenu and its legacy short s
     }
 });
 
-test('allmenu typo alias still reaches the registered allmenu handler', async () => {
-    const parsed = parseCommand('.allmen.', '.');
-    const context = createContext('.');
-    assert.equal(parsed.commandName, 'allmenu');
-    assert.equal(await context.dispatch(parsed.commandName), true);
-    assert.equal(context.calls[0].name, 'allmenu');
-    assert.deepEqual(context.calls[0].args[5], ['sample-plugin']);
-    assert.equal(context.calls[0].args[6], '.');
-});
-
 test('configured non-dot prefix is parsed and passed through to the same menu handler', async () => {
     const parsed = parseCommand('  !commands', '!');
     const context = createContext('!');
@@ -66,8 +55,9 @@ test('configured non-dot prefix is parsed and passed through to the same menu ha
     assert.equal(parseCommand('.commands', '!'), null, 'a different active prefix is not silently accepted');
 });
 
-test('unknown command names are not swallowed by the menu dispatcher', async () => {
+test('unknown names are not swallowed by the menu dispatcher', async () => {
     const context = createContext('.');
+    assert.equal(await context.dispatch('allmenu'), false);
     assert.equal(await context.dispatch('not-a-menu'), false);
     assert.equal(context.calls.length, 0);
 });

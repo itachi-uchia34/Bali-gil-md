@@ -19,7 +19,7 @@ async function dispatchParsed(input, prefix, context) {
 function makeContext(prefix = '.') {
     const calls = [];
     const sock = { sendMessage: async (...args) => calls.push({ type: 'send', args }) };
-    const commands = Object.fromEntries(['menu', 'allmenu', 'downloadmenu', 'ping', 'joke'].map(name => [
+    const commands = Object.fromEntries(['menu', 'downloadmenu', 'ping', 'joke'].map(name => [
         name,
         async (...args) => calls.push({ type: name, args })
     ]));
@@ -88,4 +88,14 @@ test('simple dispatcher does not swallow commands outside its explicit set', asy
     const context = makeContext();
     assert.equal(await dispatchSimpleCommand('unknown', context.commands, []), false);
     assert.equal(context.calls.length, 0);
+});
+
+test('.allmenu is no longer mapped to a menu handler', async () => {
+    const context = makeContext('.');
+    const parsed = parseCommand('.allmenu', '.');
+    assert.equal(parsed.commandName, 'allmenu');
+    assert.equal(await dispatchMenuCommand(parsed.commandName, context), false);
+    await sendUnknownCommand(context.sock, context.chatId, context.msg, '.', parsed.commandName);
+    assert.equal(context.calls[0].type, 'send');
+    assert.match(context.calls[0].args[1].text, /Unknown command: \.allmenu/);
 });
