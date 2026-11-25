@@ -7,8 +7,8 @@ const { dispatchSimpleCommand } = require('../lib/command-dispatch');
 
 const msg = { key: { id: 'ping-test' } };
 
-test('.ping is parsed and routed through the shared latency-command dispatcher', async () => {
-    const parsed = parseCommand('.ping');
+test('*ping is parsed and routed through the shared latency-command dispatcher', async () => {
+    const parsed = parseCommand('*ping');
     assert.equal(parsed.commandName, 'ping');
     const calls = [];
     const sock = {};

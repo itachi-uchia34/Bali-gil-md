@@ -25,6 +25,12 @@ test('command parser accepts the configured prefix and normalizes the command na
     });
 });
 
+test('default command prefix is * and the old dot prefix is not accepted implicitly', () => {
+    assert.equal(settings.prefix, '*');
+    assert.equal(parseCommand('*menu').commandName, 'menu');
+    assert.equal(parseCommand('.menu'), null);
+});
+
 test('command parser ignores messages without the configured prefix or an empty command', () => {
     assert.equal(parseCommand('.menu', '!'), null);
     assert.equal(parseCommand('!   ', '!'), null);
@@ -32,12 +38,12 @@ test('command parser ignores messages without the configured prefix or an empty 
 });
 
 test('command parser routes common menu aliases and ignores trailing punctuation', () => {
-    assert.equal(parseCommand('.commands').commandName, 'menu');
-    assert.equal(parseCommand('.allmenu').commandName, 'allmenu');
-    assert.equal(parseCommand('.allmen.').commandName, 'allmen');
-    assert.equal(parseCommand('.downloadmen').commandName, 'downloadmenu');
-    assert.equal(parseCommand('.downloadmenu').commandName, 'downloadmenu');
-    assert.equal(parseCommand('.commands!').commandName, 'menu');
+    assert.equal(parseCommand('.commands', '.').commandName, 'menu');
+    assert.equal(parseCommand('.allmenu', '.').commandName, 'allmenu');
+    assert.equal(parseCommand('.allmen.', '.').commandName, 'allmen');
+    assert.equal(parseCommand('.downloadmen', '.').commandName, 'downloadmenu');
+    assert.equal(parseCommand('.downloadmenu', '.').commandName, 'downloadmenu');
+    assert.equal(parseCommand('.commands!', '.').commandName, 'menu');
 });
 
 test('menu handler failures produce a useful in-chat diagnostic', async () => {
@@ -408,11 +414,11 @@ test('help and the full .menu catalogue omit the removed .allmenu shortcut', asy
 
     assert.match(sent[0], /𝗕𝗔𝗟𝗜 𝗚𝗜𝗟 𝗠𝗗 𝗛𝗘𝗟𝗣/);
     assert.match(sent[0], /📜 AKATSUKI GUIDANCE/);
-    assert.match(sent[0], /\.menu/);
-    assert.match(sent[0], /\.ping/);
-    assert.match(sent[0], /\.autoreact/);
-    assert.match(sent[0], /\.autoreacts/);
-    assert.doesNotMatch(sent[0], /\.utils|\.akatsuki|\.painquote/);
+    assert.match(sent[0], /\*menu/);
+    assert.match(sent[0], /\*ping/);
+    assert.match(sent[0], /\*autoreact/);
+    assert.match(sent[0], /\*autoreacts/);
+    assert.doesNotMatch(sent[0], /\*utils|\*akatsuki|\*painquote/);
     assert.match(fullMenu, /!downloadmenu/);
     assert.match(fullMenu, /!ping/);
     assert.doesNotMatch(fullMenu, /!allmenu/);

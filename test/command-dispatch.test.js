@@ -60,6 +60,20 @@ test('configured dot prefix routes .menu and .commands to the real menu dispatch
     }
 });
 
+test('default * prefix routes *menu and *ping while ignoring dot-prefixed input', async () => {
+    const context = makeContext('*');
+    for (const [input, expected] of [['*menu', 'menu'], ['*ping', 'ping']]) {
+        const { parsed, handled } = await dispatchParsed(input, '*', context);
+        assert.equal(parsed.commandName, expected);
+        assert.equal(handled, true);
+        assert.equal(context.calls.at(-1).type, expected);
+    }
+    const oldPrefix = await dispatchParsed('.ping', '*', context);
+    assert.equal(oldPrefix.parsed, null);
+    assert.equal(oldPrefix.handled, false);
+    assert.equal(context.calls.length, 2);
+});
+
 test('custom prefix gates commands and is passed through to menu rendering', async () => {
     const context = makeContext('!');
     const { parsed, handled } = await dispatchParsed('!menu', '!', context);

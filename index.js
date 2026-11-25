@@ -1133,7 +1133,7 @@ Your path has left the Akatsuki. The cloak and ring remain with those who endure
 
                         let type = Object.keys(messageContent)[0];
                         const text = getMessageText(messageContent);
-                        const commandPrefix = typeof settings.prefix === 'string' && settings.prefix.length ? settings.prefix : '.';
+                        const commandPrefix = typeof settings.prefix === 'string' && settings.prefix.length ? settings.prefix : '*';
                         const parsedCommand = parseCommand(text, commandPrefix);
                         currentCommandName = parsedCommand?.commandName || null;
                         currentCommandPrefix = commandPrefix;

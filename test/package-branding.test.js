@@ -20,6 +20,7 @@ test('tracked project source no longer contains Syed Mini Bot branding', () => {
     const trackedFiles = execFileSync('git', ['ls-files', '-z'], { cwd: root }).toString().split('\0').filter(Boolean);
     const legacyBranding = /syed[ -]+mini[ -]+bot|syed[ -]+md/i;
     const matches = trackedFiles.filter((relativePath) => {
+        if (relativePath === 'test/package-branding.test.js') return false;
         try {
             return legacyBranding.test(fs.readFileSync(path.join(root, relativePath), 'utf8'));
         } catch {

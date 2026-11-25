@@ -3,7 +3,7 @@ const { generateMenuText } = require('../lib/menu-text');
 const { sendMenuWithSong, sendMenuText } = require('../lib/menu-format');
 
 async function menuCommand(sock, chatId, msg, session, commands = {}, botData = {}, commandPrefix = settings.prefix) {
-    const prefix = typeof commandPrefix === 'string' && commandPrefix.length ? commandPrefix : '.';
+    const prefix = typeof commandPrefix === 'string' && commandPrefix.length ? commandPrefix : '*';
     const userName = botData?.userNames?.[session?.userId] || msg?.pushName || 'User';
     const baseMenuText = generateMenuText(userName, session, commands, prefix);
     const menuChannel = botData?.channelSettings?.[session?.userId];

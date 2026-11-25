@@ -70,7 +70,7 @@
 
 | Area | Included capabilities |
 |---|---|
-| **Akatsuki interface** | Themed `.menu`, `.help`, `.owner`, `.creator`, `.quote`, group announcements, rank messages, and the Akatsuki pairing gate. |
+| **Akatsuki interface** | Themed `*menu`, `*help`, `*owner`, `*creator`, `*quote`, group announcements, rank messages, and the Akatsuki pairing gate. |
 | **WhatsApp automation** | Pairing flow, persistent sessions, group events, media handling, reactions, read status, and status automation. |
 | **Group management** | Add, remove, promote, demote, mute, tag, group information, links, descriptions, and profile pictures. |
 | **Protection** | Anti-link, anti-call, anti-delete, anti-status, anti-bug, anti-spam-related controls, and configurable moderation behavior. |
@@ -111,9 +111,9 @@ If `.env.example` is not present in your checkout, create `.env` manually using 
 | Variable | Required | Purpose |
 |---|---:|---|
 | `OWNER_NUMBER` | Recommended | Owner WhatsApp number, including country code. Use digits or a leading `+`; the bot normalizes the display. |
-| `OWNER_NAME` | Optional | Owner display name used by `.owner`, `.creator`, and menu credits. |
+| `OWNER_NAME` | Optional | Owner display name used by `*owner`, `.creator`, and menu credits. |
 | `CREATOR_NUMBER` | Optional | Creator WhatsApp number. This number shares WhatsApp owner-only command access with `OWNER_NUMBER`. |
-| `CREATOR_NAME` | Optional | Creator display name used by `.owner`, `.creator`, and menu credits. |
+| `CREATOR_NAME` | Optional | Creator display name used by `*owner`, `.creator`, and menu credits. |
 | `OWNER_TELEGRAM_ID` | Optional | Telegram user ID allowed to receive owner-level integration behavior. |
 | `TELEGRAM_BOT_TOKEN` | Optional | Token created with Telegram’s [BotFather](https://t.me/BotFather). Required for Telegram commands and pairing messages. Regenerate it immediately if it has ever been exposed. |
 | `OPENAI_API_KEY` | Optional | Enables features that use the configured OpenAI integration. Keep it only in the deployment secret manager. |
@@ -181,8 +181,8 @@ Do not use a token from a public archive or commit history. Revoke any previousl
 The default prefix is `.`. Use the built-in menus to discover commands:
 
 ```text
-.menu
-.help
+*menu
+*help
 .h
 ```
 
@@ -191,21 +191,21 @@ Most commands accept plain text after the command. Group-targeting commands gene
 Examples:
 
 ```text
-.quote
-.weather London
-.sticker                 # Reply to an image or video
-.dpz @member             # View a member profile picture
-.tagall Team meeting at 20:00
-.promote @member
-.madarapromote @member    # Madara’s war-council promotion
-.demote @member
-.kick @member             # Pain’s Almighty Push removal
-.ban @member              # Alias for the Almighty Push removal order
-.tobiban @member          # Tobi’s Kamui ban
-.mute                     # Pain’s Silent Shroud; admins only
-.gcoff                    # Alias for .mute
-.unmute                   # Restore group messaging
-.gcon                     # Alias for .unmute
+*quote
+*weather London
+*sticker                 # Reply to an image or video
+*dpz @member             # View a member profile picture
+*tagall Team meeting at 20:00
+*promote @member
+*madarapromote @member    # Madara’s war-council promotion
+*demote @member
+*kick @member             # Pain’s Almighty Push removal
+*ban @member              # Alias for the Almighty Push removal order
+*tobiban @member          # Tobi’s Kamui ban
+*mute                     # Pain’s Silent Shroud; admins only
+*gcoff                    # Alias for *mute
+*unmute                   # Restore group messaging
+*gcon                     # Alias for *unmute
 ```
 
 ## Modular plugin system
@@ -244,132 +244,132 @@ The following catalog reflects the command families registered by the bot. Some 
 
 | Command | Purpose |
 |---|---|
-| `.menu` | Full Akatsuki command index and command-center menu. |
-| `.help`, `.h` | Concise Akatsuki help menu. |
-| `.owner`, `.creator` | BALI GIL-themed owner and creator profile. |
-| `.quote` | Rotating Akatsuki quote featuring Pain, Tobi, Itachi, Konan, Kisame, Deidara, or Sasori. |
+| `*menu` | Full Akatsuki command index and command-center menu. |
+| `*help`, `.h` | Concise Akatsuki help menu. |
+| `*owner`, `.creator` | BALI GIL-themed owner and creator profile. |
+| `*quote` | Rotating Akatsuki quote featuring Pain, Tobi, Itachi, Konan, Kisame, Deidara, or Sasori. |
 | `.akatsuki`, `.painquote`, `.tobiquote` | Example plugin commands for member registry and themed quotes. |
 | `.deidaraquote`, `.sasoriquote`, `.artquote` | Deidara explosive-art, Sasori puppet-control, and combined artistry quotes. |
-| `.ping`, `.runtime`, `.uptime` | Check response time and process uptime. |
-| `.serverinfo`, `.speedtest`, `.device` | Inspect server, network, and device information. |
+| `*ping`, `*runtime`, `*uptime` | Check response time and process uptime. |
+| `*serverinfo`, `*speedtest`, `*device` | Inspect server, network, and device information. |
 
 ### ⚔️ Group management and ranks
 
 | Commands | Purpose |
 |---|---|
-| `.add`, `.invite`, `.join` | Add members, manage invitations, or join a group where permitted. |
-| `.kick`, `.ban` | Invoke Pain’s Almighty Push (`SHINRA TENSEI!`) to remove a tagged or replied-to member. Both commands use the same protected moderation flow. |
-| `.tobiban` | Tobi’s Kamui-themed removal order with the same admin and target protections. |
-| `.promote`, `.demote`, `.revoke` | Grant or revoke group administrator rank. |
-| `.madarapromote` | Madara’s war-council promotion command with multi-member mention support. |
-| `.tagall`, `.hidetag`, `.tagadmin`, `.tagme` | Announce to members, mention silently, tag administrators, or tag yourself. |
-| `.groupinfo`, `.grouplink` | View group information or retrieve the group link. |
-| `.setname`, `.setdesc`, `.setppgc` | Update group name, description, or profile picture. |
-| `.mute`, `.gcoff` | Activate Pain’s Silent Shroud and restrict group messages to admins, where supported. |
-| `.unmute`, `.gcon` | Release the Shroud and reopen messaging for all members, where supported. |
-| `.leave`, `.listonline`, `.everyonemsg` | Leave a group, inspect online members, or send an everyone message. |
-| `.welcome`, `.goodbye` | Configure themed arrival and departure messages with `on`, `off`, or `status`. |
-| `.poll`, `.editmsg`, `.react`, `.send`, `.forward`, `.save`, `.clear` | Group communication and message utilities. |
+| `*add`, `*invite`, `*join` | Add members, manage invitations, or join a group where permitted. |
+| `*kick`, `*ban` | Invoke Pain’s Almighty Push (`SHINRA TENSEI!`) to remove a tagged or replied-to member. Both commands use the same protected moderation flow. |
+| `*tobiban` | Tobi’s Kamui-themed removal order with the same admin and target protections. |
+| `*promote`, `*demote`, `*revoke` | Grant or revoke group administrator rank. |
+| `*madarapromote` | Madara’s war-council promotion command with multi-member mention support. |
+| `*tagall`, `*hidetag`, `*tagadmin`, `*tagme` | Announce to members, mention silently, tag administrators, or tag yourself. |
+| `*groupinfo`, `*grouplink` | View group information or retrieve the group link. |
+| `*setname`, `*setdesc`, `*setppgc` | Update group name, description, or profile picture. |
+| `*mute`, `*gcoff` | Activate Pain’s Silent Shroud and restrict group messages to admins, where supported. |
+| `*unmute`, `*gcon` | Release the Shroud and reopen messaging for all members, where supported. |
+| `*leave`, `*listonline`, `*everyonemsg` | Leave a group, inspect online members, or send an everyone message. |
+| `*welcome`, `*goodbye` | Configure themed arrival and departure messages with `on`, `off`, or `status`. |
+| `*poll`, `*editmsg`, `*react`, `*send`, `*forward`, `*save`, `*clear` | Group communication and message utilities. |
 
 ### 🛡️ Security barriers and automation
 
 | Commands | Purpose |
 |---|---|
-| `.antilink on` | Delete detected links. |
-| `.antilink kick` | Delete links and remove the sender; use only with clear group consent. |
-| `.antilink off`, `.antilink status` | Disable or inspect anti-link protection. |
-| `.antibug`, `.anticall`, `.antidelete`, `.antistatus` | Configure the corresponding protection modules where enabled. |
-| `.autoreact`, `.autoreacts` | Enable or disable rotating emoji reactions. |
-| `.autoread`, `.autostatus` | Configure read-status and status automation. |
-| `.autochat on`, `.autochat off`, `.autochat status` | Open or seal Pain’s AI Shroud for a group. Admin-only; replies to ordinary non-command group messages when an AI provider is available. |
-| `.autoreply on`, `.autoreply off`, `.autoreply status` | Open or seal the global AI response gate for ordinary private messages. Admin/owner-only and separate from group `.autochat`. |
-| `.keyword on`, `.keyword off`, `.keyword status` | Enable, disable, or inspect automatic Akatsuki quote triggers. Admin/owner-only; matching words include pain, peace, akatsuki, Itachi, Tobi, Madara, Deidara, and Sasori. |
-| `.mode`, `.public`, `.private` | Control bot operating mode. |
+| `*antilink on` | Delete detected links. |
+| `*antilink kick` | Delete links and remove the sender; use only with clear group consent. |
+| `*antilink off`, `*antilink status` | Disable or inspect anti-link protection. |
+| `*antibug`, `*anticall`, `*antidelete`, `*antistatus` | Configure the corresponding protection modules where enabled. |
+| `.autoreact`, `*autoreacts` | Enable or disable rotating emoji reactions. |
+| `*autoread`, `*autostatus` | Configure read-status and status automation. |
+| `*autochat on`, `*autochat off`, `*autochat status` | Open or seal Pain’s AI Shroud for a group. Admin-only; replies to ordinary non-command group messages when an AI provider is available. |
+| `*autoreply on`, `*autoreply off`, `*autoreply status` | Open or seal the global AI response gate for ordinary private messages. Admin/owner-only and separate from group `*autochat`. |
+| `*keyword on`, `*keyword off`, `*keyword status` | Enable, disable, or inspect automatic Akatsuki quote triggers. Admin/owner-only; matching words include pain, peace, akatsuki, Itachi, Tobi, Madara, Deidara, and Sasori. |
+| `*mode`, `*public`, `*private` | Control bot operating mode. |
 
 ### 🎴 Media and downloads
 
 | Commands | Purpose |
 |---|---|
-| `.sticker` | Convert replied-to images or videos into WebP stickers. |
-| `.dpz`, `.dp` | Show a tagged or replied-to member’s profile picture with an Akatsuki member-themed caption. |
-| `.toimg` | Convert a sticker to an image. |
-| `.tomp3`, `.song`, `.video` | Convert or retrieve audio/video media. |
-| `.youtube`, `.ytmp3`, `.ytmp4`, `.yts` | YouTube search and media utilities. |
-| `.tiktok`, `.instagram`, `.facebook`, `.pinterest`, `.twitter`, `.reddit` | Supported social-media retrieval utilities. |
-| `.spotify`, `.mediafire`, `.mf`, `.gdrive`, `.apk`, `.threads`, `.snapchat`, `.capcut`, `.terabox` | Additional retrieval utilities where the upstream service is available. |
-| `.blur`, `.crop`, `.flip`, `.grayscale`, `.invert`, `.removebg`, `.enlarge`, `.enhance`, `.upscale`, `.remini` | Image editing and enhancement tools. |
-| `.pdf`, `.ocr`, `.screenshot`, `.qr` | Document, text-recognition, screenshot, and QR utilities. |
+| `*sticker` | Convert replied-to images or videos into WebP stickers. |
+| `*dpz`, `*dp` | Show a tagged or replied-to member’s profile picture with an Akatsuki member-themed caption. |
+| `*toimg` | Convert a sticker to an image. |
+| `*tomp3`, `*song`, `*video` | Convert or retrieve audio/video media. |
+| `*youtube`, `.ytmp3`, `.ytmp4`, `*yts` | YouTube search and media utilities. |
+| `*tiktok`, `.instagram`, `*facebook`, `*pinterest`, `*twitter`, `*reddit` | Supported social-media retrieval utilities. |
+| `*spotify`, `.mediafire`, `*mf`, `*gdrive`, `*apk`, `.threads`, `.snapchat`, `.capcut`, `.terabox` | Additional retrieval utilities where the upstream service is available. |
+| `*blur`, `*crop`, `*flip`, `*grayscale`, `*invert`, `*removebg`, `*enlarge`, `.enhance`, `.upscale`, `.remini` | Image editing and enhancement tools. |
+| `.pdf`, `.ocr`, `*screenshot`, `*qr` | Document, text-recognition, screenshot, and QR utilities. |
 
 ### 🤖 AI and knowledge
 
 | Commands | Purpose |
 |---|---|
-| `.ai`, `.chatbot`, `.autochat`, `.autoreply`, `.keyword`, `.chatgpt`, `.gemini`, `.llama`, `.deepseek`, `.blackbox` | AI assistant integrations, subject to configured providers and keys. `.autochat` controls concise group replies with a five-second per-group cooldown; `.autoreply` controls automatic private-message replies; `.keyword` sends matching Akatsuki quotes with an eight-second per-chat cooldown. |
+| `*ai`, `*chatbot`, `*autochat`, `*autoreply`, `*keyword`, `.chatgpt`, `.gemini`, `.llama`, `.deepseek`, `.blackbox` | AI assistant integrations, subject to configured providers and keys. `*autochat` controls concise group replies with a five-second per-group cooldown; `*autoreply` controls automatic private-message replies; `*keyword` sends matching Akatsuki quotes with an eight-second per-chat cooldown. |
 | `.imagine`, `.flux`, `.pixart`, `.dalle`, `.bingai`, `.midjourney` | Image-generation integrations where configured. |
-| `.translate`, `.dict`, `.wiki`, `.google`, `.define`, `.weather`, `.ipinfo`, `.whois`, `.dnslookup` | Translation, reference, search, weather, network, and domain utilities. |
-| `.news`, `.crypto`, `.movie`, `.lyrics`, `.manga`, `.github`, `.npm`, `.playstore` | Information and service lookup utilities. |
-| `.base64`, `.binary`, `.hex`, `.morse`, `.calc`, `.shorturl`, `.pastebin` | Encoding, calculation, shortening, and text utilities. |
+| `*translate`, `.dict`, `*wiki`, `*google`, `*define`, `*weather`, `*ipinfo`, `*whois`, `*dnslookup` | Translation, reference, search, weather, network, and domain utilities. |
+| `*news`, `*crypto`, `*movie`, `*lyrics`, `*manga`, `*github`, `*npm`, `*playstore` | Information and service lookup utilities. |
+| `*base64`, `*binary`, `*hex`, `*morse`, `*calc`, `*shorturl`, `*pastebin` | Encoding, calculation, shortening, and text utilities. |
 
 ### 🎭 Fun, quotes, games, and anime
 
 | Commands | Purpose |
 |---|---|
-| `.joke`, `.meme`, `.dare`, `.truth`, `.roast`, `.compliment`, `.pickup`, `.insult`, `.flirt` | Social and entertainment responses. |
-| `.ascii`, `.character`, `.fact`, `.trivia`, `.riddle`, `.wouldyourather`, `.8ball`, `.coinflip`, `.roll` | Games, prompts, and text entertainment. |
-| `.ship`, `.emojimix`, `.hack`, `.report` | Fun utilities and reporting workflows. |
+| `*joke`, `*meme`, `*dare`, `*truth`, `*roast`, `*compliment`, `.pickup`, `.insult`, `.flirt` | Social and entertainment responses. |
+| `*ascii`, `*character`, `*fact`, `*trivia`, `*riddle`, `*wouldyourather`, `.8ball`, `*coinflip`, `*roll` | Games, prompts, and text entertainment. |
+| `*ship`, `*emojimix`, `*hack`, `*report` | Fun utilities and reporting workflows. |
 | `.tictactoe`, `.chess`, `.hangman` | Interactive game commands where implemented. |
-| `.anime`, `.character`, `.manga` | Anime and manga-related utilities. |
+| `*anime`, `*character`, `*manga` | Anime and manga-related utilities. |
 
 ### 🕌 Islamic utilities
 
 | Commands | Purpose |
 |---|---|
-| `.quran`, `.hadith` | Retrieve Quran and Hadith content from configured sources. |
-| `.prayer`, `.qibla` | Prayer-time and Qibla utilities where location data is available. |
-| `.asmaulhusna` | Display the names of Allah. |
+| `*quran`, `*hadith` | Retrieve Quran and Hadith content from configured sources. |
+| `*prayer`, `*qibla` | Prayer-time and Qibla utilities where location data is available. |
+| `*asmaulhusna` | Display the names of Allah. |
 
 ### 👑 Owner and system administration
 
 | Commands | Purpose |
 |---|---|
-| `.public`, `.private`, `.mode` | Change bot availability mode. |
-| `.block`, `.unblock` | Manage blocked contacts. |
-| `.broadcast`, `.bcall`, `.bcgc` | Owner broadcast utilities. |
-| `.restart`, `.shutdown`, `.xrestart`, `.xshutdown` | Process-control commands; owner-only and host-dependent. |
-| `.backup`, `.restore`, `.clone`, `.nuke`, `.deleteall` | Administrative data or process operations; review the implementation before use. |
-| `.addsudo`, `.delsudo`, `.listsudo`, `.setprefix`, `.setname` | Owner configuration and access-management utilities where enabled. |
-| `.owneraccess grant <number>`, `.owneraccess revoke <number>`, `.owneraccess list` | Owner/Creator-managed premium approval for owner-only commands. Access is stored in bot data and remains until revoked. |
-| `.password`, `.mycmd`, `.gali` | Additional owner or utility commands. |
+| `*public`, `*private`, `*mode` | Change bot availability mode. |
+| `*block`, `*unblock` | Manage blocked contacts. |
+| `.broadcast`, `*bcall`, `*bcgc` | Owner broadcast utilities. |
+| `*restart`, `*shutdown`, `*xrestart`, `*xshutdown` | Process-control commands; owner-only and host-dependent. |
+| `*backup`, `*restore`, `*clone`, `*nuke`, `*deleteall` | Administrative data or process operations; review the implementation before use. |
+| `.addsudo`, `.delsudo`, `.listsudo`, `.setprefix`, `*setname` | Owner configuration and access-management utilities where enabled. |
+| `*owneraccess grant <number>`, `*owneraccess revoke <number>`, `*owneraccess list` | Owner/Creator-managed premium approval for owner-only commands. Access is stored in bot data and remains until revoked. |
+| `*password`, `*mycmd`, `*gali` | Additional owner or utility commands. |
 
 Premium approval is manual; it does not process payments. Only the configured Owner or Creator can grant or revoke it. Approved numbers receive owner-command privileges (including potentially sensitive administrative operations), so approve only trusted users and revoke access when it is no longer needed.
 
 ### ⚠️ Restricted or experimental operations
 
-The repository contains legacy commands with names such as `.spam`, `.smsbomb`, `.callbomb`, `.crash`, `.freeze`, `.lag`, `.bug`, `.locspam`, `.vcardspam`, `.buttonspam`, `.pollspam`, and `.contactspam`. These should not be used against people, phone numbers, services, or infrastructure. They may violate provider terms, local law, or platform safety rules. Keep them disabled or remove them from production if they are not required for a legitimate, authorized test environment.
+The repository contains legacy commands with names such as `*spam`, `*smsbomb`, `*callbomb`, `*crash`, `*freeze`, `*lag`, `*bug`, `*locspam`, `*vcardspam`, `*buttonspam`, `*pollspam`, and `*contactspam`. These should not be used against people, phone numbers, services, or infrastructure. They may violate provider terms, local law, or platform safety rules. Keep them disabled or remove them from production if they are not required for a legitimate, authorized test environment.
 
 ## Akatsuki group management
 
 The themed management commands are designed for controlled group administration:
 
 ```text
-.welcome on
-.welcome off
-.welcome status
-.goodbye on
-.goodbye off
-.goodbye status
-.antilink on
-.antilink kick
-.antilink status
-.tagall Maintenance begins now
-.promote @member
-.demote @member
-.kick @member
-.ban @member
-.mute
-.gcoff
-.unmute
-.gcon
+*welcome on
+*welcome off
+*welcome status
+*goodbye on
+*goodbye off
+*goodbye status
+*antilink on
+*antilink kick
+*antilink status
+*tagall Maintenance begins now
+*promote @member
+*demote @member
+*kick @member
+*ban @member
+*mute
+*gcoff
+*unmute
+*gcon
 ```
 
 The bot must be a group administrator for actions such as removing members, changing ranks, deleting messages, muting a group, or changing group metadata. Use moderation commands transparently and only with the group’s consent and applicable platform rules.
@@ -418,7 +418,7 @@ This bot is a long-running Node process with WebSocket, pairing, and session req
 | Symptom | Checks |
 |---|---|
 | **The bot does not start** | Run `node --check index.js`, confirm `npm install` completed, inspect the first startup error, and verify the Node version is 18 or newer. |
-| **`.help` or `.menu` does not respond** | Confirm the bot process is online, the prefix is `.`, and the message is sent to the paired WhatsApp account. |
+| **`*help` or `*menu` does not respond** | Confirm the bot process is online, the prefix is `*`, and the message is sent to the paired WhatsApp account. |
 | **Pairing code is not delivered** | Use digits with country code, verify the session is not already active, inspect Railway logs, and ensure the host retains session files. |
 | **Group actions fail** | Make the bot a group administrator, use a mention or reply target, and confirm the sender has admin permission. |
 | **Telegram commands do not work** | Configure a newly generated `TELEGRAM_BOT_TOKEN`, verify the owner ID, restart the service, and inspect Telegram startup logs. |
